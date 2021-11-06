@@ -14,10 +14,18 @@ public class Main {
     public static void run(String source) {
         Lexer lexer = new Lexer(source);
         List<Token> tokens = lexer.lex();
+        Parser parser = new Parser(tokens);
+        Expr expr = parser.parse();
         
         for (Token token : tokens) {
             System.out.println(token);
         }
+        
+        if (_hadError) {
+            return;
+        }
+        
+        System.out.println(new AstPrinter().print(expr));
     }
     
     static void error(int line, String msg) {
@@ -27,6 +35,14 @@ public class Main {
     private static void report(int line, String where, String msg) {
         System.err.println("[line " + line + "] Error" + where + ": " + msg);
         _hadError = true;
+    }
+    
+    static void error(Token token, String msg) {
+        if (token._type == TokenType.TK_EOF) {
+            report(token._line, " at end", msg);
+        } else {
+            report(token._line, " at '" + token._lexeme + "'", msg);
+        }
     }
     
     public static void runFile(String path) throws IOException {
