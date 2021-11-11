@@ -9,7 +9,9 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Main {
-    static boolean _hadError;
+    public static final Interpreter _interpreter = new Interpreter();
+    static boolean _hadError = false;
+    static boolean _hadRuntimeError = false;
     
     public static void run(String source) {
         Lexer lexer = new Lexer(source);
@@ -25,11 +27,18 @@ public class Main {
             return;
         }
         
-        System.out.println(new AstPrinter().print(expr));
+        _interpreter.interpret(expr);
+        
+        //System.out.println(new AstPrinter().print(expr));
     }
     
     static void error(int line, String msg) {
         report(line, "", msg);
+    }
+    
+    static void runtimeError(RuntimeError e) {
+        System.err.println(e.getMessage() + "\n[line " + e._token._line + "]");
+        _hadRuntimeError = true;
     }
     
     private static void report(int line, String where, String msg) {
@@ -50,6 +59,10 @@ public class Main {
         run(new String(bytes, Charset.defaultCharset()));
         
         if (_hadError) {
+            System.exit(69);
+        }
+        
+        if (_hadRuntimeError) {
             System.exit(69);
         }
     }

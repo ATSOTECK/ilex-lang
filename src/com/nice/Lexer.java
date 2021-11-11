@@ -142,7 +142,7 @@ public class Lexer {
             eat();
         }
         
-        if (!atEnd()) {
+        if (atEnd()) {
             Main.error(_line, "Unterminated string.");
             return;
         }
