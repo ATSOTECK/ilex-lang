@@ -1,10 +1,15 @@
 package com.nice;
 
-public class Interpreter implements Expr.Visitor<Object> {
-    void interpret(Expr expr) {
+import java.util.List;
+
+public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    private Environment _environment = new Environment();
+    
+    void interpret(List<Stmt> statements) {
         try {
-            Object value = evaluate(expr);
-            System.out.println(stringify(value));
+            for (Stmt stmt : statements) {
+                execute(stmt);
+            }
         } catch (RuntimeError e) {
             Main.runtimeError(e);
         }
@@ -84,6 +89,11 @@ public class Interpreter implements Expr.Visitor<Object> {
         return null;
     }
     
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return _environment.get(expr._name);
+    }
+    
     private void checkNumberOperand(Token operator, Object operand) {
         if (operand instanceof Double) {
             return;
@@ -141,5 +151,43 @@ public class Interpreter implements Expr.Visitor<Object> {
     
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+    
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
+    
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt) {
+        evaluate(stmt._expression);
+        
+        return null;
+    }
+    
+    @Override
+    public Void visitPrintStmt(Stmt.Print stmt) {
+        Object value = evaluate(stmt._expression);
+        System.out.println(stringify(value));
+        
+        return null;
+    }
+    
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        Object value = null;
+        if (stmt._initializer != null) {
+            value = evaluate(stmt._initializer);
+        }
+        
+        _environment.define(stmt._name._lexeme, value);
+        return null;
+    }
+    
+    @Override
+    public Object visitAssignExpr(Expr.Assign expr) {
+        Object value = evaluate(expr._value);
+        _environment.assign(expr._name, value);
+        
+        return value;
     }
 }

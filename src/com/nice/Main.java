@@ -17,19 +17,13 @@ public class Main {
         Lexer lexer = new Lexer(source);
         List<Token> tokens = lexer.lex();
         Parser parser = new Parser(tokens);
-        Expr expr = parser.parse();
-        
-        for (Token token : tokens) {
-            System.out.println(token);
-        }
+        List<Stmt> statements = parser.parse();
         
         if (_hadError) {
             return;
         }
         
-        _interpreter.interpret(expr);
-        
-        //System.out.println(new AstPrinter().print(expr));
+        _interpreter.interpret(statements);
     }
     
     static void error(int line, String msg) {
