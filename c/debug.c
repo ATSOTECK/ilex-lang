@@ -31,18 +31,31 @@ static int simpleInstruction(const char *name, int offset) {
 
 int disassembleInstruction(Chunk *chunk, int offset) {
     printf("%04d ", offset);
-    if (offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1]) {
+    if (offset > 0 && getLine(chunk, offset) == getLine(chunk, offset - 1)) {
         printf("   | ");
     } else {
-        printf("%4d ", chunk->lines[offset]);
+        printf("%4d ", getLine(chunk, offset));
     }
 
     uint8_t instruction = chunk->code[offset];
     switch (instruction) {
-        case OP_CONSTANT:
-            return constantInstruction("OP_CONSTANT", chunk, offset);
-        case OP_RETURN:
-            return simpleInstruction("OP_RETURN", offset);
+        case OP_CONSTANT: return constantInstruction("OP_CONSTANT", chunk, offset);
+        case OP_NULL: return simpleInstruction("OP_NULL", offset);
+        case OP_TRUE: return simpleInstruction("OP_TRUE", offset);
+        case OP_FALSE: return simpleInstruction("OP_FALSE", offset);
+        case OP_EQ: return simpleInstruction("OP_EQ", offset);
+        case OP_NOTEQ: return simpleInstruction("OP_NOTEQ", offset);
+        case OP_GR: return simpleInstruction("OP_GR", offset);
+        case OP_GREQ: return simpleInstruction("OP_GREQ", offset);
+        case OP_LT: return simpleInstruction("OP_LT", offset);
+        case OP_LTEQ: return simpleInstruction("OP_LTEQ", offset);
+        case OP_ADD: return simpleInstruction("OP_ADD", offset);
+        case OP_SUB: return simpleInstruction("OP_SUB", offset);
+        case OP_MUL: return simpleInstruction("OP_MUL", offset);
+        case OP_DIV: return simpleInstruction("OP_DIV", offset);
+        case OP_NOT: return simpleInstruction("OP_NOT", offset);
+        case OP_NEG: return simpleInstruction("OP_NEG", offset);
+        case OP_RETURN: return simpleInstruction("OP_RETURN", offset);
         default:
             printf("Unknown opcode %d\n", instruction);
             return offset + 1;

@@ -7,6 +7,19 @@
 #include "memory.h"
 #include "value.h"
 
+bool valuesEqual(Value a, Value b) {
+    if (a.type != b.type) {
+        return false;
+    }
+
+    switch (a.type) {
+        case VAL_BOOL:   return AS_BOOL(a) == AS_BOOL(b);
+        case VAL_NULL:   return true;
+        case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
+        default:         return false; // Unreachable.
+    }
+}
+
 void initValueArray(ValueArray *array) {
     array->values = NULL;
     array->capacity = 0;
@@ -30,5 +43,9 @@ void freeValueArray(ValueArray *array) {
 }
 
 void printValue(Value value) {
-    printf("%g", value);
+    switch (value.type) {
+        case VAL_BOOL: printf(AS_BOOL(value) ? "true" : "false"); break;
+        case VAL_NULL: printf("null"); break;
+        case VAL_NUMBER: printf("%g", AS_NUMBER(value)); break;
+    }
 }

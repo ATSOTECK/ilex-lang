@@ -10,14 +10,36 @@
 
 typedef enum {
     OP_CONSTANT,
+    OP_NULL,
+    OP_TRUE,
+    OP_FALSE,
+    OP_EQ,
+    OP_NOTEQ,
+    OP_GR,
+    OP_GREQ,
+    OP_LT,
+    OP_LTEQ,
+    OP_ADD,
+    OP_SUB,
+    OP_MUL,
+    OP_DIV,
+    OP_NOT,
+    OP_NEG,
     OP_RETURN,
 } OpCode;
+
+typedef struct {
+    int line;
+    int offset;
+} LineInfo;
 
 typedef struct {
     int count;
     int capacity;
     uint8_t *code;
-    int *lines;
+    int lineCount;
+    int lineCapacity;
+    LineInfo *lineInfo;
     ValueArray constants;
 } Chunk;
 
@@ -25,5 +47,8 @@ void initChunk(Chunk *chunk);
 void freeChunk(Chunk *chunk);
 void writeChunk(Chunk *chunk, uint8_t byte, int line);
 int addConstant(Chunk *chunk, Value value);
+void writeConstant(Chunk *chunk, Value value, int line);
+
+int getLine(Chunk *chunk, int offset);
 
 #endif //C_CHUNK_H
