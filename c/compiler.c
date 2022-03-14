@@ -154,6 +154,10 @@ static void number() {
     emitConstant(NUMBER_VAL(val));
 }
 
+static void string() {
+    emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.len - 2)));
+}
+
 static void binary() {
     TokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
@@ -186,7 +190,6 @@ static void literal() {
 static void unary() {
     TokenType op = parser.previous.type;
 
-    // expression();
     parsePrecedence(PREC_UNARY);
 
     switch (op) {
@@ -217,7 +220,7 @@ ParseRule rules[] = {
         [TK_LT]            = {NULL,     binary, PREC_COMPARISON},
         [TK_LTEQ]          = {NULL,     binary, PREC_COMPARISON},
         [TK_IDENT]         = {NULL,     NULL,   PREC_NONE},
-        [TK_STRING]        = {NULL,     NULL,   PREC_NONE},
+        [TK_STRING]        = {string,   NULL,   PREC_NONE},
         [TK_NUMBER]        = {number,   NULL,   PREC_NONE},
         [TK_AND]           = {NULL,     NULL,   PREC_NONE},
         [TK_CLASS]         = {NULL,     NULL,   PREC_NONE},
