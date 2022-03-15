@@ -46,6 +46,8 @@ Parser parser;
 Chunk *compilingChunk;
 
 static void expression();
+static void statement();
+static void declaration();
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
@@ -103,6 +105,19 @@ static void eat(TokenType type, const char *message) {
     errorAtCurrent(message);
 }
 
+static bool check(TokenType type) {
+    return parser.current.type == type;
+}
+
+static bool match(TokenType type) {
+    if (!check(type)) {
+        return false;
+    }
+    advance();
+
+    return true;
+}
+
 static void emitByte(uint8_t byte) {
     writeChunk(currentChunk(), byte, parser.previous.line);
 }
@@ -130,6 +145,10 @@ static void emitConstant(Value value) {
     emitBytes(OP_CONSTANT, makeConstant(value));
 }
 
+static uint8_t identifierConstant(Token *name) {
+    return makeConstant(OBJ_VAL(copyString(name->start, name->len)));
+}
+
 static void endCompiler() {
     emitReturn();
 
@@ -138,10 +157,6 @@ static void endCompiler() {
         disassembleChunk(currentChunk(), "code");
     }
 #endif
-}
-
-static void expression() {
-    parsePrecedence(PREC_ASSIGN);
 }
 
 static void grouping() {
@@ -156,6 +171,15 @@ static void number() {
 
 static void string() {
     emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.len - 2)));
+}
+
+static void namedVariable(Token name) {
+    uint8_t arg = identifierConstant(&name);
+    emitBytes(OP_GET_GLOBAL, arg);
+}
+
+static void variable() {
+    namedVariable(parser.previous);
 }
 
 static void binary() {
@@ -219,7 +243,7 @@ ParseRule rules[] = {
         [TK_GREQ]          = {NULL,     binary, PREC_COMPARISON},
         [TK_LT]            = {NULL,     binary, PREC_COMPARISON},
         [TK_LTEQ]          = {NULL,     binary, PREC_COMPARISON},
-        [TK_IDENT]         = {NULL,     NULL,   PREC_NONE},
+        [TK_IDENT]         = {variable, NULL,   PREC_NONE},
         [TK_STRING]        = {string,   NULL,   PREC_NONE},
         [TK_NUMBER]        = {number,   NULL,   PREC_NONE},
         [TK_AND]           = {NULL,     NULL,   PREC_NONE},
@@ -259,8 +283,92 @@ static void parsePrecedence(Precedence precedence) {
     }
 }
 
+static void expressionStatement() {
+    expression();
+    eat(TK_SEMICOLON, "Expect ';' after expression.");
+    emitByte(OP_POP);
+}
+
+static void printStatement() {
+    expression();
+    eat(TK_SEMICOLON, "Expect ';' after value.");
+    emitByte(OP_PRINT);
+}
+
+static void synchronize() {
+    parser.panicMode = false;
+
+    while (parser.current.type != TK_EOF) {
+        if (parser.previous.type == TK_SEMICOLON) {
+            return;
+        }
+        switch (parser.current.type) {
+            case TK_CLASS:
+            case TK_FUN:
+            case TK_VAR:
+            case TK_FOR:
+            case TK_IF:
+            case TK_WHILE:
+            case TK_PRINT:
+            case TK_RETURN:
+                return;
+
+            default:
+                ; // Do nothing.
+        }
+
+        advance();
+    }
+}
+
+static void statement() {
+    if (match(TK_PRINT)) {
+        printStatement();
+    } else {
+        expressionStatement();
+    }
+}
+
+static uint8_t parseVariable(const char *errorMessage) {
+    eat(TK_IDENT, errorMessage);
+    return identifierConstant(&parser.previous);
+}
+
+static void defineVariable(uint8_t global) {
+    emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
 static ParseRule* getRule(TokenType type) {
     return &rules[type];
+}
+
+static void expression() {
+    parsePrecedence(PREC_ASSIGN);
+}
+
+static void varDeclaration() {
+    uint8_t global = parseVariable("Expect variable name.");
+
+    if (match(TK_ASSIGN)) {
+        expression();
+    } else {
+        emitByte(OP_NULL);
+    }
+    eat(TK_SEMICOLON, "Expect ';' after variable declaration.");
+
+    defineVariable(global);
+}
+
+static void declaration() {
+    if (match(TK_VAR)) {
+        varDeclaration();
+    } else {
+        statement();
+    }
+
+    if (parser.panicMode) {
+        synchronize();
+    }
 }
 
 bool compile(const char *source, Chunk *chunk) {
@@ -271,8 +379,9 @@ bool compile(const char *source, Chunk *chunk) {
     parser.panicMode = false;
 
     advance();
-    expression();
-    eat(TK_EOF, "Expect end of expression.");
+    while (!match(TK_EOF)) {
+        declaration();
+    }
 
     endCompiler();
     return !parser.hadError;

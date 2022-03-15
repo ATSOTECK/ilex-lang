@@ -13,6 +13,9 @@ typedef enum {
     OP_NULL,
     OP_TRUE,
     OP_FALSE,
+    OP_POP,
+    OP_GET_GLOBAL,
+    OP_DEFINE_GLOBAL,
     OP_EQ,
     OP_NOTEQ,
     OP_GR,
@@ -25,6 +28,7 @@ typedef enum {
     OP_DIV,
     OP_NOT,
     OP_NEG,
+    OP_PRINT,
     OP_RETURN,
 } OpCode;
 
