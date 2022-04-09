@@ -37,6 +37,7 @@ typedef enum {
     // Keywords.
     TK_AND,
     TK_CLASS,
+    TK_CONST, // TODO
     TK_ELSE,
     TK_FALSE,
     TK_FOR,
