@@ -1,0 +1,30 @@
+var breakfast = "beignets";
+var beverage = "cafe au lait";
+breakfast = "beignets with " + beverage;
+
+print breakfast;
+
+var a = true;
+if (a) {
+    var yeet = "yeet";
+    print yeet;
+} else {
+    var yote = "yote";
+    print yote;
+}
+
+var b = 0;
+while (a) {
+    b = b + 1;
+    print b;
+
+    if (b >= 10) {
+        a = false;
+    }
+}
+
+print "\n";
+
+for (var i = 20; i < 30; i = i + 1) {
+    print i;
+}

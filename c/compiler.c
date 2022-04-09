@@ -61,6 +61,7 @@ Chunk *compilingChunk;
 static void expression();
 static void statement();
 static void declaration();
+static void block();
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
@@ -140,6 +141,26 @@ static void emitBytes(uint8_t byte1, uint8_t byte2) {
     emitByte(byte2);
 }
 
+static void emitLoop(int loopStart) {
+    emitByte(OP_LOOP);
+
+    int offset = currentChunk()->count - loopStart + 2;
+    if (offset > UINT16_MAX) {
+        error("Loop body too large.");
+    }
+
+    emitByte((offset >> 8) & 0xff);
+    emitByte(offset & 0xff);
+}
+
+static int emitJump(uint8_t instruction) {
+    emitByte(instruction);
+    emitByte(0xff);
+    emitByte(0xff);
+
+    return currentChunk()->count - 2;
+}
+
 static void emitReturn() {
     emitByte(OP_RETURN);
 }
@@ -156,6 +177,17 @@ static uint8_t makeConstant(Value value) {
 
 static void emitConstant(Value value) {
     emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
+static void patchJump(int offset) {
+    int jump = currentChunk()->count - offset - 2;
+
+    if (jump > UINT16_MAX) {
+        error("Too much code to jump over.");
+    }
+
+    currentChunk()->code[offset] = (jump >> 8) & 0xff;
+    currentChunk()->code[offset + 1] = jump & 0xff;
 }
 
 static void initCompiler(Compiler *compiler) {
@@ -254,6 +286,27 @@ static void number(bool canAssign) {
     emitConstant(NUMBER_VAL(val));
 }
 
+static void and_(bool canAssign) {
+    int endJump = emitJump(OP_JUMP_IF_FALSE);
+
+    emitByte(OP_POP);
+    parsePrecedence(PREC_AND);
+
+    patchJump(endJump);
+}
+
+static void or_(bool canAssign) {
+    // TODO: Jump if true.
+    int elseJump = emitJump(OP_JUMP_IF_FALSE);
+    int endJump = emitJump(OP_JUMP);
+
+    patchJump(elseJump);
+    emitByte(OP_POP);
+
+    parsePrecedence(PREC_OR);
+    patchJump(endJump);
+}
+
 static void string(bool canAssign) {
     emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.len - 2)));
 }
@@ -347,7 +400,7 @@ ParseRule rules[] = {
         [TK_IDENT]         = {variable, NULL,   PREC_NONE},
         [TK_STRING]        = {string,   NULL,   PREC_NONE},
         [TK_NUMBER]        = {number,   NULL,   PREC_NONE},
-        [TK_AND]           = {NULL,     NULL,   PREC_NONE},
+        [TK_AND]           = {NULL,     and_,   PREC_AND},
         [TK_CLASS]         = {NULL,     NULL,   PREC_NONE},
         [TK_ELSE]          = {NULL,     NULL,   PREC_NONE},
         [TK_FALSE]         = {literal,  NULL,   PREC_NONE},
@@ -355,7 +408,7 @@ ParseRule rules[] = {
         [TK_FUN]           = {NULL,     NULL,   PREC_NONE},
         [TK_IF]            = {NULL,     NULL,   PREC_NONE},
         [TK_NULL]          = {literal,  NULL,   PREC_NONE},
-        [TK_OR]            = {NULL,     NULL,   PREC_NONE},
+        [TK_OR]            = {NULL,     or_,    PREC_OR},
         [TK_PRINT]         = {NULL,     NULL,   PREC_NONE},
         [TK_RETURN]        = {NULL,     NULL,   PREC_NONE},
         [TK_SUPER]         = {NULL,     NULL,   PREC_NONE},
@@ -387,18 +440,6 @@ static void parsePrecedence(Precedence precedence) {
     if (canAssign && match(TK_ASSIGN)) {
         error("Invalid assignment target.");
     }
-}
-
-static void expressionStatement() {
-    expression();
-    eat(TK_SEMICOLON, "Expect ';' after expression.");
-    emitByte(OP_POP);
-}
-
-static void printStatement() {
-    expression();
-    eat(TK_SEMICOLON, "Expect ';' after value.");
-    emitByte(OP_PRINT);
 }
 
 static void synchronize() {
@@ -480,6 +521,113 @@ static void varDeclaration() {
     defineVariable(global);
 }
 
+static void expressionStatement() {
+    expression();
+    eat(TK_SEMICOLON, "Expect ';' after expression.");
+    emitByte(OP_POP);
+}
+
+static void forStatement() {
+    beginScope();
+    eat(TK_LPAREN, "Expect '(' after 'for'.");
+
+    if (match(TK_SEMICOLON)) {
+        // No initializer.
+    } else if (match(TK_VAR)) {
+        varDeclaration();
+    } else {
+        expressionStatement();
+    }
+
+    int loopStart = currentChunk()->count;
+    int exitJump = -1;
+    if (!match(TK_SEMICOLON)) {
+        expression();
+        eat(TK_SEMICOLON, "Expect ';' after loop condition.");
+
+        // Jump out of the loop if the condition is false.
+        exitJump = emitJump(OP_JUMP_IF_FALSE);
+        emitByte(OP_POP); // Condition.
+    }
+
+    if (!match(TK_RPAREN)) {
+        int bodyJump = emitJump(OP_JUMP);
+        int incrementStart = currentChunk()->count;
+        expression();
+        emitByte(OP_POP);
+        eat(TK_RPAREN, "Expect ')' after for clauses.");
+
+        emitLoop(loopStart);
+        loopStart = incrementStart;
+        patchJump(bodyJump);
+    }
+
+    eat(TK_LBRACE, "Expect '{' after ')'.");
+    beginScope();
+    block();
+    endScope();
+
+    emitLoop(loopStart);
+
+    if (exitJump != -1) {
+        patchJump(exitJump);
+        emitByte(OP_POP); // Condition.
+    }
+
+    endScope();
+}
+
+static void ifStatement() {
+    eat(TK_LPAREN, "Expect '(' after 'if'.");
+    expression();
+    eat(TK_RPAREN, "Expect ')' after condition.");
+
+    int thenJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+
+    eat(TK_LBRACE, "Expect '{' after ')'.");
+    beginScope();
+    block();
+    endScope();
+
+    int elseJump = emitJump(OP_JUMP);
+    patchJump(thenJump);
+    emitByte(OP_POP);
+
+    if (match(TK_ELSE)) {
+        eat(TK_LBRACE, "Expect '{' after 'else'.");
+        beginScope();
+        block();
+        endScope();
+    }
+    patchJump(elseJump);
+}
+
+static void printStatement() {
+    expression();
+    eat(TK_SEMICOLON, "Expect ';' after value.");
+    emitByte(OP_PRINT);
+}
+
+static void whileStatement() {
+    int loopStart = currentChunk()->count;
+    eat(TK_LPAREN, "Expect '(' after 'while'.");
+    expression();
+    eat(TK_RPAREN, "Expect ')' after condition.");
+
+    int exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+
+    eat(TK_LBRACE, "Expect '{' after ').");
+    beginScope();
+    block();
+    endScope();
+    emitLoop(loopStart);
+
+    patchJump(exitJump);
+    emitByte(OP_POP);
+}
+
 static void declaration() {
     if (match(TK_VAR)) {
         varDeclaration();
@@ -495,6 +643,12 @@ static void declaration() {
 static void statement() {
     if (match(TK_PRINT)) {
         printStatement();
+    } else if (match(TK_FOR)) {
+        forStatement();
+    } else if (match(TK_IF)) {
+        ifStatement();
+    } else if (match(TK_WHILE)) {
+        whileStatement();
     } else if (match(TK_LBRACE)) {
         beginScope();
         block();
