@@ -43,7 +43,7 @@ typedef enum {
     TK_ELSE,
     TK_FALSE,
     TK_FOR,
-    TK_FUN,
+    TK_FN,
     TK_GOTO, // TODO
     TK_IF,
     TK_NULL,

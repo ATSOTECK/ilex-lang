@@ -93,6 +93,23 @@ static void skipWhitespace() {
                     while (peek() != '\n' && !atEnd()) {
                         advance();
                     }
+                } else if (peekNext() == '-' || peekNext() == '*') {
+                    int level = 0;
+                    advance();
+                    while (!atEnd() && (level >= 1 || !((peek() == '-' || peek() == '*') && peekNext() == '/'))) {
+                        if (peek() == '\n') {
+                            lexer.line++;
+                        } else if (peek() == '/' && (peekNext() == '-' || peekNext() == '*')) {
+                            ++level;
+                        } else if ((peek() == '-' || peek() == '*') && peekNext() == '/') {
+                            --level;
+                        }
+
+                        advance();
+                    }
+
+                    advance(); // - or *
+                    advance();// /
                 } else {
                     return;
                 }
@@ -120,8 +137,8 @@ static TokenType identType() {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'a': return checkKeyword(2, 3, "lse", TK_FALSE);
+                    case 'n': return TK_FN;
                     case 'o': return checkKeyword(2, 1, "r", TK_FOR);
-                    case 'u': return checkKeyword(2, 2, "nc", TK_FUN);
                 }
             } break;
         case 'i': return checkKeyword(1, 1, "f", TK_IF);

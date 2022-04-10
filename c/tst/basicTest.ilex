@@ -28,3 +28,24 @@ print "\n";
 for (var i = 20; i < 30; i = i + 1) {
     print i;
 }
+
+var c = b / 0;
+print c;
+c = c + 1;
+print c;
+
+fn test(param) {
+    print param;
+    // var x = a + b;
+}
+
+fn add(a, b) {
+    return a + b;
+}
+
+test("Hello");
+test(5);
+
+print "hi";
+
+print seconds();

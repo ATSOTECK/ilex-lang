@@ -1,0 +1,15 @@
+fn fib(n) {
+    if (n < 2) {
+        return n;
+    }
+
+    return fib(n - 2) + fib(n - 1);
+}
+
+fn main() {
+    var start = seconds();
+    print fib(40);
+    print seconds() - start;
+}
+
+main();
