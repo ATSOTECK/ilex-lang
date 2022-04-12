@@ -48,4 +48,17 @@ test(5);
 
 print "hi";
 
+fn makeClosure(value) {
+    fn closure() {
+        print value;
+    }
+
+    return closure;
+}
+
+var closure1 = makeClosure("Apple");
+var closure2 = makeClosure("Juice");
+closure1();
+closure2();
+
 print seconds();
