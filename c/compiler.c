@@ -487,6 +487,18 @@ static void call(bool canAssign) {
     emitBytes(OP_CALL, argCount);
 }
 
+static void dot(bool canAssign) {
+    eat(TK_IDENT, "Expect property name after '.'.");
+    uint8_t name = identifierConstant(&parser.previous);
+
+    if (canAssign && match(TK_ASSIGN)) {
+        expression();
+        emitBytes(OP_SET_PROPERTY, name);
+    } else {
+        emitBytes(OP_GET_PROPERTY, name);
+    }
+}
+
 static void literal(bool canAssign) {
     switch (parser.previous.type) {
         case TK_FALSE: emitByte(OP_FALSE); break;
@@ -514,7 +526,7 @@ ParseRule rules[] = {
         [TK_LBRACE]        = {NULL,     NULL,   PREC_NONE},
         [TK_RBRACE]        = {NULL,     NULL,   PREC_NONE},
         [TK_COMMA]         = {NULL,     NULL,   PREC_NONE},
-        [TK_DOT]           = {NULL,     NULL,   PREC_NONE},
+        [TK_DOT]           = {NULL,     dot,    PREC_CALL},
         [TK_MINUS]         = {unary,    binary, PREC_TERM},
         [TK_PLUS]          = {NULL,     binary, PREC_TERM},
         [TK_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
@@ -643,6 +655,18 @@ static void function(FunctionType type) {
         emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
         emitByte(compiler.upvalues[i].index);
     }
+}
+
+static void classDeclaration() {
+    eat(TK_IDENT, "Expect class name.");
+    uint8_t nameConstant = identifierConstant(&parser.previous);
+    declareVariable();
+
+    emitBytes(OP_CLASS, nameConstant);
+    defineVariable(nameConstant);
+
+    eat(TK_LBRACE, "Expect '{' before class body.");
+    eat(TK_RBRACE, "Expect '}' after class body.");
 }
 
 static void fnDeclaration() {
@@ -787,7 +811,9 @@ static void whileStatement() {
 }
 
 static void declaration() {
-    if (match(TK_FN)) {
+    if (match(TK_CLASS)) {
+        classDeclaration();
+    } else if (match(TK_FN)) {
         fnDeclaration();
     } else if (match(TK_VAR)) {
         varDeclaration();

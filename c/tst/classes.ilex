@@ -1,0 +1,4 @@
+class Cat {}
+var cat = Cat();
+cat.name = "Kiikii";
+print cat.name;
