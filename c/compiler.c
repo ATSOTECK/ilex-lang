@@ -9,6 +9,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "lexer.h"
+#include "memory.h"
 
 #ifdef DEBUG_PRINT_CODE
 #   include "debug.h"
@@ -836,3 +837,11 @@ ObjFunction *compile(const char *source) {
     return parser.hadError ? NULL : function;
 }
 
+void markCompilerRoots() {
+    Compiler *compiler = current;
+
+    while (compiler != NULL) {
+        markObject((Obj*)compiler->function);
+        compiler = compiler->enclosing;
+    }
+}

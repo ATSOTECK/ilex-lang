@@ -76,5 +76,7 @@ int main(int argc, char **argv) {
         exit(64);
     }
 
+    freeVM();
+
     return 0;
 }

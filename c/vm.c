@@ -37,7 +37,8 @@ static void runtimeError(const char *format, ...) {
     for (int i = vm.frameCount - 1; i >= 0; i--) {
         CallFrame *frame = &vm.frames[i];
         ObjFunction *function = frame->closure->function;
-        int line = getLine(&function->chunk, (int)(frame->ip - function->chunk.code - 1));
+        size_t instruction = frame->ip - function->chunk.code - 1;
+        int line = function->chunk.lines[instruction];
         fprintf(stderr, "[line %d] in ", line);
         if (function->name == NULL) {
             fprintf(stderr, "script\n");
@@ -60,6 +61,12 @@ static void defineNative(const char *name, NativeFn function) {
 void initVM() {
     resetStack();
     vm.objects = NULL;
+    vm.bytesAllocated = 0;
+    vm.nextGC = 1024 * 1024;
+    vm.grayCount = 0;
+    vm.grayCapacity = 0;
+    vm.grayStack = NULL;
+
     initTable(&vm.globals);
     initTable(&vm.strings);
 
@@ -165,8 +172,8 @@ static bool isFalsey(Value value) {
 }
 
 static void concat() {
-    ObjString* b = AS_STRING(pop());
-    ObjString* a = AS_STRING(pop());
+    ObjString* b = AS_STRING(peek(0));
+    ObjString* a = AS_STRING(peek(1));
 
     int len = a->len + b->len;
     char* str = ALLOCATE(char, len + 1);
@@ -175,6 +182,8 @@ static void concat() {
     str[len] = '\0';
 
     ObjString *res = takeString(str, len);
+    pop();
+    pop();
     push(OBJ_VAL(res));
 }
 
@@ -271,12 +280,12 @@ static InterpretResult run() {
             case OP_LT: BINARY_OP(BOOL_VAL, <); break;
             case OP_LTEQ: BINARY_OP(BOOL_VAL, <=); break;
             case OP_ADD: {
-                if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
-                    concat();
-                } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+                if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
                     double b = AS_NUMBER(pop());
                     double a = AS_NUMBER(pop());
                     push(NUMBER_VAL(a + b));
+                } else if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+                    concat();
                 } else {
                     runtimeError("Operands must be two numbers or two strings.");
                     return INTERPRET_RUNTIME_ERROR;
