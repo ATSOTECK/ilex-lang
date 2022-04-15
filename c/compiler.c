@@ -57,6 +57,8 @@ typedef struct {
 
 typedef enum {
     TYPE_FUNCTION,
+    TYPE_INITIALIZER,
+    TYPE_METHOD,
     TYPE_SCRIPT
 } FunctionType;
 
@@ -71,8 +73,13 @@ typedef struct Compiler {
     int scopeDepth;
 } Compiler;
 
+typedef struct ClassCompiler {
+    struct ClassCompiler *enclosing;
+} ClassCompiler;
+
 Parser parser;
 Compiler *current = NULL; // Will not work with multiple threads. This should be passed to the functions that need it.
+ClassCompiler* currentClass = NULL;
 
 static void expression();
 static void statement();
@@ -178,7 +185,12 @@ static int emitJump(uint8_t instruction) {
 }
 
 static void emitReturn() {
-    emitByte(OP_NULL);
+    if (current->type == TYPE_INITIALIZER) {
+        emitBytes(OP_GET_LOCAL, 0);  // this
+    } else {
+        emitByte(OP_NULL);
+    }
+
     emitByte(OP_RETURN);
 }
 
@@ -222,8 +234,13 @@ static void initCompiler(Compiler *compiler, FunctionType type) {
     Local *local = &current->locals[current->localCount++];
     local->depth = 0;
     local->isCaptured = false;
-    local->name.start = "";
-    local->name.len = 0;
+    if (type != TYPE_FUNCTION) {
+        local->name.start = "this";
+        local->name.len = 4;
+    } else {
+        local->name.start = "";
+        local->name.len = 0;
+    }
 }
 
 static uint8_t identifierConstant(Token *name) {
@@ -462,6 +479,15 @@ static void variable(bool canAssign) {
     namedVariable(parser.previous, canAssign);
 }
 
+static void this_(bool canAssign) {
+    if (currentClass == NULL) {
+        error("Can't use 'this' outside of a class.");
+        return;
+    }
+
+    variable(false);
+}
+
 static void binary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
@@ -494,6 +520,10 @@ static void dot(bool canAssign) {
     if (canAssign && match(TK_ASSIGN)) {
         expression();
         emitBytes(OP_SET_PROPERTY, name);
+    } else if (match(TK_LPAREN)) {
+            uint8_t argCount = argumentList();
+            emitBytes(OP_INVOKE, name);
+            emitByte(argCount);
     } else {
         emitBytes(OP_GET_PROPERTY, name);
     }
@@ -555,7 +585,7 @@ ParseRule rules[] = {
         [TK_PRINT]         = {NULL,     NULL,   PREC_NONE},
         [TK_RETURN]        = {NULL,     NULL,   PREC_NONE},
         [TK_SUPER]         = {NULL,     NULL,   PREC_NONE},
-        [TK_THIS]          = {NULL,     NULL,   PREC_NONE},
+        [TK_THIS]          = {this_,    NULL,   PREC_NONE},
         [TK_TRUE]          = {literal,  NULL,   PREC_NONE},
         [TK_VAR]           = {NULL,     NULL,   PREC_NONE},
         [TK_WHILE]         = {NULL,     NULL,   PREC_NONE},
@@ -657,16 +687,41 @@ static void function(FunctionType type) {
     }
 }
 
+static void method() {
+    eat(TK_IDENT, "Expect method name.");
+    uint8_t constant = identifierConstant(&parser.previous);
+
+    FunctionType type = TYPE_METHOD;
+    if (parser.previous.len == 4 &&
+        memcmp(parser.previous.start, "init", 4) == 0) {
+        type = TYPE_INITIALIZER;
+    }
+    function(type);
+    emitBytes(OP_METHOD, constant);
+}
+
 static void classDeclaration() {
     eat(TK_IDENT, "Expect class name.");
+    Token className = parser.previous;
     uint8_t nameConstant = identifierConstant(&parser.previous);
     declareVariable();
 
     emitBytes(OP_CLASS, nameConstant);
     defineVariable(nameConstant);
 
+    ClassCompiler classCompiler;
+    classCompiler.enclosing = currentClass;
+    currentClass = &classCompiler;
+
+    namedVariable(className, false);
     eat(TK_LBRACE, "Expect '{' before class body.");
+    while (!check(TK_RBRACE) && !check(TK_EOF)) {
+        method();
+    }
     eat(TK_RBRACE, "Expect '}' after class body.");
+    emitByte(OP_POP);
+
+    currentClass = currentClass->enclosing;
 }
 
 static void fnDeclaration() {
@@ -785,6 +840,10 @@ static void returnStatement() {
     if (match(TK_SEMICOLON)) {
         emitReturn();
     } else {
+        if (current->type == TYPE_INITIALIZER) {
+            error("Can't return a value from an initializer.");
+        }
+
         expression();
         eat(TK_SEMICOLON, "Expect ';' after return value.");
         emitByte(OP_RETURN);
