@@ -338,6 +338,25 @@ static InterpretResult run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
             } break;
+            case OP_GET_PROPERTY_NO_POP: {
+                if (!IS_INSTANCE(peek(0))) {
+                    runtimeError("Only instances have properties.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+    
+                ObjInstance *instance = AS_INSTANCE(peek(0));
+                ObjString *name = READ_STRING();
+                Value value;
+    
+                if (tableGet(&instance->fields, name, &value)) {
+                    push(value);
+                    break;
+                }
+    
+                if (!bindMethod(instance->objClass, name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            } break;
             case OP_DEFINE_GLOBAL: {
                 ObjString *name = READ_STRING();
                 tableSet(&vm.globals, name, peek(0));
@@ -397,7 +416,23 @@ static InterpretResult run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
             } break;
+            case OP_INC: {
+                if (!IS_NUMBER(peek(0))) {
+                    runtimeError("Operand must be a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                push(NUMBER_VAL(AS_NUMBER(pop()) + 1));
+            } break;
             case OP_SUB: BINARY_OP(NUMBER_VAL, -); break;
+            case OP_DEC: {
+                if (!IS_NUMBER(peek(0))) {
+                    runtimeError("Operand must be a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+        
+                push(NUMBER_VAL(AS_NUMBER(pop()) - 1));
+            } break;
             case OP_MUL: BINARY_OP(NUMBER_VAL, *); break;
             case OP_DIV: BINARY_OP(NUMBER_VAL, /); break;
             case OP_NOT: push(BOOL_VAL(isFalsey(pop()))); break;
@@ -483,9 +518,9 @@ static InterpretResult run() {
 
                 if (isFalsey(condition)) {
                     if (!error->str[0]) {
-                        runtimeError("%s %s", "Assertion Failed.", error->str);
+                        runtimeError("Assertion Failed.");
                     } else {
-                        runtimeError("%s %s", "Assertion failed with message:", error->str);
+                        runtimeError("Assertion failed with message: %s", error->str);
                     }
                     
                     return INTERPRET_RUNTIME_ERROR;

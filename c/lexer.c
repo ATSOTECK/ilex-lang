@@ -246,14 +246,30 @@ Token nextToken() {
         case ';': return makeToken(TK_SEMICOLON);
         case ',': return makeToken(TK_COMMA);
         case '.': return makeToken(TK_DOT);
-        case '-': return makeToken(TK_MINUS);
-        case '+': return makeToken(TK_PLUS);
-        case '/': return makeToken(TK_DIV);
-        case '*': return makeToken(TK_MUL);
+        case '-': {
+            if (match('-')) {
+                return makeToken(TK_DEC);
+            } else if (match('=')) {
+                return makeToken(TK_MINUSEQ);
+            } else {
+                return makeToken(TK_MINUS);
+            }
+        }
+        case '+': {
+            if (match('+')) {
+                return makeToken(TK_INC);
+            } else if (match('=')) {
+                return makeToken(TK_PLUSEQ);
+            } else {
+                return makeToken(TK_PLUS);
+            }
+        }
+        case '/': return makeToken(match('=') ? TK_DIVEQ : TK_DIV);
+        case '*': return makeToken(match('=') ? TK_MULEQ : TK_MUL);
         case '!': return makeToken(match('=') ? TK_NOTEQ : TK_NOT);
-        case '=': return makeToken(match('=') ? TK_EQ : TK_ASSIGN);
-        case '<': return makeToken(match('=') ? TK_LTEQ : TK_LT);
-        case '>': return makeToken(match('=') ? TK_GREQ : TK_GR);
+        case '=': return makeToken(match('=') ? TK_EQ    : TK_ASSIGN);
+        case '<': return makeToken(match('=') ? TK_LTEQ  : TK_LT);
+        case '>': return makeToken(match('=') ? TK_GREQ  : TK_GR);
         case '"': return string();
     }
 

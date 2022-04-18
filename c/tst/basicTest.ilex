@@ -15,7 +15,7 @@ if (a) {
 
 var b = 0;
 while (a) {
-    b = b + 1;
+    b++;
     println(b);
 
     if (b >= 10) {
@@ -25,13 +25,13 @@ while (a) {
 
 println();
 
-for (var i = 20; i < 30; i = i + 1) {
+for (var i = 20; i < 30; i++) {
     println(i);
 }
 
 var c = b / 0;
 println(c);
-c = c + 1;
+c++;
 println(c);
 
 fn test(param) {

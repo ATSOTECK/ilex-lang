@@ -28,6 +28,12 @@ typedef enum {
     TK_GREQ, // >=
     TK_LT, // <
     TK_LTEQ, // <=
+    TK_INC, // ++
+    TK_DEC, // --
+    TK_PLUSEQ, // +=
+    TK_MINUSEQ, // -=
+    TK_MULEQ, // *=
+    TK_DIVEQ, // /=
 
     // Literals.
     TK_IDENT,

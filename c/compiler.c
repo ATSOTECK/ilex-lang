@@ -470,6 +470,14 @@ static void namedVariable(Token name, bool canAssign) {
     if (canAssign && match(TK_ASSIGN)) {
         expression();
         emitBytes(setOp, (uint8_t)arg);
+    } else if (canAssign && match(TK_INC)) {
+        namedVariable(name, false);
+        emitByte(OP_INC);
+        emitBytes(setOp, (uint8_t)arg);
+    } else if (canAssign && match(TK_DEC)) {
+        namedVariable(name, false);
+        emitByte(OP_DEC);
+        emitBytes(setOp, (uint8_t)arg);
     } else {
         emitBytes(getOp, (uint8_t)arg);
     }
@@ -516,9 +524,17 @@ static void call(bool canAssign) {
 static void dot(bool canAssign) {
     eat(TK_IDENT, "Expect property name after '.'.");
     uint8_t name = identifierConstant(&parser.previous);
-
+    
     if (canAssign && match(TK_ASSIGN)) {
         expression();
+        emitBytes(OP_SET_PROPERTY, name);
+    } else if (canAssign && match(TK_INC)) {
+        emitBytes(OP_GET_PROPERTY_NO_POP, name);
+        emitByte(OP_INC);
+        emitBytes(OP_SET_PROPERTY, name);
+    } else if (canAssign && match(TK_DEC)) {
+        emitBytes(OP_GET_PROPERTY_NO_POP, name);
+        emitByte(OP_DEC);
         emitBytes(OP_SET_PROPERTY, name);
     } else if (match(TK_LPAREN)) {
             uint8_t argCount = argumentList();
@@ -548,6 +564,14 @@ static void unary(bool canAssign) {
         case TK_MINUS: emitByte(OP_NEG); break;
         default: return;
     }
+}
+
+static void inc(bool canAssign) {
+    emitByte(OP_INC);
+}
+
+static void dec(bool canAssign) {
+    emitByte(OP_DEC);
 }
 
 ParseRule rules[] = {
@@ -589,6 +613,8 @@ ParseRule rules[] = {
         [TK_VAR]           = {NULL,     NULL,   PREC_NONE},
         [TK_WHILE]         = {NULL,     NULL,   PREC_NONE},
         [TK_ASSERT]        = {NULL,     NULL,   PREC_NONE},
+        [TK_INC]           = {NULL,     inc,    PREC_TERM},
+        [TK_DEC]           = {NULL,     dec,    PREC_TERM},
         [TK_ERROR]         = {NULL,     NULL,   PREC_NONE},
         [TK_EOF]           = {NULL,     NULL,   PREC_NONE},
 };
