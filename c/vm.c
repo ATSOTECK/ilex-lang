@@ -482,7 +482,12 @@ static InterpretResult run() {
                 ObjString *error = READ_STRING();
 
                 if (isFalsey(condition)) {
-                    runtimeError("%s %s", "Assertion Failed:", error->str);
+                    if (!error->str[0]) {
+                        runtimeError("%s %s", "Assertion Failed.", error->str);
+                    } else {
+                        runtimeError("%s %s", "Assertion failed with message:", error->str);
+                    }
+                    
                     return INTERPRET_RUNTIME_ERROR;
                 }
             } break;

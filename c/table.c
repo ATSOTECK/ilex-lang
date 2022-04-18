@@ -4,7 +4,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <printf.h>
 
 #include "memory.h"
 #include "object.h"
