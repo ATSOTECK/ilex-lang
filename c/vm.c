@@ -10,16 +10,13 @@
 #include "object.h"
 #include "memory.h"
 
+#include "libs/lib_natives.h"
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 
 VM vm;
-
-static Value secondsNative(int argCount, Value* args) {
-    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
-}
 
 static void resetStack() {
     vm.stackTop = vm.stack;
@@ -27,7 +24,7 @@ static void resetStack() {
     vm.openUpvalues = NULL;
 }
 
-static void runtimeError(const char *format, ...) {
+void runtimeError(const char *format, ...) {
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
@@ -41,24 +38,24 @@ static void runtimeError(const char *format, ...) {
         int line = function->chunk.lines[instruction];
         fprintf(stderr, "[line %d] in ", line);
         if (function->name == NULL) {
-            fprintf(stderr, "script\n");
+            fprintf(stderr, "script %s\n", vm.scriptName->str);
         } else {
-            fprintf(stderr, "%s()\n", function->name->str);
+            fprintf(stderr, "function %s()\n", function->name->str);
         }
     }
 
     resetStack();
 }
 
-static void defineNative(const char *name, NativeFn function) {
+void defineNative(const char *name, NativeFn function, Table *table) {
     push(OBJ_VAL(copyString(name, (int)strlen(name))));
     push(OBJ_VAL(newNative(function)));
-    tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
+    tableSet(table, AS_STRING(vm.stack[0]), vm.stack[1]);
     pop();
     pop();
 }
 
-void initVM() {
+void initVM(const char *path) {
     resetStack();
     vm.objects = NULL;
     vm.bytesAllocated = 0;
@@ -71,15 +68,18 @@ void initVM() {
     initTable(&vm.strings);
 
     vm.initString = NULL;
+    vm.scriptName = NULL;
     vm.initString = copyString("init", 4);
+    vm.scriptName = copyString(path, (int)strlen(path));
 
-    defineNative("seconds", secondsNative);
+    defineNatives(&vm);
 }
 
 void freeVM() {
     freeTable(&vm.globals);
     freeTable(&vm.strings);
     vm.initString = NULL;
+    vm.scriptName = NULL;
     freeObjects();
 }
 
@@ -408,10 +408,6 @@ static InterpretResult run() {
                 }
                 push(NUMBER_VAL(-AS_NUMBER(pop())));
             } break;
-            case OP_PRINT: {
-                printValue(pop());
-                printf("\n");
-            } break;
             case OP_JUMP: {
                 uint16_t offset = READ_SHORT();
                 frame->ip += offset;
@@ -481,6 +477,15 @@ static InterpretResult run() {
             case OP_METHOD: {
                 defineMethod(READ_STRING());
             }break;
+            case OP_ASSERT: {
+                Value condition = pop();
+                ObjString *error = READ_STRING();
+
+                if (isFalsey(condition)) {
+                    runtimeError("%s %s", "Assertion Failed:", error->str);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            } break;
         }
     }
 
@@ -491,7 +496,9 @@ static InterpretResult run() {
 #undef BINARY_OP
 }
 
-InterpretResult interpret(const char *source) {
+InterpretResult interpret(const char *source, const char *path) {
+    initVM(path);
+
     ObjFunction *function = compile(source);
     if (function == NULL) {
         return INTERPRET_COMPILE_ERROR;

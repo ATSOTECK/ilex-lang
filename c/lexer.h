@@ -36,6 +36,8 @@ typedef enum {
 
     // Keywords.
     TK_AND,
+    TK_AS,
+    TK_ASSERT,
     TK_BREAK, // TODO
     TK_CLASS,
     TK_CONST, // TODO
@@ -48,12 +50,12 @@ typedef enum {
     TK_IF,
     TK_NULL,
     TK_OR,
-    TK_PRINT,
     TK_RETURN,
     TK_SUPER,
     TK_SWITCH, // TODO
     TK_THIS,
     TK_TRUE,
+    TK_USE,
     TK_VAR,
     TK_WHILE,
 

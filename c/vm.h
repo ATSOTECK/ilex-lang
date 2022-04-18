@@ -35,6 +35,7 @@ typedef struct {
     int grayCount;
     int grayCapacity;
     Obj** grayStack;
+    ObjString *scriptName;
 } VM;
 
 typedef enum {
@@ -45,10 +46,12 @@ typedef enum {
 
 extern VM vm;
 
-void initVM();
+void initVM(const char *path);
 void freeVM();
 
-InterpretResult interpret(const char *source);
+void runtimeError(const char *format, ...);
+InterpretResult interpret(const char *source, const char *path);
+void defineNative(const char *name, NativeFn function, Table *table);
 
 void push(Value v);
 Value pop();

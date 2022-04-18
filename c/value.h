@@ -53,6 +53,8 @@ void initValueArray(ValueArray *array);
 void writeValueArray(ValueArray *array, Value value);
 void freeValueArray(ValueArray *array);
 
+char *valueType(Value value);
+
 void printValue(Value value);
 
 #endif //C_VALUE_H

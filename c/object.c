@@ -104,6 +104,16 @@ static uint32_t hashString(const char *key, int length) {
     return hash;
 }
 
+char *newCString(char *str) {
+    size_t len = strlen(str);
+
+    char* ret = ALLOCATE(char, len + 1);
+    memcpy(ret, str, len);
+    ret[len] = '\0';
+
+    return ret;
+}
+
 ObjString *takeString(char *str, int len) {
     uint32_t hash = hashString(str, len);
     ObjString *interned = tableFindString(&vm.strings, str, len, hash);
@@ -145,6 +155,25 @@ static void printFunction(ObjFunction *function) {
     printf("<fn %s>", function->name->str);
 }
 
+char *objectType(Value value) {
+    switch (OBJ_TYPE(value)) {
+        case OBJ_BOUND_METHOD:
+        case OBJ_FUNCTION:
+        case OBJ_CLOSURE: return newCString("function");
+        case OBJ_CLASS: return newCString("class");
+        case OBJ_INSTANCE: {
+            ObjInstance *instance = AS_INSTANCE(value);
+            return newCString(instance->objClass->name->str);
+        }
+        case OBJ_LIBRARY: return newCString("library");
+        case OBJ_NATIVE: return newCString("native");
+        case OBJ_STRING: return newCString("string");
+        case OBJ_UPVALUE: return newCString("upvalue");
+    }
+
+    return newCString("unknown");
+}
+
 void printObject(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD: printFunction(AS_BOUND_METHOD(value)->method->function); break;
@@ -152,6 +181,15 @@ void printObject(Value value) {
         case OBJ_CLOSURE: printFunction(AS_CLOSURE(value)->function); break;
         case OBJ_FUNCTION: printFunction(AS_FUNCTION(value)); break;
         case OBJ_INSTANCE: printf("%s instance", AS_INSTANCE(value)->objClass->name->str); break; //TODO: toString()
+        case OBJ_LIBRARY: {
+            ObjLibrary *library = AS_LIBRARY(value);
+            if (library->name == NULL) {
+                printf("<library>");
+                break;
+            }
+
+            printf("<library %s>", library->name->str);
+        } break;
         case OBJ_NATIVE: printf("<native fn>"); break;
         case OBJ_STRING: printf("%s", AS_CSTRING(value)); break;
         case OBJ_UPVALUE: printf("This should never be seen."); break;

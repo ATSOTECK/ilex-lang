@@ -17,4 +17,8 @@
 
 #define UINT8_COUNT (UINT8_MAX + 1)
 
+#define ILEX_VERSION_MAJOR 0
+#define ILEX_VERSION_MINOR 0
+#define ILEX_VERSION "0.0.1"
+
 #endif //C_COMMON_H

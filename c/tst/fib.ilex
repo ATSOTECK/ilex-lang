@@ -8,8 +8,8 @@ fn fib(n) {
 
 fn main() {
     var start = seconds();
-    print fib(40);
-    print seconds() - start;
+    println(fib(40));
+    println(seconds() - start);
 }
 
 main();

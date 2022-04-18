@@ -2,40 +2,40 @@ var breakfast = "beignets";
 var beverage = "cafe au lait";
 breakfast = "beignets with " + beverage;
 
-print breakfast;
+println(breakfast);
 
 var a = true;
 if (a) {
     var yeet = "yeet";
-    print yeet;
+    println(yeet);
 } else {
     var yote = "yote";
-    print yote;
+    println(yote);
 }
 
 var b = 0;
 while (a) {
     b = b + 1;
-    print b;
+    println(b);
 
     if (b >= 10) {
         a = false;
     }
 }
 
-print "\n";
+println();
 
 for (var i = 20; i < 30; i = i + 1) {
-    print i;
+    println(i);
 }
 
 var c = b / 0;
-print c;
+println(c);
 c = c + 1;
-print c;
+println(c);
 
 fn test(param) {
-    print param;
+    println(param);
     // var x = a + b;
 }
 
@@ -46,11 +46,11 @@ fn add(a, b) {
 test("Hello");
 test(5);
 
-print "hi";
+println("hi");
 
 fn makeClosure(value) {
     fn closure() {
-        print value;
+        println(value);
     }
 
     return closure;
@@ -61,4 +61,4 @@ var closure2 = makeClosure("Juice");
 closure1();
 closure2();
 
-print seconds();
+println(seconds());

@@ -45,6 +45,20 @@ void freeValueArray(ValueArray *array) {
     initValueArray(array);
 }
 
+char *valueType(Value value) {
+    if (IS_BOOL(value)) {
+        return newCString("bool");
+    } else if (IS_NUMBER(value)) {
+        return newCString("number");
+    } else if (IS_NULL(value)) {
+        return newCString("none");
+    } else if (IS_OBJ(value)) {
+        return objectType(value);
+    }
+
+    return newCString("unknown");
+}
+
 void printValue(Value value) {
     switch (value.type) {
         case VAL_BOOL: printf(AS_BOOL(value) ? "true" : "false"); break;

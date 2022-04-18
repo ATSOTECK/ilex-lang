@@ -1,13 +1,13 @@
 class Cat {
     sayHi(name) {
-        print "hi " + name;
+        println("hi " + name);
     }
 }
 
 var cat = Cat();
 cat.name = "Kiikii";
 
-print cat.name;
+println(cat.name);
 
 var sayHi = cat.sayHi;
 
@@ -16,7 +16,7 @@ sayHi("Skyler");
 class Nested {
     method() {
         fn function() {
-            print this;
+            println(this);
         }
 
         function();
@@ -31,7 +31,7 @@ class CoffeeMaker {
     }
 
     brew() {
-        print "Enjoy your cup of " + this.coffee + ".";
+        println("Enjoy your cup of " + this.coffee + ".");
 
         // No reusing the grounds!
         this.coffee = null;
@@ -44,7 +44,7 @@ maker.brew();
 class Oops {
     init() {
         fn f() {
-            print "not a method";
+            println("not a method");
         }
 
         this.field = f;

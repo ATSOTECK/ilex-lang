@@ -1,0 +1,26 @@
+var x  = 12;
+println("Hello world!", x);
+
+var t = seconds();
+var str = "yeet";
+
+class Cat {
+    sayHi(name) {
+        println("hi " + name);
+    }
+}
+
+var cat = Cat();
+cat.name = "Kiikii";
+
+println("t is a", typeof(t));
+println("str is a", typeof(str));
+println("typeof str is a", typeof(typeof(str)));
+println("typeof cat", typeof(cat));
+
+println("Seconds since start:", t);
+println("Milliseconds since start:", milliseconds());
+
+println("This is running in ilex version:", ilexVersion());
+println("Ilex version major:", ilexVersionMajor());
+println("Ilex version minor:", ilexVersionMinor());

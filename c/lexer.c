@@ -130,7 +130,13 @@ static TokenType checkKeyword(int start, int len, const char *rest, TokenType ty
 
 static TokenType identType() {
     switch (lexer.start[0]) {
-        case 'a': return checkKeyword(1, 2, "nd", TK_AND);
+        case 'a':
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'n': return checkKeyword(2, 1, "d", TK_AND);
+                    case 's': return checkKeyword(2, 4, "sert", TK_ASSERT);
+                }
+            } break;
         case 'c': return checkKeyword(1, 4, "lass", TK_CLASS);
         case 'e': return checkKeyword(1, 3, "lse", TK_ELSE);
         case 'f':
@@ -144,7 +150,6 @@ static TokenType identType() {
         case 'i': return checkKeyword(1, 1, "f", TK_IF);
         case 'n': return checkKeyword(1, 3, "ull", TK_NULL);
         case 'o': return checkKeyword(1, 1, "r", TK_OR);
-        case 'p': return checkKeyword(1, 4, "rint", TK_PRINT);
         case 'r': return checkKeyword(1, 5, "eturn", TK_RETURN);
         case 's': return checkKeyword(1, 4, "uper", TK_SUPER);
         case 't':
@@ -154,6 +159,7 @@ static TokenType identType() {
                     case 'r': return checkKeyword(2, 2, "ue", TK_TRUE);
                 }
             } break;
+        case 'u': return checkKeyword(1, 2, "se", TK_USE);
         case 'v': return checkKeyword(1, 2, "ar", TK_VAR);
         case 'w': return checkKeyword(1, 4, "hile", TK_WHILE);
     }

@@ -35,7 +35,6 @@ typedef enum {
     OP_DIV,
     OP_NOT,
     OP_NEG,
-    OP_PRINT,
     OP_JUMP,
     OP_JUMP_IF_FALSE,
     OP_LOOP,
@@ -46,6 +45,8 @@ typedef enum {
     OP_RETURN,
     OP_CLASS,
     OP_METHOD,
+    OP_USE,
+    OP_ASSERT,
 } OpCode;
 
 typedef struct {

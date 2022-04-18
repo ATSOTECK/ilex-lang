@@ -582,13 +582,13 @@ ParseRule rules[] = {
         [TK_IF]            = {NULL,     NULL,   PREC_NONE},
         [TK_NULL]          = {literal,  NULL,   PREC_NONE},
         [TK_OR]            = {NULL,     or_,    PREC_OR},
-        [TK_PRINT]         = {NULL,     NULL,   PREC_NONE},
         [TK_RETURN]        = {NULL,     NULL,   PREC_NONE},
         [TK_SUPER]         = {NULL,     NULL,   PREC_NONE},
         [TK_THIS]          = {this_,    NULL,   PREC_NONE},
         [TK_TRUE]          = {literal,  NULL,   PREC_NONE},
         [TK_VAR]           = {NULL,     NULL,   PREC_NONE},
         [TK_WHILE]         = {NULL,     NULL,   PREC_NONE},
+        [TK_ASSERT]        = {NULL,     NULL,   PREC_NONE},
         [TK_ERROR]         = {NULL,     NULL,   PREC_NONE},
         [TK_EOF]           = {NULL,     NULL,   PREC_NONE},
 };
@@ -629,8 +629,8 @@ static void synchronize() {
             case TK_FOR:
             case TK_IF:
             case TK_WHILE:
-            case TK_PRINT:
             case TK_RETURN:
+            case TK_ASSERT:
                 return;
 
             default:
@@ -800,6 +800,23 @@ static void forStatement() {
     endScope();
 }
 
+static void assertStatement() {
+    eat(TK_LPAREN, "Expect '(' after 'assert'.");
+
+    int constant = addConstant(currentChunk(), OBJ_VAL(copyString("", 0)));
+
+    expression();
+
+    if (match(TK_COMMA)) {
+        eat(TK_STRING, "Expect assert error string after ','.");
+        constant = addConstant(currentChunk(), OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.len - 2)));
+    }
+    eat(TK_RPAREN, "Expect ')' after condition.");
+    eat(TK_SEMICOLON, "Expect ';' after ')'.");
+
+    emitBytes(OP_ASSERT, (uint8_t)constant);
+}
+
 static void ifStatement() {
     eat(TK_LPAREN, "Expect '(' after 'if'.");
     expression();
@@ -824,12 +841,6 @@ static void ifStatement() {
         endScope();
     }
     patchJump(elseJump);
-}
-
-static void printStatement() {
-    expression();
-    eat(TK_SEMICOLON, "Expect ';' after value.");
-    emitByte(OP_PRINT);
 }
 
 static void returnStatement() {
@@ -886,9 +897,7 @@ static void declaration() {
 }
 
 static void statement() {
-    if (match(TK_PRINT)) {
-        printStatement();
-    } else if (match(TK_FOR)) {
+    if (match(TK_FOR)) {
         forStatement();
     } else if (match(TK_IF)) {
         ifStatement();
@@ -896,6 +905,8 @@ static void statement() {
         returnStatement();
     } else if (match(TK_WHILE)) {
         whileStatement();
+    } else if (match(TK_ASSERT)) {
+        assertStatement();
     } else if (match(TK_LBRACE)) {
         beginScope();
         block();
