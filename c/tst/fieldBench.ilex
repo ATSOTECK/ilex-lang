@@ -1,0 +1,31 @@
+class Zoo {
+    init() {
+        this.aardvark = 1;
+        this.baboon   = 1;
+        this.cat      = 1;
+        this.donkey   = 1;
+        this.elephant = 1;
+        this.fox      = 1;
+    }
+    ant()    { return this.aardvark; }
+    banana() { return this.baboon; }
+    tuna()   { return this.cat; }
+    hay()    { return this.donkey; }
+    grass()  { return this.elephant; }
+    mouse()  { return this.fox; }
+}
+
+zoo := Zoo();
+sum := 0;
+start := seconds();
+while (sum < 100000000) {
+    sum = sum + zoo.ant()
+            + zoo.banana()
+            + zoo.tuna()
+            + zoo.hay()
+            + zoo.grass()
+            + zoo.mouse();
+}
+
+println(seconds() - start);
+println(sum);
