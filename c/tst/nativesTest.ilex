@@ -1,8 +1,8 @@
-var x  = 12;
+x := 12;
 println("Hello world!", x);
 
-var t = seconds();
-var str = "yeet";
+t := seconds();
+str := "yeet";
 
 class Cat {
     sayHi(name) {
@@ -10,7 +10,7 @@ class Cat {
     }
 }
 
-var cat = Cat();
+cat := Cat();
 cat.name = "Kiikii";
 
 println("t is a", typeof(t));

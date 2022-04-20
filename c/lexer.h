@@ -35,6 +35,9 @@ typedef enum {
     TK_MULEQ, // *=
     TK_DIVEQ, // /=
 
+    TK_VAR_DECL, // :=
+    TK_SCOPE, // ::
+
     // Literals.
     TK_IDENT,
     TK_STRING,
@@ -48,7 +51,9 @@ typedef enum {
     TK_CLASS,
     TK_CONST, // TODO
     TK_CONTINUE, // TODO
+    TK_ELIF,
     TK_ELSE,
+    TK_ENUM,
     TK_FALSE,
     TK_FOR,
     TK_FN,

@@ -18,6 +18,7 @@
 typedef struct {
     Token current;
     Token previous;
+    Token next;
     bool hadError;
     bool panicMode;
 } Parser;
@@ -120,11 +121,20 @@ static void errorAtCurrent(const char *message) {
     errorAt(&parser.current, message);
 }
 
+static void firstAdvance() {
+    parser.next = nextToken();
+
+    if (parser.next.type == TK_ERROR) {
+        errorAtCurrent(parser.current.start);
+    }
+}
+
 static void advance() {
     parser.previous = parser.current;
 
     for (;;) {
-        parser.current = nextToken();
+        parser.current = parser.next;
+        parser.next = nextToken();
         if (parser.current.type != TK_ERROR) {
             break;
         }
@@ -144,6 +154,10 @@ static void eat(TokenType type, const char *message) {
 
 static bool check(TokenType type) {
     return parser.current.type == type;
+}
+
+static bool lookahead(TokenType type) {
+    return parser.next.type == type;
 }
 
 static bool match(TokenType type) {
@@ -770,6 +784,24 @@ static void varDeclaration() {
     defineVariable(global);
 }
 
+static void varDeclaration2() {
+    eat(TK_IDENT, "Expect variable name.");
+    declareVariable();
+    uint8_t global;
+
+    if (current->scopeDepth > 0) {
+        global = 0;
+    } else {
+        global = identifierConstant(&parser.previous);
+    }
+
+    eat(TK_VAR_DECL, "Expected := after variable name.");
+    expression();
+    eat(TK_SEMICOLON, "Expect ';' after variable declaration.");
+
+    defineVariable(global);
+}
+
 static void expressionStatement() {
     expression();
     eat(TK_SEMICOLON, "Expect ';' after expression.");
@@ -784,6 +816,8 @@ static void forStatement() {
         // No initializer.
     } else if (match(TK_VAR)) {
         varDeclaration();
+    } else if (check(TK_IDENT) && lookahead(TK_VAR_DECL)) {
+        varDeclaration2();
     } else {
         expressionStatement();
     }
@@ -860,11 +894,17 @@ static void ifStatement() {
     patchJump(thenJump);
     emitByte(OP_POP);
 
-    if (match(TK_ELSE)) {
-        eat(TK_LBRACE, "Expect '{' after 'else'.");
-        beginScope();
-        block();
-        endScope();
+    if (match(TK_ELIF)) {
+        ifStatement();
+    } else if (match(TK_ELSE)) {
+        if (match(TK_IF)) {
+            ifStatement();
+        } else {
+            eat(TK_LBRACE, "Expect '{' after 'else'.");
+            beginScope();
+            block();
+            endScope();
+        }
     }
     patchJump(elseJump);
 }
@@ -913,6 +953,8 @@ static void declaration() {
         fnDeclaration();
     } else if (match(TK_VAR)) {
         varDeclaration();
+    } else if (check(TK_IDENT) && lookahead(TK_VAR_DECL)) {
+        varDeclaration2();
     } else {
         statement();
     }
@@ -945,6 +987,7 @@ static void statement() {
 ObjFunction *compile(const char *source) {
     initLexer(source);
     Compiler compiler;
+    firstAdvance();
     initCompiler(&compiler, TYPE_SCRIPT);
 
     parser.hadError = false;

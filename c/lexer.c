@@ -138,7 +138,19 @@ static TokenType identType() {
                 }
             } break;
         case 'c': return checkKeyword(1, 4, "lass", TK_CLASS);
-        case 'e': return checkKeyword(1, 3, "lse", TK_ELSE);
+        case 'e':
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'l':
+                        if (lexer.current - lexer.start > 2) {
+                            switch (lexer.start[2]) {
+                                case 'i': return checkKeyword(3, 1, "f", TK_ELIF);
+                                case 's': return checkKeyword(3, 1, "e", TK_ELSE);
+                            }
+                        }
+                    case 'n': return checkKeyword(2, 2, "um", TK_ENUM);
+                }
+            }
         case 'f':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
@@ -270,6 +282,13 @@ Token nextToken() {
         case '=': return makeToken(match('=') ? TK_EQ    : TK_ASSIGN);
         case '<': return makeToken(match('=') ? TK_LTEQ  : TK_LT);
         case '>': return makeToken(match('=') ? TK_GREQ  : TK_GR);
+        case ':': {
+            if (match('=')) {
+                return makeToken(TK_VAR_DECL);
+            } else if (match(':')) {
+                return makeToken(TK_SCOPE);
+            }
+        }
         case '"': return string();
     }
 
