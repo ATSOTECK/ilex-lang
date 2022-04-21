@@ -20,6 +20,7 @@
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION "0.0.4"
+#define ILEX_VERSION_BUILD 5
+#define ILEX_VERSION "0.0.5"
 
 #endif //C_COMMON_H

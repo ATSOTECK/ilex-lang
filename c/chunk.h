@@ -37,6 +37,8 @@ typedef enum {
     OP_DEC,
     OP_MUL,
     OP_DIV,
+    OP_POW,
+    OP_MOD,
     OP_NOT,
     OP_NEG,
     OP_JUMP,

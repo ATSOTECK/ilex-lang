@@ -72,6 +72,7 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_GET_GLOBAL: return constantInstruction("OP_GET_GLOBAL", chunk, offset);
         case OP_GET_UPVALUE: return byteInstruction("OP_GET_UPVALUE", chunk, offset);
         case OP_GET_PROPERTY: return constantInstruction("OP_GET_PROPERTY", chunk, offset);
+        case OP_GET_PROPERTY_NO_POP: return constantInstruction("OP_GET_PROPERTY_NO_POP", chunk, offset);
         case OP_GET_SUPER: return constantInstruction("OP_GET_SUPER", chunk, offset);
         case OP_DEFINE_GLOBAL: return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);
         case OP_SET_LOCAL: return byteInstruction("OP_SET_LOCAL", chunk, offset);
@@ -85,9 +86,13 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_LT: return simpleInstruction("OP_LT", offset);
         case OP_LTEQ: return simpleInstruction("OP_LTEQ", offset);
         case OP_ADD: return simpleInstruction("OP_ADD", offset);
+        case OP_INC: return simpleInstruction("OP_INC", offset);
         case OP_SUB: return simpleInstruction("OP_SUB", offset);
+        case OP_DEC: return simpleInstruction("OP_DEC", offset);
         case OP_MUL: return simpleInstruction("OP_MUL", offset);
         case OP_DIV: return simpleInstruction("OP_DIV", offset);
+        case OP_POW: return simpleInstruction("OP_POW", offset);
+        case OP_MOD: return simpleInstruction("OP_MOD", offset);
         case OP_NOT: return simpleInstruction("OP_NOT", offset);
         case OP_NEG: return simpleInstruction("OP_NEG", offset);
         case OP_JUMP: return jumpInstruction("OP_JUMP", 1, chunk, offset);

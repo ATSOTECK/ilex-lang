@@ -33,6 +33,7 @@ typedef enum {
     PREC_TERM,        // + -
     PREC_FACTOR,      // * /
     PREC_UNARY,       // ! -
+    PREC_EXPONENT,    // **
     PREC_CALL,        // . ()
     PREC_PRIMARY
 } Precedence;
@@ -485,6 +486,42 @@ static void namedVariable(Token name, bool canAssign) {
     if (canAssign && match(TK_ASSIGN)) {
         expression();
         emitBytes(setOp, (uint8_t)arg);
+    } else if (canAssign && match(TK_PLUSEQ)) {
+        //checkIfConst(setOp, arg); //TODO
+        namedVariable(name, false);
+        expression();
+        emitByte(OP_ADD);
+        emitBytes(setOp, (uint8_t)arg);
+    } else if (canAssign && match(TK_MINUSEQ)) {
+        //checkIfConst(setOp, arg); //TODO
+        namedVariable(name, false);
+        expression();
+        emitByte(OP_SUB);
+        emitBytes(setOp, (uint8_t)arg);
+    } else if (canAssign && match(TK_MULEQ)) {
+        //checkIfConst(setOp, arg); //TODO
+        namedVariable(name, false);
+        expression();
+        emitByte(OP_MUL);
+        emitBytes(setOp, (uint8_t)arg);
+    } else if (canAssign && match(TK_DIVEQ)) {
+        //checkIfConst(setOp, arg); //TODO
+        namedVariable(name, false);
+        expression();
+        emitByte(OP_DIV);
+        emitBytes(setOp, (uint8_t)arg);
+    } else if (canAssign && match(TK_POWEQ)) {
+        //checkIfConst(setOp, arg); //TODO
+        namedVariable(name, false);
+        expression();
+        emitByte(OP_POW);
+        emitBytes(setOp, (uint8_t)arg);
+    } else if (canAssign && match(TK_MODEQ)) {
+        //checkIfConst(setOp, arg); //TODO
+        namedVariable(name, false);
+        expression();
+        emitByte(OP_MOD);
+        emitBytes(setOp, (uint8_t)arg);
     } else if (canAssign && match(TK_INC)) {
         namedVariable(name, false);
         emitByte(OP_INC);
@@ -558,6 +595,8 @@ static void binary(bool canAssign) {
         case TK_MINUS:       emitByte(OP_SUB); break;
         case TK_MUL:         emitByte(OP_MUL); break;
         case TK_DIV:         emitByte(OP_DIV); break;
+        case TK_POW:         emitByte(OP_POW); break;
+        case TK_MOD:         emitByte(OP_MOD); break;
         default: return; // Unreachable.
     }
 }
@@ -573,6 +612,36 @@ static void dot(bool canAssign) {
     
     if (canAssign && match(TK_ASSIGN)) {
         expression();
+        emitBytes(OP_SET_PROPERTY, name);
+    } else if (canAssign && match(TK_PLUSEQ)) {
+        emitBytes(OP_GET_PROPERTY_NO_POP, name);
+        expression();
+        emitByte(OP_ADD);
+        emitBytes(OP_SET_PROPERTY, name);
+    }  else if (canAssign && match(TK_MINUSEQ)) {
+        emitBytes(OP_GET_PROPERTY_NO_POP, name);
+        expression();
+        emitByte(OP_SUB);
+        emitBytes(OP_SET_PROPERTY, name);
+    }  else if (canAssign && match(TK_MULEQ)) {
+        emitBytes(OP_GET_PROPERTY_NO_POP, name);
+        expression();
+        emitByte(OP_MUL);
+        emitBytes(OP_SET_PROPERTY, name);
+    } else if (canAssign && match(TK_DIVEQ)) {
+        emitBytes(OP_GET_PROPERTY_NO_POP, name);
+        expression();
+        emitByte(OP_DIV);
+        emitBytes(OP_SET_PROPERTY, name);
+    } else if (canAssign && match(TK_POWEQ)) {
+        emitBytes(OP_GET_PROPERTY_NO_POP, name);
+        expression();
+        emitByte(OP_POW);
+        emitBytes(OP_SET_PROPERTY, name);
+    } else if (canAssign && match(TK_MODEQ)) {
+        emitBytes(OP_GET_PROPERTY_NO_POP, name);
+        expression();
+        emitByte(OP_MOD);
         emitBytes(OP_SET_PROPERTY, name);
     } else if (canAssign && match(TK_INC)) {
         emitBytes(OP_GET_PROPERTY_NO_POP, name);
@@ -629,6 +698,14 @@ ParseRule rules[] = {
         [TK_DOT]           = {NULL,     dot,    PREC_CALL},
         [TK_MINUS]         = {unary,    binary, PREC_TERM},
         [TK_PLUS]          = {NULL,     binary, PREC_TERM},
+        [TK_PLUSEQ]        = {NULL,     NULL,   PREC_NONE},
+        [TK_MINUSEQ]       = {NULL,     NULL,   PREC_NONE},
+        [TK_MULEQ]         = {NULL,     NULL,   PREC_NONE},
+        [TK_DIVEQ]         = {NULL,     NULL,   PREC_NONE},
+        [TK_POWEQ]         = {NULL,     NULL,   PREC_NONE},
+        [TK_POW]           = {NULL,     binary, PREC_EXPONENT},
+        [TK_MOD]           = {NULL,     binary, PREC_FACTOR},
+        [TK_MODEQ]         = {NULL,     NULL,   PREC_NONE},
         [TK_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
         [TK_DIV]           = {NULL,     binary, PREC_FACTOR},
         [TK_MUL]           = {NULL,     binary, PREC_FACTOR},
@@ -657,6 +734,7 @@ ParseRule rules[] = {
         [TK_THIS]          = {this_,    NULL,   PREC_NONE},
         [TK_TRUE]          = {literal,  NULL,   PREC_NONE},
         [TK_VAR]           = {NULL,     NULL,   PREC_NONE},
+        [TK_VAR_DECL]      = {NULL,     NULL,   PREC_NONE},
         [TK_WHILE]         = {NULL,     NULL,   PREC_NONE},
         [TK_ASSERT]        = {NULL,     NULL,   PREC_NONE},
         [TK_INC]           = {NULL,     inc,    PREC_TERM},

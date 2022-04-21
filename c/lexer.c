@@ -277,7 +277,16 @@ Token nextToken() {
             }
         }
         case '/': return makeToken(match('=') ? TK_DIVEQ : TK_DIV);
-        case '*': return makeToken(match('=') ? TK_MULEQ : TK_MUL);
+        case '*': {
+            if (match('=')) {
+                return makeToken(TK_MULEQ);
+            } else if (match('*')) {
+                return makeToken(match('=') ? TK_POWEQ : TK_POW);
+            } else {
+                return makeToken(TK_MUL);
+            }
+        }
+        case '%': return makeToken(match('=') ? TK_MODEQ : TK_MOD);
         case '!': return makeToken(match('=') ? TK_NOTEQ : TK_NOT);
         case '=': return makeToken(match('=') ? TK_EQ    : TK_ASSIGN);
         case '<': return makeToken(match('=') ? TK_LTEQ  : TK_LT);

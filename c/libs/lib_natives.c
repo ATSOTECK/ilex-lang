@@ -80,6 +80,10 @@ static Value ilexVersionMinor(int argc, Value *args) {
     return NUMBER_VAL(ILEX_VERSION_MINOR);
 }
 
+static Value ilexVersionBuild(int argc, Value *args) {
+    return NUMBER_VAL(ILEX_VERSION_BUILD);
+}
+
 void defineNatives(VM *_vm) {
     defineNative("println", println, &_vm->globals);
     defineNative("debugln", println, &_vm->globals); // Same as println but more searchable.
@@ -93,4 +97,5 @@ void defineNatives(VM *_vm) {
     defineNative("ilexVersion", ilexVersionString, &_vm->globals);
     defineNative("ilexVersionMajor", ilexVersionMajor, &_vm->globals);
     defineNative("ilexVersionMinor", ilexVersionMinor, &_vm->globals);
+    defineNative("ilexVersionBuild", ilexVersionBuild, &_vm->globals);
 }

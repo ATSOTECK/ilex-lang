@@ -34,6 +34,10 @@ typedef enum {
     TK_MINUSEQ, // -=
     TK_MULEQ, // *=
     TK_DIVEQ, // /=
+    TK_POW, // **
+    TK_POWEQ, // **=
+    TK_MOD, // %
+    TK_MODEQ, // %=
 
     TK_VAR_DECL, // :=
     TK_SCOPE, // ::

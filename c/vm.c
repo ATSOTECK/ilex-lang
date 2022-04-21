@@ -12,6 +12,7 @@
 
 #include "libs/lib_natives.h"
 
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -443,6 +444,24 @@ static InterpretResult run() {
             } break;
             case OP_MUL: BINARY_OP(NUMBER_VAL, *); break;
             case OP_DIV: BINARY_OP(NUMBER_VAL, /); break;
+            case OP_POW: {
+                if (!IS_NUMBER(peek(0) || !IS_NUMBER(peek(1)))) {
+                    runtimeError("Operands must be two numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                double b = AS_NUMBER(pop());
+                double a = AS_NUMBER(pop());
+                push(NUMBER_VAL(powf(a, b)));
+            } break;
+            case OP_MOD: {
+                if (!IS_NUMBER(peek(0) || !IS_NUMBER(peek(1)))) {
+                    runtimeError("Operands must be two numbers.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                double b = AS_NUMBER(pop());
+                double a = AS_NUMBER(pop());
+                push(NUMBER_VAL(fmod(a, b)));
+            } break;
             case OP_NOT: push(BOOL_VAL(isFalsey(pop()))); break;
             case OP_NEG: {
                 if (!IS_NUMBER(peek(0))) {
