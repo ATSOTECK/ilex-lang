@@ -7,9 +7,9 @@ fn fib(n) {
 }
 
 fn main() {
-    var start = seconds();
+    start := seconds();
     println(fib(40));
-    println(seconds() - start);
+    println(seconds() - start, "seconds");
 }
 
 main();

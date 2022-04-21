@@ -20,6 +20,25 @@ static Value println(int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
+static Value ln(int argc, Value *args) {
+    int count = 1;
+
+    if (argc > 1) {
+        runtimeError("Function ln() expected 1 or 0 arguments but got %d", argc);
+    } else if (argc == 1) {
+        count = (int)AS_NUMBER(args[0]);
+        if (count <= 0) {
+            count = 1;
+        }
+    }
+
+    for (int i = 0; i < count; ++i) {
+        printf("\n");
+    }
+
+    return NUMBER_VAL(0);
+}
+
 static Value print(int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
         printValue(args[i]);
@@ -63,7 +82,10 @@ static Value ilexVersionMinor(int argc, Value *args) {
 
 void defineNatives(VM *_vm) {
     defineNative("println", println, &_vm->globals);
+    defineNative("debugln", println, &_vm->globals); // Same as println but more searchable.
+    defineNative("ln", ln, &_vm->globals);
     defineNative("print", print, &_vm->globals);
+    defineNative("debug", print, &_vm->globals); // Same as print but more searchable.
     defineNative("typeof", typeof_, &_vm->globals);
     defineNative("seconds", seconds, &_vm->globals);
     defineNative("milliseconds", milliseconds, &_vm->globals);

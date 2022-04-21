@@ -2,8 +2,14 @@ for (var i = 0; i < 10; i++) {
     println(i);
 }
 
-println();
+ln();
 
 for (j := 0; j < 10; j++) {
     println(j);
+}
+
+ln();
+
+for (k := 10; k >= 0; k--) {
+    println(k);
 }

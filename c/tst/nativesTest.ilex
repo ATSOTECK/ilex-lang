@@ -24,3 +24,9 @@ println("Milliseconds since start:", milliseconds());
 println("This is running in ilex version:", ilexVersion());
 println("Ilex version major:", ilexVersionMajor());
 println("Ilex version minor:", ilexVersionMinor());
+
+println("ln() test begin");
+ln(5);
+println("ln() test end");
+
+debugln("yeet");
