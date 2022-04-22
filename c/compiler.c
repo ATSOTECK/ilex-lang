@@ -2,6 +2,7 @@
 // Created by Skyler on 3/12/22.
 //
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,6 +50,7 @@ typedef struct {
 typedef struct {
     Token name;
     int depth;
+    bool isConst;
     bool isCaptured;
 } Local;
 
@@ -115,8 +117,15 @@ static void errorAt(Token* token, const char* message) {
     parser.hadError = true;
 }
 
-static void error(const char *message) {
-    errorAt(&parser.previous, message);
+static void error(const char *message, ...) {
+    char *msg = (char*)malloc(sizeof(char) * 256);
+    va_list args;
+    va_start(args, message);
+    vsnprintf(msg, 256, message, args);
+    va_end(args);
+
+    errorAt(&parser.previous, msg);
+    free(msg);
 }
 
 static void errorAtCurrent(const char *message) {
@@ -368,20 +377,16 @@ static uint8_t parseVariable(const char *errorMessage) {
     return identifierConstant(&parser.previous);
 }
 
-static void markInitialized() {
-    if (current->scopeDepth == 0) {
-        return;
-    }
-
-    current->locals[current->localCount - 1].depth = current->scopeDepth;
-}
-
-static void defineVariable(uint8_t global) {
+static void defineVariable(uint8_t global, bool isConst) {
     if (current->scopeDepth > 0) {
-        markInitialized();
+        current->locals[current->localCount - 1].depth = current->scopeDepth;
+        current->locals[current->localCount - 1].isConst = isConst;
         return;
     }
 
+    if (isConst) {
+        tableSet(&vm.consts, AS_STRING(currentChunk()->constants.values[global]), NULL_VAL);
+    }
     emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
@@ -467,6 +472,24 @@ static void string(bool canAssign) {
     emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.len - 2)));
 }
 
+static void checkIfConst(uint8_t setOp, int arg) {
+    if (setOp == OP_SET_LOCAL) {
+        if (current->locals[arg].isConst) {
+            // TODO(Skyler): Find a better way to do this.
+            char *name = (char*)malloc(current->locals[arg].name.len + 1);
+            memcpy(name, current->locals[arg].name.start, current->locals[arg].name.len);
+            error("Cannot assign to const variable '%s'.", name);
+            free(name);
+        }
+    } else if (setOp == OP_SET_GLOBAL) {
+        Value _;
+        ObjString *name = AS_STRING(currentChunk()->constants.values[arg]);
+        if (tableGet(&vm.consts, name, &_)) {
+            error("Cannot assign to const variable '%s'.", name->str);
+        }
+    }
+}
+
 static void namedVariable(Token name, bool canAssign) {
     uint8_t getOp, setOp;
     int arg = resolveLocal(current, &name);
@@ -484,49 +507,52 @@ static void namedVariable(Token name, bool canAssign) {
     }
 
     if (canAssign && match(TK_ASSIGN)) {
+        checkIfConst(setOp, arg);
         expression();
         emitBytes(setOp, (uint8_t)arg);
     } else if (canAssign && match(TK_PLUSEQ)) {
-        //checkIfConst(setOp, arg); //TODO
+        checkIfConst(setOp, arg);
         namedVariable(name, false);
         expression();
         emitByte(OP_ADD);
         emitBytes(setOp, (uint8_t)arg);
     } else if (canAssign && match(TK_MINUSEQ)) {
-        //checkIfConst(setOp, arg); //TODO
+        checkIfConst(setOp, arg);
         namedVariable(name, false);
         expression();
         emitByte(OP_SUB);
         emitBytes(setOp, (uint8_t)arg);
     } else if (canAssign && match(TK_MULEQ)) {
-        //checkIfConst(setOp, arg); //TODO
+        checkIfConst(setOp, arg);
         namedVariable(name, false);
         expression();
         emitByte(OP_MUL);
         emitBytes(setOp, (uint8_t)arg);
     } else if (canAssign && match(TK_DIVEQ)) {
-        //checkIfConst(setOp, arg); //TODO
+        checkIfConst(setOp, arg);
         namedVariable(name, false);
         expression();
         emitByte(OP_DIV);
         emitBytes(setOp, (uint8_t)arg);
     } else if (canAssign && match(TK_POWEQ)) {
-        //checkIfConst(setOp, arg); //TODO
+        checkIfConst(setOp, arg);
         namedVariable(name, false);
         expression();
         emitByte(OP_POW);
         emitBytes(setOp, (uint8_t)arg);
     } else if (canAssign && match(TK_MODEQ)) {
-        //checkIfConst(setOp, arg); //TODO
+        checkIfConst(setOp, arg);
         namedVariable(name, false);
         expression();
         emitByte(OP_MOD);
         emitBytes(setOp, (uint8_t)arg);
     } else if (canAssign && match(TK_INC)) {
+        checkIfConst(setOp, arg);
         namedVariable(name, false);
         emitByte(OP_INC);
         emitBytes(setOp, (uint8_t)arg);
     } else if (canAssign && match(TK_DEC)) {
+        checkIfConst(setOp, arg);
         namedVariable(name, false);
         emitByte(OP_DEC);
         emitBytes(setOp, (uint8_t)arg);
@@ -734,6 +760,7 @@ ParseRule rules[] = {
         [TK_THIS]          = {this_,    NULL,   PREC_NONE},
         [TK_TRUE]          = {literal,  NULL,   PREC_NONE},
         [TK_VAR]           = {NULL,     NULL,   PREC_NONE},
+        [TK_CONST]         = {NULL,     NULL,   PREC_NONE},
         [TK_VAR_DECL]      = {NULL,     NULL,   PREC_NONE},
         [TK_WHILE]         = {NULL,     NULL,   PREC_NONE},
         [TK_ASSERT]        = {NULL,     NULL,   PREC_NONE},
@@ -772,10 +799,12 @@ static void synchronize() {
         if (parser.previous.type == TK_SEMICOLON) {
             return;
         }
+
         switch (parser.current.type) {
             case TK_CLASS:
             case TK_FN:
             case TK_VAR:
+            case TK_CONST:
             case TK_FOR:
             case TK_IF:
             case TK_WHILE:
@@ -821,7 +850,7 @@ static void function(FunctionType type) {
             }
 
             uint8_t constant = parseVariable("Expect parameter name.");
-            defineVariable(constant);
+            defineVariable(constant, false); // TODO: Should this be true?
         } while (match(TK_COMMA));
     }
     eat(TK_RPAREN, "Expect ')' after parameters.");
@@ -857,7 +886,7 @@ static void classDeclaration() {
     declareVariable();
 
     emitBytes(OP_CLASS, nameConstant);
-    defineVariable(nameConstant);
+    defineVariable(nameConstant, false);
 
     ClassCompiler classCompiler;
     classCompiler.enclosing = currentClass;
@@ -874,7 +903,7 @@ static void classDeclaration() {
 
         beginScope();
         addLocal(syntheticToken("super"));
-        defineVariable(0);
+        defineVariable(0, false);
 
         namedVariable(className, false);
         emitByte(OP_INHERIT);
@@ -898,22 +927,25 @@ static void classDeclaration() {
 
 static void fnDeclaration() {
     uint8_t global = parseVariable("Expect function name.");
-    markInitialized();
+    //markInitialized();
     function(TYPE_FUNCTION);
-    defineVariable(global);
+    defineVariable(global, false);
 }
 
-static void varDeclaration() {
-    uint8_t global = parseVariable("Expect variable name.");
+static void varDeclaration(bool isConst) {
+    do {
+        uint8_t global = parseVariable("Expect variable name.");
 
-    if (match(TK_ASSIGN)) {
-        expression();
-    } else {
-        emitByte(OP_NULL);
-    }
-    eat(TK_SEMICOLON, "Expect ';' after variable declaration.");
+        if (match(TK_ASSIGN) || isConst) {
+            expression();
+        } else {
+            emitByte(OP_NULL);
+        }
 
-    defineVariable(global);
+        defineVariable(global, isConst);
+    } while (match(TK_COMMA));
+
+    match(TK_SEMICOLON);
 }
 
 static void varDeclaration2() {
@@ -929,14 +961,14 @@ static void varDeclaration2() {
 
     eat(TK_VAR_DECL, "Expected := after variable name.");
     expression();
-    eat(TK_SEMICOLON, "Expect ';' after variable declaration.");
+    defineVariable(global, false);
 
-    defineVariable(global);
+    match(TK_SEMICOLON);
 }
 
 static void expressionStatement() {
     expression();
-    eat(TK_SEMICOLON, "Expect ';' after expression.");
+    match(TK_SEMICOLON);
     emitByte(OP_POP);
 }
 
@@ -944,14 +976,21 @@ static void forStatement() {
     beginScope();
     eat(TK_LPAREN, "Expect '(' after 'for'.");
 
+    bool initializer = true;
     if (match(TK_SEMICOLON)) {
-        // No initializer.
+        initializer = false;
     } else if (match(TK_VAR)) {
-        varDeclaration();
+        varDeclaration(false);
     } else if (check(TK_IDENT) && lookahead(TK_VAR_DECL)) {
         varDeclaration2();
     } else {
         expressionStatement();
+    }
+
+    if (initializer) {
+        if (parser.previous.type != TK_SEMICOLON) {
+            errorAtCurrent("Expect ';' after loop initializer.");
+        }
     }
 
     int loopStart = currentChunk()->count;
@@ -1004,7 +1043,7 @@ static void assertStatement() {
         constant = addConstant(currentChunk(), OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.len - 2)));
     }
     eat(TK_RPAREN, "Expect ')' after condition.");
-    eat(TK_SEMICOLON, "Expect ';' after ')'.");
+    match(TK_SEMICOLON);
 
     emitBytes(OP_ASSERT, (uint8_t)constant);
 }
@@ -1054,7 +1093,7 @@ static void returnStatement() {
         }
 
         expression();
-        eat(TK_SEMICOLON, "Expect ';' after return value.");
+        match(TK_SEMICOLON);
         emitByte(OP_RETURN);
     }
 }
@@ -1084,9 +1123,11 @@ static void declaration() {
     } else if (match(TK_FN)) {
         fnDeclaration();
     } else if (match(TK_VAR)) {
-        varDeclaration();
+        varDeclaration(false);
     } else if (check(TK_IDENT) && lookahead(TK_VAR_DECL)) {
         varDeclaration2();
+    } else if (match(TK_CONST)) {
+        varDeclaration(true);
     } else {
         statement();
     }

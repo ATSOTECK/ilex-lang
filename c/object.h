@@ -5,11 +5,11 @@
 #ifndef __C_OBJECT_H__
 #define __C_OBJECT_H__
 
+#include "ilex_include.h"
 #include "chunk.h"
 #include "common.h"
 #include "table.h"
 #include "value.h"
-
 
 #define OBJ_TYPE(value)        (AS_OBJ(value)->type)
 
@@ -66,7 +66,7 @@ typedef struct {
     ObjString *name;
 } ObjFunction;
 
-typedef Value (*NativeFn)(int argCount, Value *args);
+typedef Value (*NativeFn)(VM *vm, int argCount, Value *args);
 
 typedef struct {
     Obj obj;
@@ -112,6 +112,13 @@ typedef struct {
     ObjClosure *method;
 } ObjBoundMethod;
 
+typedef struct {
+    Obj obj;
+    int len;
+    int capacity;
+    Value *data;
+} ObjList;
+
 ObjBoundMethod *newBoundMethod(Value receiver, ObjClosure *method);
 ObjClass *newClass(ObjString *name);
 ObjClosure *newClosure(ObjFunction *function);
@@ -123,11 +130,16 @@ char *newCString(char *str);
 ObjString *takeString(char *str, int len);
 ObjString *copyString(const char* chars, int length);
 ObjUpvalue *newUpvalue(Value *slot);
+ObjLibrary *newList();
 char *objectType(Value value);
 void printObject(Value value);
 
 static inline bool isObjType(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;
+}
+
+static inline ObjType getObjType(Value value) {
+    return AS_OBJ(value)->type;
 }
 
 #endif //__C_OBJECT_H__

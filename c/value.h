@@ -20,12 +20,14 @@ typedef struct ObjString ObjString;
 #define TAG_NULL  1 // 01.
 #define TAG_FALSE 2 // 10.
 #define TAG_TRUE  3 // 11.
+#define TAG_EMPTY 4 // 10.
 
 typedef uint64_t Value;
 
 #define IS_BOOL(value)      (((value) | 1) == TRUE_VAL)
 #define IS_NULL(value)      ((value) == NULL_VAL)
 #define IS_NUMBER(value)    (((value) & QNAN) != QNAN)
+#define IS_EMPTY(value)     ((value) == EMPTY_VAL)
 #define IS_OBJ(value)       (((value) & (QNAN | SIGN_BIT)) == (QNAN | SIGN_BIT))
 
 #define AS_BOOL(value)      ((value) == TRUE_VAL)
@@ -37,6 +39,7 @@ typedef uint64_t Value;
 #define FALSE_VAL       ((Value)(uint64_t)(QNAN | TAG_FALSE))
 #define TRUE_VAL        ((Value)(uint64_t)(QNAN | TAG_TRUE))
 #define NULL_VAL        ((Value)(uint64_t)(QNAN | TAG_NULL))
+#define EMPTY_VAL       ((Value)(uint64_t)(QNAN | TAG_EMPTY))
 #define NUMBER_VAL(num) numToValue(num)
 #define OBJ_VAL(obj)    (Value)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
 

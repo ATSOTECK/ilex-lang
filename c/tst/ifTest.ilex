@@ -1,25 +1,25 @@
 fn main() {
     for (i := 0; i <= 3; i++) {
         if (i == 0) {
-            println(0);
+            println(0)
         } else if (i == 1) {
-            println(1);
+            println(1)
         } elif (i == 2) {
-            println(2);
+            println(2)
         } else {
-            println(3);
+            println(3)
         }
     }
 
-    println();
+    println()
 
     for (j := 0; j < 2; j++) {
         if (j == 0) {
-            println(0);
+            println(0)
         } else {
-            println(1);
+            println(1)
         }
     }
 }
 
-main();
+main()

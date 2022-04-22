@@ -62,7 +62,7 @@ char *valueType(Value value) {
     } else if (IS_NUMBER(value)) {
         return newCString("number");
     } else if (IS_NULL(value)) {
-        return newCString("none");
+        return newCString("null");
     } else if (IS_OBJ(value)) {
         return objectType(value);
     }
@@ -77,7 +77,7 @@ void printValue(Value value) {
     } else if (IS_NULL(value)) {
         printf("null");
     } else if (IS_NUMBER(value)) {
-        printf("%g", AS_NUMBER(value));
+        printf("%.15g", AS_NUMBER(value));
     } else if (IS_OBJ(value)) {
         printObject(value);
     }

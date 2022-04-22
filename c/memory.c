@@ -181,6 +181,8 @@ static void markRoots() {
     }
 
     markTable(&vm.globals);
+    markTable(&vm.consts);
+    markTable(&vm.stringFunctions);
     markCompilerRoots();
     markObject((Obj*)vm.initString);
     markObject((Obj*)vm.scriptName);

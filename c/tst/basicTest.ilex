@@ -1,6 +1,6 @@
-var breakfast = "beignets";
-var beverage = "cafe au lait";
-breakfast = "beignets with " + beverage;
+var breakfast = "beignets"
+var beverage = "cafe au lait"
+breakfast = "beignets with " + beverage
 
 println(breakfast);
 
@@ -61,4 +61,16 @@ var closure2 = makeClosure("Juice");
 closure1();
 closure2();
 
-println(seconds());
+fn tst1() {
+    xx := "This is xx"
+    
+    fn tst2() {
+        println(xx)
+    }
+    
+    tst2()
+}
+
+tst1()
+
+println(milliseconds(), "ms");

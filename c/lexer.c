@@ -137,7 +137,14 @@ static TokenType identType() {
                     case 's': return checkKeyword(2, 4, "sert", TK_ASSERT);
                 }
             } break;
-        case 'c': return checkKeyword(1, 4, "lass", TK_CLASS);
+        case 'b': return checkKeyword(1, 4, "reak", TK_BREAK);
+        case 'c':
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'l': return checkKeyword(2, 3, "ass", TK_CLASS);
+                    case 'o': return checkKeyword(2, 3, "nst", TK_CONST);
+                }
+            }
         case 'e':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {

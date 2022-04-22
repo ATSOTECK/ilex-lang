@@ -59,6 +59,6 @@ assert(num == 10);
 num = num % 3;
 assert(num == 1);
 
-println("Passed!");
+println("Math test passed in", milliseconds(), "ms!")
 
 assert(num == 2, "This should fail.");

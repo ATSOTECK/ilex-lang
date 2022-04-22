@@ -11,6 +11,7 @@
 #include "memory.h"
 
 #include "libs/lib_natives.h"
+#include "libs/lib_string.h"
 
 #include <math.h>
 #include <stdarg.h>
@@ -26,6 +27,31 @@ static void resetStack() {
 }
 
 void runtimeError(const char *format, ...) {
+    fprintf(stderr, "Runtime Error: ");
+
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fputs("\n", stderr);
+
+    for (int i = vm.frameCount - 1; i >= 0; i--) {
+        CallFrame *frame = &vm.frames[i];
+        ObjFunction *function = frame->closure->function;
+        size_t instruction = frame->ip - function->chunk.code - 1;
+        int line = function->chunk.lines[instruction];
+        fprintf(stderr, "[line %d] in ", line);
+        if (function->name == NULL) {
+            fprintf(stderr, "script %s\n", vm.scriptName->str);
+        } else {
+            fprintf(stderr, "function %s()\n", function->name->str);
+        }
+    }
+
+    resetStack();
+}
+
+void assertError(const char *format, ...) {
     va_list args;
     va_start(args, format);
     vfprintf(stderr, format, args);
@@ -66,7 +92,10 @@ void initVM(const char *path) {
     vm.grayStack = NULL;
 
     initTable(&vm.globals);
+    initTable(&vm.consts);
     initTable(&vm.strings);
+
+    initTable(&vm.stringFunctions);
 
     vm.initString = NULL;
     vm.scriptName = NULL;
@@ -74,11 +103,14 @@ void initVM(const char *path) {
     vm.scriptName = copyString(path, (int)strlen(path));
 
     defineNatives(&vm);
+    defineStringFunctions(&vm);
 }
 
 void freeVM() {
     freeTable(&vm.globals);
+    freeTable(&vm.consts);
     freeTable(&vm.strings);
+    freeTable(&vm.stringFunctions);
     vm.initString = NULL;
     vm.scriptName = NULL;
     freeObjects();
@@ -144,7 +176,7 @@ static bool callValue(Value callee, int argCount) {
             case OBJ_CLOSURE: return call(AS_CLOSURE(callee), argCount);
             case OBJ_NATIVE: {
                 NativeFn native = AS_NATIVE(callee);
-                Value result = native(argCount, vm.stackTop - argCount);
+                Value result = native(&vm, argCount, vm.stackTop - argCount);
                 vm.stackTop -= argCount + 1;
                 push(result);
 
@@ -156,6 +188,19 @@ static bool callValue(Value callee, int argCount) {
 
     runtimeError("Can only call functions and classes.");
     return false;
+}
+
+static bool callNativeFunction(Value function, int argc) {
+    NativeFn native = AS_NATIVE(function);
+
+    Value res = native(&vm, argc, vm.stackTop - argc - 1);
+    if (IS_EMPTY(res)) {
+        return false;
+    }
+
+    vm.stackTop -= argc + 1;
+    push(res);
+    return true;
 }
 
 static bool invokeFromClass(ObjClass *objClass, ObjString *name, int argCount) {
@@ -171,20 +216,31 @@ static bool invokeFromClass(ObjClass *objClass, ObjString *name, int argCount) {
 static bool invoke(ObjString *name, int argCount) {
     Value receiver = peek(argCount);
 
-    if (!IS_INSTANCE(receiver)) {
-        runtimeError("Only instances have methods.");
-        return false;
+    switch (getObjType(receiver)) {
+        case OBJ_INSTANCE: {
+            ObjInstance *instance = AS_INSTANCE(receiver);
+
+            Value value;
+            if (tableGet(&instance->fields, name, &value)) {
+                vm.stackTop[-argCount - 1] = value;
+                return callValue(value, argCount);
+            }
+
+            return invokeFromClass(instance->objClass, name, argCount);
+        }
+        case OBJ_STRING: {
+            Value value;
+            if (tableGet(&vm.stringFunctions, name, &value)) {
+                return callNativeFunction(value, argCount);
+            }
+
+            runtimeError("String has no method %s().", name->str);
+            return false;
+        }
     }
 
-    ObjInstance *instance = AS_INSTANCE(receiver);
-
-    Value value;
-    if (tableGet(&instance->fields, name, &value)) {
-        vm.stackTop[-argCount - 1] = value;
-        return callValue(value, argCount);
-    }
-
-    return invokeFromClass(instance->objClass, name, argCount);
+    runtimeError("Only instances have methods.");
+    return false;
 }
 
 static bool bindMethod(ObjClass *objClass, ObjString *name) {
@@ -566,9 +622,9 @@ static InterpretResult run() {
 
                 if (isFalsey(condition)) {
                     if (!error->str[0]) {
-                        runtimeError("Assertion Failed.");
+                        assertError("Assertion Failed.");
                     } else {
-                        runtimeError("Assertion failed with message: %s", error->str);
+                        assertError("Assertion failed with message: %s", error->str);
                     }
                     
                     return INTERPRET_RUNTIME_ERROR;

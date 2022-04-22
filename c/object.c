@@ -166,7 +166,7 @@ char *objectType(Value value) {
             return newCString(instance->objClass->name->str);
         }
         case OBJ_LIBRARY: return newCString("library");
-        case OBJ_NATIVE: return newCString("native");
+        case OBJ_NATIVE: return newCString("nativeFunction");
         case OBJ_STRING: return newCString("string");
         case OBJ_UPVALUE: return newCString("upvalue");
     }

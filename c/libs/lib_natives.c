@@ -7,7 +7,7 @@
 #include <string.h>
 #include "lib_natives.h"
 
-static Value println(int argc, Value *args) {
+static Value println(VM *_vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
         printValue(args[i]);
         if (i < argc - 1) {
@@ -20,7 +20,7 @@ static Value println(int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
-static Value ln(int argc, Value *args) {
+static Value ln(VM *_vm, int argc, Value *args) {
     int count = 1;
 
     if (argc > 1) {
@@ -39,7 +39,7 @@ static Value ln(int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
-static Value print(int argc, Value *args) {
+static Value print(VM *_vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
         printValue(args[i]);
         if (i < argc - 1) {
@@ -50,7 +50,7 @@ static Value print(int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
-static Value typeof_(int argc, Value *args) {
+static Value typeof_(VM *_vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError("Function typeof() expected 1 argument but got %d.", argc);
         return NULL_VAL;
@@ -60,27 +60,27 @@ static Value typeof_(int argc, Value *args) {
     return OBJ_VAL(takeString(type, strlen(type)));
 }
 
-static Value seconds(int argc, Value* args) {
+static Value seconds(VM *_vm, int argc, Value* args) {
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
-static Value milliseconds(int argc, Value* args) {
+static Value milliseconds(VM *_vm, int argc, Value* args) {
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC * 1000);
 }
 
-static Value ilexVersionString(int argc, Value *args) {
+static Value ilexVersionString(VM *_vm, int argc, Value *args) {
     return OBJ_VAL(takeString(newCString(ILEX_VERSION), strlen(ILEX_VERSION)));
 }
 
-static Value ilexVersionMajor(int argc, Value *args) {
+static Value ilexVersionMajor(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(ILEX_VERSION_MAJOR);
 }
 
-static Value ilexVersionMinor(int argc, Value *args) {
+static Value ilexVersionMinor(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(ILEX_VERSION_MINOR);
 }
 
-static Value ilexVersionBuild(int argc, Value *args) {
+static Value ilexVersionBuild(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(ILEX_VERSION_BUILD);
 }
 

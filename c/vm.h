@@ -19,15 +19,18 @@ typedef struct {
     Value *slots;
 } CallFrame;
 
-typedef struct {
+struct VM_ {
     CallFrame frames[FRAMES_MAX];
     int frameCount;
     Value stack[STACK_MAX];
     Value *stackTop;
     Table globals;
+    Table consts;
     Table strings;
     ObjString *initString;
     ObjUpvalue *openUpvalues;
+
+    Table stringFunctions;
 
     size_t bytesAllocated;
     size_t nextGC;
@@ -36,7 +39,7 @@ typedef struct {
     int grayCapacity;
     Obj** grayStack;
     ObjString *scriptName;
-} VM;
+};
 
 typedef enum {
     INTERPRET_OK,

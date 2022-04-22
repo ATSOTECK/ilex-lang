@@ -1,15 +1,15 @@
 for (var i = 0; i < 10; i++) {
-    println(i);
+    println(i)
 }
 
-ln();
+ln()
 
 for (j := 0; j < 10; j++) {
-    println(j);
+    println(j)
 }
 
-ln();
+ln()
 
 for (k := 10; k >= 0; k--) {
-    println(k);
+    println(k)
 }
