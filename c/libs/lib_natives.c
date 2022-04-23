@@ -3,6 +3,7 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include "lib_natives.h"
@@ -50,6 +51,21 @@ static Value print(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
+static Value stdErr(VM *_vm, int argc, Value *args) {
+    for (int i = 0; i < argc; ++i) {
+        char *str = valueToString(args[i]);
+        fprintf(stderr, "%s", str);
+        free(str);
+        if (i < argc - 1) {
+            fprintf(stderr, " ");
+        }
+    }
+    
+    fprintf(stderr, "\n");
+    
+    return NUMBER_VAL(0);
+}
+
 static Value typeof_(VM *_vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError("Function typeof() expected 1 argument but got %d.", argc);
@@ -90,6 +106,7 @@ void defineNatives(VM *_vm) {
     defineNative("ln", ln, &_vm->globals);
     defineNative("print", print, &_vm->globals);
     defineNative("debug", print, &_vm->globals); // Same as print but more searchable.
+    defineNative("printErr", stdErr, &_vm->globals);
     defineNative("typeof", typeof_, &_vm->globals);
     defineNative("seconds", seconds, &_vm->globals);
     defineNative("milliseconds", milliseconds, &_vm->globals);

@@ -73,4 +73,9 @@ fn tst1() {
 
 tst1()
 
+someVar := true
+println("someVar", someVar ? "is true" : "is false")
+someVar = false
+println("someVar", someVar ? "is true" : "is false")
+
 println(milliseconds(), "ms");

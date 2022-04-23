@@ -627,6 +627,23 @@ static void binary(bool canAssign) {
     }
 }
 
+static void ternary(bool canAssign) {
+    int elseJump = emitJump(OP_JUMP_IF_FALSE);
+    
+    emitByte(OP_POP);
+    expression();
+    
+    int endJump = emitJump(OP_JUMP);
+    
+    patchJump(elseJump);
+    emitByte(OP_POP); // Condition.
+    
+    eat(TK_COLON, "Expect ':' after expression.");
+    expression();
+    
+    patchJump(endJump);
+}
+
 static void call(bool canAssign) {
     uint8_t argCount = argumentList();
     emitBytes(OP_CALL, argCount);
@@ -766,6 +783,7 @@ ParseRule rules[] = {
         [TK_ASSERT]        = {NULL,     NULL,   PREC_NONE},
         [TK_INC]           = {NULL,     inc,    PREC_TERM},
         [TK_DEC]           = {NULL,     dec,    PREC_TERM},
+        [TK_TER]           = {NULL,     ternary,PREC_ASSIGN},
         [TK_ERROR]         = {NULL,     NULL,   PREC_NONE},
         [TK_EOF]           = {NULL,     NULL,   PREC_NONE},
 };

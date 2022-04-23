@@ -303,8 +303,11 @@ Token nextToken() {
                 return makeToken(TK_VAR_DECL);
             } else if (match(':')) {
                 return makeToken(TK_SCOPE);
+            } else {
+                return makeToken(TK_COLON);
             }
         }
+        case '?': return makeToken(match('.') ? TK_OPT : TK_TER);
         case '"': return string();
     }
 

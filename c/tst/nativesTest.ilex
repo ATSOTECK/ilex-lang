@@ -31,3 +31,7 @@ ln(5)
 println("ln() test end")
 
 debugln("yeet")
+
+printErr("This is an error yo.")
+
+println("This\nis\na\ntest.")

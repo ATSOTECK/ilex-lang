@@ -16,8 +16,10 @@ typedef enum {
     TK_MINUS, // -
     TK_PLUS, // +
     TK_SEMICOLON, // ;
+    TK_COLON, // :
     TK_DIV, // /
     TK_MUL, // *
+    TK_TER, // ?
 
     // One or two character tokens.
     TK_NOT, // !
@@ -38,6 +40,7 @@ typedef enum {
     TK_POWEQ, // **=
     TK_MOD, // %
     TK_MODEQ, // %=
+    TK_OPT, // ?.
 
     TK_VAR_DECL, // :=
     TK_SCOPE, // ::

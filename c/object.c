@@ -3,6 +3,7 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "memory.h"
@@ -155,6 +156,35 @@ static void printFunction(ObjFunction *function) {
     printf("<fn %s>", function->name->str);
 }
 
+static char *functionToString(ObjFunction *function) {
+    if (function->name == NULL) {
+        return newCString("<script>");
+    }
+    
+    char *ret = (char*)malloc(sizeof(char) * function->name->len + 6);
+    snprintf(ret, function->name->len + 6, "<fn %s>", function->name->str);
+    
+    return ret;
+}
+
+static char *instanceToString(ObjInstance *instance) {
+    char *ret = (char*)malloc(sizeof(char) * instance->objClass->name->len + 10);
+    snprintf(ret, instance->objClass->name->len + 10, "%s instance", instance->objClass->name->str);
+    
+    return ret;
+}
+
+static char *libraryToString(ObjLibrary *library) {
+    if (library->name == NULL) {
+        return newCString("<library>");
+    }
+    
+    char *ret = (char*)malloc(sizeof(char) * library->name->len + 11);
+    snprintf(ret, library->name->len + 11, "<library %s>", library->name->str);
+    
+    return ret;
+}
+
 char *objectType(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD:
@@ -166,7 +196,7 @@ char *objectType(Value value) {
             return newCString(instance->objClass->name->str);
         }
         case OBJ_LIBRARY: return newCString("library");
-        case OBJ_NATIVE: return newCString("nativeFunction");
+        case OBJ_NATIVE: return newCString("cFunction");
         case OBJ_STRING: return newCString("string");
         case OBJ_UPVALUE: return newCString("upvalue");
     }
@@ -176,22 +206,32 @@ char *objectType(Value value) {
 
 void printObject(Value value) {
     switch (OBJ_TYPE(value)) {
-        case OBJ_BOUND_METHOD: printFunction(AS_BOUND_METHOD(value)->method->function); break;
-        case OBJ_CLASS: printf("%s", AS_CLASS(value)->name->str); break;
-        case OBJ_CLOSURE: printFunction(AS_CLOSURE(value)->function); break;
-        case OBJ_FUNCTION: printFunction(AS_FUNCTION(value)); break;
-        case OBJ_INSTANCE: printf("%s instance", AS_INSTANCE(value)->objClass->name->str); break; //TODO: toString()
-        case OBJ_LIBRARY: {
-            ObjLibrary *library = AS_LIBRARY(value);
-            if (library->name == NULL) {
-                printf("<library>");
-                break;
-            }
-
-            printf("<library %s>", library->name->str);
-        } break;
-        case OBJ_NATIVE: printf("<native fn>"); break;
-        case OBJ_STRING: printf("%s", AS_CSTRING(value)); break;
-        case OBJ_UPVALUE: printf("This should never be seen."); break;
+        case OBJ_BOUND_METHOD: printFunction(AS_BOUND_METHOD(value)->method->function); return;
+        case OBJ_CLASS: printf("%s", AS_CLASS(value)->name->str); return;
+        case OBJ_CLOSURE: printFunction(AS_CLOSURE(value)->function); return;
+        case OBJ_FUNCTION: printFunction(AS_FUNCTION(value)); return;
+        case OBJ_INSTANCE: printf("%s instance", AS_INSTANCE(value)->objClass->name->str); return; //TODO: toString()
+        case OBJ_LIBRARY: printf("%s", libraryToString(AS_LIBRARY(value))); return;
+        case OBJ_NATIVE: printf("<native fn>"); return;
+        case OBJ_STRING: printf("%s", AS_CSTRING(value)); return;
+        case OBJ_UPVALUE: printf("Should never happen."); return;
     }
+    
+    printf("unknown object");
+}
+
+char *objectToString(Value value) {
+    switch (OBJ_TYPE(value)) {
+        case OBJ_BOUND_METHOD: return functionToString(AS_BOUND_METHOD(value)->method->function);
+        case OBJ_CLASS: return newCString(AS_CLASS(value)->name->str);
+        case OBJ_CLOSURE: return functionToString(AS_CLOSURE(value)->function);
+        case OBJ_FUNCTION: return functionToString(AS_FUNCTION(value));
+        case OBJ_INSTANCE: return instanceToString(AS_INSTANCE(value));
+        case OBJ_LIBRARY: return libraryToString(AS_LIBRARY(value));
+        case OBJ_NATIVE: return newCString("<native fn>");
+        case OBJ_STRING: return newCString(AS_STRING(value)->str);
+        case OBJ_UPVALUE: return newCString("Should never happen.");
+    }
+    
+    return newCString("unknown object");
 }

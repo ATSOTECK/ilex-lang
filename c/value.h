@@ -104,6 +104,7 @@ void freeValueArray(ValueArray *array);
 
 char *valueType(Value value);
 
+char *valueToString(Value value);
 void printValue(Value value);
 
 #endif //C_VALUE_H

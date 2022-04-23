@@ -3,6 +3,7 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "object.h"
@@ -70,23 +71,28 @@ char *valueType(Value value) {
     return newCString("unknown");
 }
 
-void printValue(Value value) {
-#ifdef NAN_BOXING
+char *valueToString(Value value) {
     if (IS_BOOL(value)) {
-        printf(AS_BOOL(value) ? "true" : "false");
+        return newCString(AS_BOOL(value) ? "true" : "false");
     } else if (IS_NULL(value)) {
-        printf("null");
+        return newCString("null");
     } else if (IS_NUMBER(value)) {
-        printf("%.15g", AS_NUMBER(value));
+        double num = AS_NUMBER(value);
+        int len = snprintf(NULL, 0, "%.15g", num) + 1;
+        char *ret = (char*)malloc(sizeof(char) * len);
+        snprintf(ret, len, "%.15g", num);
+        
+        return ret;
     } else if (IS_OBJ(value)) {
-        printObject(value);
+        return objectToString(value);
     }
-#else
-    switch (value.type) {
-        case VAL_BOOL: printf(AS_BOOL(value) ? "true" : "false"); break;
-        case VAL_NULL: printf("null"); break;
-        case VAL_NUMBER: printf("%g", AS_NUMBER(value)); break;
-        case VAL_OBJ: printObject(value); break;
-    }
-#endif
+    
+    // Should never be reached.
+    return newCString("unknown value");
+}
+
+void printValue(Value value) {
+    char *str = valueToString(value);
+    printf("%s", str);
+    free(str);
 }
