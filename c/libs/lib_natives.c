@@ -76,12 +76,18 @@ static Value typeof_(VM *_vm, int argc, Value *args) {
     return OBJ_VAL(takeString(type, strlen(type)));
 }
 
+// TODO: Broken on windows. Must fix.
 static Value seconds(VM *_vm, int argc, Value* args) {
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
+// TODO: Broken on windows. Must fix.
 static Value milliseconds(VM *_vm, int argc, Value* args) {
+#ifndef I_WIN
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC * 1000);
+#else
+    return NUMBER_VAL((double)clock());
+#endif
 }
 
 static Value ilexVersionString(VM *_vm, int argc, Value *args) {

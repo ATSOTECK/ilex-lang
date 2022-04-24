@@ -81,10 +81,10 @@ typedef enum {
 
     TK_ERROR,
     TK_EOF
-} TokenType;
+} IlexTokenType;
 
 typedef struct {
-    TokenType type;
+    IlexTokenType type;
     const char *start;
     int len;
     int line;

@@ -38,7 +38,7 @@ static bool atEnd() {
     return *lexer.current == '\0';
 }
 
-static Token makeToken(TokenType type) {
+static Token makeToken(IlexTokenType type) {
     Token token;
     token.type = type;
     token.start = lexer.start;
@@ -120,7 +120,7 @@ static void skipWhitespace() {
     }
 }
 
-static TokenType checkKeyword(int start, int len, const char *rest, TokenType type) {
+static IlexTokenType checkKeyword(int start, int len, const char *rest, IlexTokenType type) {
     if (lexer.current - lexer.start == start + len && memcmp(lexer.start + start, rest, len) == 0) {
         return type;
     }
@@ -128,7 +128,7 @@ static TokenType checkKeyword(int start, int len, const char *rest, TokenType ty
     return TK_IDENT;
 }
 
-static TokenType identType() {
+static IlexTokenType identType() {
     switch (lexer.start[0]) {
         case 'a':
             if (lexer.current - lexer.start > 1) {

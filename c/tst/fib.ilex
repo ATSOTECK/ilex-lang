@@ -10,6 +10,7 @@ fn main() {
     start := seconds()
     println(fib(40))
     println(seconds() - start, "seconds")
+    println(milliseconds() - start, "ms")
 }
 
 main()

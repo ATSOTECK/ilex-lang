@@ -90,7 +90,7 @@ static void expression();
 static void statement();
 static void declaration();
 static void block();
-static ParseRule* getRule(TokenType type);
+static ParseRule* getRule(IlexTokenType type);
 static void parsePrecedence(Precedence precedence);
 
 static Chunk *currentChunk() {
@@ -154,7 +154,7 @@ static void advance() {
     }
 }
 
-static void eat(TokenType type, const char *message) {
+static void eat(IlexTokenType type, const char *message) {
     if (parser.current.type == type) {
         advance();
         return;
@@ -163,15 +163,15 @@ static void eat(TokenType type, const char *message) {
     errorAtCurrent(message);
 }
 
-static bool check(TokenType type) {
+static bool check(IlexTokenType type) {
     return parser.current.type == type;
 }
 
-static bool lookahead(TokenType type) {
+static bool lookahead(IlexTokenType type) {
     return parser.next.type == type;
 }
 
-static bool match(TokenType type) {
+static bool match(IlexTokenType type) {
     if (!check(type)) {
         return false;
     }
@@ -639,7 +639,7 @@ static void this_(bool canAssign) {
 }
 
 static void binary(bool canAssign) {
-    TokenType operatorType = parser.previous.type;
+    IlexTokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
     parsePrecedence((Precedence)(rule->precedence + 1));
 
@@ -740,7 +740,7 @@ static void literal(bool canAssign) {
 }
 
 static void unary(bool canAssign) {
-    TokenType op = parser.previous.type;
+    IlexTokenType op = parser.previous.type;
 
     parsePrecedence(PREC_UNARY);
 
@@ -867,7 +867,7 @@ static void synchronize() {
     }
 }
 
-static ParseRule* getRule(TokenType type) {
+static ParseRule* getRule(IlexTokenType type) {
     return &rules[type];
 }
 
