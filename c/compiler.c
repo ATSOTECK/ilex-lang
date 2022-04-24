@@ -457,15 +457,25 @@ static void and_(bool canAssign) {
 }
 
 static void or_(bool canAssign) {
-    // TODO: Jump if true.
-    int elseJump = emitJump(OP_JUMP_IF_FALSE);
-    int endJump = emitJump(OP_JUMP);
+    // TODO: This is broken.
+    if (canAssign) {
+        // This means it is being used like x = val || otherVal
+        IlexTokenType operatorType = parser.previous.type;
+        ParseRule *rule = getRule(operatorType);
+        parsePrecedence((Precedence)(rule->precedence + 1));
 
-    patchJump(elseJump);
-    emitByte(OP_POP);
+        emitByte(OP_OR);
+    } else {
+        // TODO: Jump if true.
+        int elseJump = emitJump(OP_JUMP_IF_FALSE);
+        int endJump = emitJump(OP_JUMP);
 
-    parsePrecedence(PREC_OR);
-    patchJump(endJump);
+        patchJump(elseJump);
+        emitByte(OP_POP);
+
+        parsePrecedence(PREC_OR);
+        patchJump(endJump);
+    }
 }
 
 int parseEscapeSequences(char *str, int len) {
@@ -640,7 +650,7 @@ static void this_(bool canAssign) {
 
 static void binary(bool canAssign) {
     IlexTokenType operatorType = parser.previous.type;
-    ParseRule* rule = getRule(operatorType);
+    ParseRule *rule = getRule(operatorType);
     parsePrecedence((Precedence)(rule->precedence + 1));
 
     switch (operatorType) {
@@ -819,7 +829,13 @@ ParseRule rules[] = {
 
 static void parsePrecedence(Precedence precedence) {
     advance();
+
     ParseFn prefixRule = getRule(parser.previous.type)->prefix;
+/*
+    if (parser.current.type == TK_OR && precedence == PREC_ASSIGN) {
+        prefixRule = orOP;
+    }
+*/
     if (prefixRule == NULL) {
         error("Expect expression.");
         return;

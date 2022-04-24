@@ -56,6 +56,7 @@ typedef enum {
     OP_USE,
     OP_ASSERT,
     OP_NULL_COALESCE,
+    OP_OR,
 } OpCode;
 
 typedef struct {

@@ -11,7 +11,6 @@
 #include "value.h"
 
 bool valuesEqual(Value a, Value b) {
-#ifdef NAN_BOXING
     // IEEE 754 compliance is for NERDS.
     /*
     if (IS_NUMBER(a) && IS_NUMBER(b)) {
@@ -20,19 +19,6 @@ bool valuesEqual(Value a, Value b) {
     */
 
     return a == b;
-#else
-    if (a.type != b.type) {
-        return false;
-    }
-
-    switch (a.type) {
-        case VAL_BOOL:   return AS_BOOL(a) == AS_BOOL(b);
-        case VAL_NULL:   return true;
-        case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
-        case VAL_OBJ:    return AS_OBJ(a) == AS_OBJ(b);
-        default:         return false; // Unreachable.
-    }
-#endif
 }
 
 void initValueArray(ValueArray *array) {

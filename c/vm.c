@@ -298,8 +298,11 @@ static void defineMethod(ObjString *name) {
     pop();
 }
 
-static bool isFalsey(Value value) {
-    return IS_NULL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+static bool isFalsy(Value value) {
+    return IS_NULL(value) ||
+          (IS_BOOL(value) && !AS_BOOL(value)) ||
+          (IS_NUMBER(value) && AS_NUMBER(value) == 0) ||
+          (IS_STRING(value) && AS_STRING(value)->len == 0);
 }
 
 static void concat() {
@@ -528,7 +531,17 @@ static InterpretResult run() {
                     push(pop()); // lhs
                 }
             } break;
-            case OP_NOT: push(BOOL_VAL(isFalsey(pop()))); break;
+            case OP_OR: {
+                if (isFalsy(peek(1))) {
+                    Value rhs = pop(); // rhs
+                    pop(); // lhs
+                    push(rhs);
+                } else {
+                    pop(); // rhs
+                    push(pop()); // lhs
+                }
+            } break;
+            case OP_NOT: push(BOOL_VAL(isFalsy(pop()))); break;
             case OP_NEG: {
                 if (!IS_NUMBER(peek(0))) {
                     runtimeError("Operand must be a number.");
@@ -542,7 +555,7 @@ static InterpretResult run() {
             } break;
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
-                if (isFalsey(peek(0))) {
+                if (isFalsy(peek(0))) {
                     frame->ip += offset;
                 }
             } break;
@@ -630,7 +643,7 @@ static InterpretResult run() {
                 Value condition = pop();
                 ObjString *error = READ_STRING();
 
-                if (isFalsey(condition)) {
+                if (isFalsy(condition)) {
                     if (!error->str[0]) {
                         assertError("Assertion Failed.");
                     } else {
