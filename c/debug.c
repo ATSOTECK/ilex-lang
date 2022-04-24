@@ -93,6 +93,7 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_DIV: return simpleInstruction("OP_DIV", offset);
         case OP_POW: return simpleInstruction("OP_POW", offset);
         case OP_MOD: return simpleInstruction("OP_MOD", offset);
+        case OP_NULL_COALESCE: return simpleInstruction("OP_OP_NULL_COALESCE", offset);
         case OP_NOT: return simpleInstruction("OP_NOT", offset);
         case OP_NEG: return simpleInstruction("OP_NEG", offset);
         case OP_JUMP: return jumpInstruction("OP_JUMP", 1, chunk, offset);

@@ -307,7 +307,15 @@ Token nextToken() {
                 return makeToken(TK_COLON);
             }
         }
-        case '?': return makeToken(match('.') ? TK_OPT : TK_TER);
+        case '?': {
+            if (match('.')) {
+                return makeToken(TK_OPT);
+            } else if (match('?')) {
+                return makeToken(match('=') ? TK_NULL_COALESCE_EQ : TK_NULL_COALESCE);
+            } else {
+                return makeToken(TK_TER);
+            }
+        }
         case '"': return string();
     }
 

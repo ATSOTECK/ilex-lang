@@ -41,6 +41,8 @@ typedef enum {
     TK_MOD, // %
     TK_MODEQ, // %=
     TK_OPT, // ?.
+    TK_NULL_COALESCE, // ??
+    TK_NULL_COALESCE_EQ, // ??=
 
     TK_VAR_DECL, // :=
     TK_SCOPE, // ::

@@ -78,4 +78,26 @@ println("someVar", someVar ? "is true" : "is false")
 someVar = false
 println("someVar", someVar ? "is true" : "is false")
 
+nullVar := null
+someVar = nullVar ? nullVar : 12
+println("someVar:", someVar)
+someVar = nullVar ?? 13
+println("someVar:", someVar)
+
+nullVar = 1
+someVar = nullVar ? nullVar : 12
+println("someVar:", someVar)
+someVar = nullVar ?? 13
+println("someVar:", someVar)
+
+ln()
+
+aVar := null
+aVar ??= 12
+println("aVar:", aVar)
+
+aVar = 10
+aVar ??= 12
+println("aVar:", aVar)
+
 println(milliseconds(), "ms");

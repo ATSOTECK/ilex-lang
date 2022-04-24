@@ -518,6 +518,16 @@ static InterpretResult run() {
                 double a = AS_NUMBER(pop());
                 push(NUMBER_VAL(fmod(a, b)));
             } break;
+            case OP_NULL_COALESCE: {
+                if (IS_NULL(peek(1))) {
+                    Value rhs = pop(); // rhs
+                    pop(); // lhs
+                    push(rhs);
+                } else {
+                    pop(); // rhs
+                    push(pop()); // lhs
+                }
+            } break;
             case OP_NOT: push(BOOL_VAL(isFalsey(pop()))); break;
             case OP_NEG: {
                 if (!IS_NUMBER(peek(0))) {
