@@ -35,7 +35,27 @@ fn main() {
     }
     
     if (a || b) {
-        println("A or B true")
+        println("A or B true 1")
+    }
+    
+    a = false
+    
+    if (a || b) {
+        println("A or B true 2")
+        assert(false, "This should never show.")
+    }
+    
+    b = true
+    
+    if (a || b) {
+        println("A or B true 3")
+    }
+    
+    a = true
+    b = true
+    
+    if (a || b) {
+        println("A or B true 4")
     }
 }
 

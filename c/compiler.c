@@ -457,25 +457,24 @@ static void and_(bool canAssign) {
 }
 
 static void or_(bool canAssign) {
-    // TODO: This is broken.
-    if (canAssign) {
-        // This means it is being used like x = val || otherVal
-        IlexTokenType operatorType = parser.previous.type;
-        ParseRule *rule = getRule(operatorType);
-        parsePrecedence((Precedence)(rule->precedence + 1));
+    // TODO: Jump if true.
+    int elseJump = emitJump(OP_JUMP_IF_FALSE);
+    int endJump = emitJump(OP_JUMP);
 
-        emitByte(OP_OR);
-    } else {
-        // TODO: Jump if true.
-        int elseJump = emitJump(OP_JUMP_IF_FALSE);
-        int endJump = emitJump(OP_JUMP);
+    patchJump(elseJump);
+    emitByte(OP_POP);
 
-        patchJump(elseJump);
-        emitByte(OP_POP);
+    parsePrecedence(PREC_OR);
+    patchJump(endJump);
+}
 
-        parsePrecedence(PREC_OR);
-        patchJump(endJump);
-    }
+static void orr(bool canAssgin) {
+    // This means it is being used like x = val || otherVal
+    IlexTokenType operatorType = parser.previous.type;
+    ParseRule *rule = getRule(operatorType);
+    parsePrecedence((Precedence)(rule->precedence + 1));
+    
+    emitByte(OP_OR);
 }
 
 int parseEscapeSequences(char *str, int len) {
@@ -831,11 +830,7 @@ static void parsePrecedence(Precedence precedence) {
     advance();
 
     ParseFn prefixRule = getRule(parser.previous.type)->prefix;
-/*
-    if (parser.current.type == TK_OR && precedence == PREC_ASSIGN) {
-        prefixRule = orOP;
-    }
-*/
+    
     if (prefixRule == NULL) {
         error("Expect expression.");
         return;
@@ -845,8 +840,18 @@ static void parsePrecedence(Precedence precedence) {
     prefixRule(canAssign);
 
     while (precedence <= getRule(parser.current.type)->precedence) {
+        bool setInfixToOrr = false;
+        if (parser.current.type == TK_OR && precedence == PREC_ASSIGN) {
+            setInfixToOrr = true;
+        }
+        
         advance();
+        
         ParseFn infixRule = getRule(parser.previous.type)->infix;
+        if (setInfixToOrr) {
+            infixRule = orr;
+        }
+        
         infixRule(canAssign);
     }
 
