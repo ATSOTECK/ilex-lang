@@ -20,7 +20,16 @@
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION_BUILD 8
-#define ILEX_VERSION "0.0.8"
+#define ILEX_VERSION_BUILD 10
+#define ILEX_VERSION "0.0.10"
+
+#if defined(WIN32) || defined(_WIN32)
+#   define I_WIN
+#   include <Windows.h>
+#endif
+
+#if defined(__APPLE__)
+#   define I_MAC
+#endif
 
 #endif //C_COMMON_H

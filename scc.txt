@@ -1,16 +1,16 @@
-http://cloc.sourceforge.net v 1.62  T=0.06 s (406.9 files/s, 64895.9 lines/s)
+http://cloc.sourceforge.net v 1.62  T=0.06 s (388.6 files/s, 63938.0 lines/s)
 ------------------------------------------------------------------------------------
 File                                  blank        comment           code
 ------------------------------------------------------------------------------------
-.\c\compiler.c                          202              8            977
+.\c\compiler.c                          209              8           1015
 .\c\vm.c                                 85              5            578
-.\c\lexer.c                              43              3            277
+.\c\lexer.c                              43              3            287
 .\c\memory.c                             34              3            213
 .\c\object.c                             47              3            187
+.\c\libs\lib_natives.c                   36              4            138
 .\c\table.c                              26              3            135
 .\c\object.h                             23              3            120
 .\c\debug.c                              15              3            113
-.\c\libs\lib_natives.c                   23              3             92
 .\c\lexer.h                              10              7             79
 .\c\value.h                              28              3             79
 .\c\value.c                              15             10             73
@@ -20,13 +20,13 @@ File                                  blank        comment           code
 .\c\libs\lib_string.c                    14              3             43
 .\c\chunk.c                               9              3             36
 .\c\table.h                               8              3             24
-.\c\memory.h                              9              3             15
-.\c\common.h                              7              7             12
+.\c\common.h                              9              7             19
+.\c\memory.h                             10              3             16
 .\c\compiler.h                            4              3              7
 .\c\debug.h                               4              3              6
 .\c\libs\lib_natives.h                    4              3              5
 .\c\libs\lib_string.h                     4              3              5
 .\c\ilex_include.h                        3              3              4
 ------------------------------------------------------------------------------------
-SUM:                                    649             94           3244
+SUM:                                    672             95           3346
 ------------------------------------------------------------------------------------

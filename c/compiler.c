@@ -468,8 +468,53 @@ static void or_(bool canAssign) {
     patchJump(endJump);
 }
 
+int parseEscapeSequences(char *str, int len) {
+    int removeLen = 1;
+    for (int i = 0; i < len - 1; i++) {
+        if (str[i] == '\\') {
+            switch (str[i + 1]) {
+                case 'n':  str[i + 1] = '\n'; break;
+                case 't':  str[i + 1] = '\t'; break;
+                case 'r':  str[i + 1] = '\r'; break;
+                case 'v':  str[i + 1] = '\v'; break;
+                case '\\': str[i + 1] = '\\'; break;
+                case '\'':
+                case '"': break;
+                case '0': {
+                    if (str[i + 2] == '3' && str[i + 3] == '3') {
+                        removeLen = 3;
+                        str[i + removeLen] = '\033';
+                    }
+                } break;
+                default:
+                    continue;
+            }
+            
+            memmove(&str[i], &str[i + removeLen], len - i);
+            len -= removeLen;
+        }
+    }
+    
+    return len;
+}
+
+static Value parseString() {
+    int strLen = parser.previous.len - 2;
+    char *str = ALLOCATE(char, strLen + 1);
+    
+    memcpy(str, parser.previous.start + 1, strLen);
+    int len = parseEscapeSequences(str, strLen);
+    
+    if (len != strLen) {
+        str = SHRINK_ARRAY(str, char, strLen + 1, len + 1);
+    }
+    str[len] = '\0';
+    
+    return OBJ_VAL(takeString(str, len));
+}
+
 static void string(bool canAssign) {
-    emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.len - 2)));
+    emitConstant(parseString());
 }
 
 static void checkIfConst(uint8_t setOp, int arg) {

@@ -34,4 +34,11 @@ debugln("yeet")
 
 printErr("This is an error yo.")
 
+println("bytes allocated:", memAllocated())
+memUsagePrint()
+println("Memory used:", memUsageGet())
+
 println("This\nis\na\ntest.")
+
+println("\033[31;1;4mHello\033[0m");
+println("\033[32mThis should be green\033[0m")

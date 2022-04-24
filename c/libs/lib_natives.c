@@ -100,6 +100,60 @@ static Value ilexVersionBuild(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(ILEX_VERSION_BUILD);
 }
 
+static Value ilexMemUsed(VM *_vm, int argc, Value *args) {
+    return NUMBER_VAL(_vm->bytesAllocated);
+}
+
+static Value ilexPrintMemUsed(VM *_vm, int argc, Value *args) {
+    double bytes = _vm->bytesAllocated;
+    
+    int times = 0;
+    while (bytes > 1000) {
+        bytes /= 1000;
+        ++times;
+    }
+    
+    switch (times) {
+        case 0: printf("%d bytes\n", (int)bytes); break;
+        case 1: printf("%.15g kb\n", bytes); break;
+        case 2: printf("%.15g mb\n", bytes); break;
+        case 3: printf("%.15g gb\n", bytes); break;
+        case 4: printf("%.15g tb\n", bytes); break;
+        default: printf(">= 1000tb\n"); break;
+    }
+    
+    return NUMBER_VAL(0);
+}
+
+static Value ilexGetMemUsed(VM *_vm, int argc, Value *args) {
+    double bytes = _vm->bytesAllocated;
+    
+    int times = 0;
+    while (bytes > 1000) {
+        bytes /= 1000;
+        ++times;
+    }
+    
+    int len = snprintf(NULL, 0, "%.15g", bytes) + 4;
+    if (times == 0) {
+        len += 3;
+    }
+    
+    char *str = (char*)malloc(sizeof(char) * len);
+    
+    switch (times) {
+        case 0: snprintf(str, len, "%d bytes", (int)bytes); break;
+        case 1: snprintf(str, len, "%.15g kb", bytes); break;
+        case 2: snprintf(str, len, "%.15g mb", bytes); break;
+        case 3: snprintf(str, len, "%.15g gb", bytes); break;
+        case 4: snprintf(str, len, "%.15g tb", bytes); break;
+        default: snprintf(str, len, "???"); break;
+    }
+    
+    ObjString *ret = takeString(str, len);
+    return OBJ_VAL(ret);
+}
+
 void defineNatives(VM *_vm) {
     defineNative("println", println, &_vm->globals);
     defineNative("debugln", println, &_vm->globals); // Same as println but more searchable.
@@ -108,11 +162,17 @@ void defineNatives(VM *_vm) {
     defineNative("debug", print, &_vm->globals); // Same as print but more searchable.
     defineNative("printErr", stdErr, &_vm->globals);
     defineNative("typeof", typeof_, &_vm->globals);
+    
+    // Move these into Ilex library?
     defineNative("seconds", seconds, &_vm->globals);
     defineNative("milliseconds", milliseconds, &_vm->globals);
-
+    
     defineNative("ilexVersion", ilexVersionString, &_vm->globals);
     defineNative("ilexVersionMajor", ilexVersionMajor, &_vm->globals);
     defineNative("ilexVersionMinor", ilexVersionMinor, &_vm->globals);
     defineNative("ilexVersionBuild", ilexVersionBuild, &_vm->globals);
+    
+    defineNative("memAllocated", ilexMemUsed, &_vm->globals);
+    defineNative("memUsagePrint", ilexPrintMemUsed, &_vm->globals);
+    defineNative("memUsageGet", ilexGetMemUsed, &_vm->globals);
 }
