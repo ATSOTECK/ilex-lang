@@ -20,6 +20,23 @@ fn main() {
             println(1)
         }
     }
+    
+    a := true
+    b := false
+    
+    if (a && b) {
+        println("Both true")
+    } elif (a) {
+        println("A true")
+    } elif (b) {
+        println("B true")
+    } else {
+        println("Both false")
+    }
+    
+    if (a || b) {
+        println("A or B true")
+    }
 }
 
 main()

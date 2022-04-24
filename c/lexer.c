@@ -316,6 +316,16 @@ Token nextToken() {
                 return makeToken(TK_TER);
             }
         }
+        case '&': {
+            if (match('&')) {
+                return makeToken(TK_AND);
+            }
+        }
+        case '|': {
+            if (match('|')) {
+                return makeToken(TK_OR);
+            }
+        }
         case '"': return string();
     }
 
