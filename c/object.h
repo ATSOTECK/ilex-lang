@@ -119,21 +119,21 @@ typedef struct {
     Value *data;
 } ObjList;
 
-ObjBoundMethod *newBoundMethod(Value receiver, ObjClosure *method);
-ObjClass *newClass(ObjString *name);
-ObjClosure *newClosure(ObjFunction *function);
-ObjFunction *newFunction();
-ObjInstance *newInstance(ObjClass *objClass);
-ObjLibrary *newLibrary(ObjString* name);
-ObjNative *newNative(NativeFn function);
-char *newCString(char *str);
-ObjString *takeString(char *str, int len);
-ObjString *copyString(const char* chars, int length);
-ObjUpvalue *newUpvalue(Value *slot);
+ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
+ObjClass *newClass(VM *vm, ObjString *name);
+ObjClosure *newClosure(VM *vm, ObjFunction *function);
+ObjFunction *newFunction(VM *vm);
+ObjInstance *newInstance(VM *vm, ObjClass *objClass);
+ObjLibrary *newLibrary(VM *vm, ObjString* name);
+ObjNative *newNative(VM *vm, NativeFn function);
+char *newCString(VM *vm, char *str);
+ObjString *takeString(VM *vm, char *str, int len);
+ObjString *copyString(VM *vm, const char* chars, int length);
+ObjUpvalue *newUpvalue(VM *vm, Value *slot);
 ObjLibrary *newList();
-char *objectType(Value value);
-void printObject(Value value);
-char *objectToString(Value value);
+char *objectType(VM *vm, Value value);
+void printObject(VM *vm, Value value);
+char *objectToString(VM *vm, Value value);
 
 static inline bool isObjType(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;

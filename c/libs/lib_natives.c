@@ -8,9 +8,9 @@
 #include <string.h>
 #include "lib_natives.h"
 
-static Value println(VM *_vm, int argc, Value *args) {
+static Value println(VM *vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
-        printValue(args[i]);
+        printValue(vm, args[i]);
         if (i < argc - 1) {
             printf(" ");
         }
@@ -21,11 +21,11 @@ static Value println(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
-static Value ln(VM *_vm, int argc, Value *args) {
+static Value ln(VM *vm, int argc, Value *args) {
     int count = 1;
 
     if (argc > 1) {
-        runtimeError("Function ln() expected 1 or 0 arguments but got %d", argc);
+        runtimeError(vm, "Function ln() expected 1 or 0 arguments but got %d", argc);
     } else if (argc == 1) {
         count = (int)AS_NUMBER(args[0]);
         if (count <= 0) {
@@ -40,9 +40,9 @@ static Value ln(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
-static Value print(VM *_vm, int argc, Value *args) {
+static Value print(VM *vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
-        printValue(args[i]);
+        printValue(vm, args[i]);
         if (i < argc - 1) {
             printf(" ");
         }
@@ -51,9 +51,9 @@ static Value print(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
-static Value stdErr(VM *_vm, int argc, Value *args) {
+static Value stdErr(VM *vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
-        char *str = valueToString(args[i]);
+        char *str = valueToString(vm, args[i]);
         fprintf(stderr, "%s", str);
         free(str);
         if (i < argc - 1) {
@@ -66,23 +66,23 @@ static Value stdErr(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
-static Value typeof_(VM *_vm, int argc, Value *args) {
+static Value typeof_(VM *vm, int argc, Value *args) {
     if (argc != 1) {
-        runtimeError("Function typeof() expected 1 argument but got %d.", argc);
+        runtimeError(vm, "Function typeof() expected 1 argument but got %d.", argc);
         return NULL_VAL;
     }
 
-    char* type = valueType(args[0]);
-    return OBJ_VAL(takeString(type, strlen(type)));
+    char* type = valueType(vm, args[0]);
+    return OBJ_VAL(takeString(vm, type, strlen(type)));
 }
 
 // TODO: Broken on windows. Must fix.
-static Value seconds(VM *_vm, int argc, Value* args) {
+static Value seconds(VM *vm, int argc, Value* args) {
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
 // TODO: Broken on windows. Must fix.
-static Value milliseconds(VM *_vm, int argc, Value* args) {
+static Value milliseconds(VM *vm, int argc, Value* args) {
 #ifndef I_WIN
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC * 1000);
 #else
@@ -90,28 +90,28 @@ static Value milliseconds(VM *_vm, int argc, Value* args) {
 #endif
 }
 
-static Value ilexVersionString(VM *_vm, int argc, Value *args) {
-    return OBJ_VAL(takeString(newCString(ILEX_VERSION), strlen(ILEX_VERSION)));
+static Value ilexVersionString(VM *vm, int argc, Value *args) {
+    return OBJ_VAL(takeString(vm, newCString(vm, ILEX_VERSION), strlen(ILEX_VERSION)));
 }
 
-static Value ilexVersionMajor(VM *_vm, int argc, Value *args) {
+static Value ilexVersionMajor(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(ILEX_VERSION_MAJOR);
 }
 
-static Value ilexVersionMinor(VM *_vm, int argc, Value *args) {
+static Value ilexVersionMinor(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(ILEX_VERSION_MINOR);
 }
 
-static Value ilexVersionBuild(VM *_vm, int argc, Value *args) {
+static Value ilexVersionBuild(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(ILEX_VERSION_BUILD);
 }
 
-static Value ilexMemUsed(VM *_vm, int argc, Value *args) {
-    return NUMBER_VAL(_vm->bytesAllocated);
+static Value ilexMemUsed(VM *vm, int argc, Value *args) {
+    return NUMBER_VAL(vm->bytesAllocated);
 }
 
-static Value ilexPrintMemUsed(VM *_vm, int argc, Value *args) {
-    double bytes = _vm->bytesAllocated;
+static Value ilexPrintMemUsed(VM *vm, int argc, Value *args) {
+    double bytes = vm->bytesAllocated;
     
     int times = 0;
     while (bytes > 1000) {
@@ -131,8 +131,8 @@ static Value ilexPrintMemUsed(VM *_vm, int argc, Value *args) {
     return NUMBER_VAL(0);
 }
 
-static Value ilexGetMemUsed(VM *_vm, int argc, Value *args) {
-    double bytes = _vm->bytesAllocated;
+static Value ilexGetMemUsed(VM *vm, int argc, Value *args) {
+    double bytes = (double)vm->bytesAllocated;
     
     int times = 0;
     while (bytes > 1000) {
@@ -156,29 +156,29 @@ static Value ilexGetMemUsed(VM *_vm, int argc, Value *args) {
         default: snprintf(str, len, "???"); break;
     }
     
-    ObjString *ret = takeString(str, len);
+    ObjString *ret = takeString(vm, str, len);
     return OBJ_VAL(ret);
 }
 
-void defineNatives(VM *_vm) {
-    defineNative("println", println, &_vm->globals);
-    defineNative("debugln", println, &_vm->globals); // Same as println but more searchable.
-    defineNative("ln", ln, &_vm->globals);
-    defineNative("print", print, &_vm->globals);
-    defineNative("debug", print, &_vm->globals); // Same as print but more searchable.
-    defineNative("printErr", stdErr, &_vm->globals);
-    defineNative("typeof", typeof_, &_vm->globals);
+void defineNatives(VM *vm) {
+    defineNative(vm, "println", println, &vm->globals);
+    defineNative(vm, "debugln", println, &vm->globals); // Same as println but more searchable.
+    defineNative(vm, "ln", ln, &vm->globals);
+    defineNative(vm, "print", print, &vm->globals);
+    defineNative(vm, "debug", print, &vm->globals); // Same as print but more searchable.
+    defineNative(vm, "printErr", stdErr, &vm->globals);
+    defineNative(vm, "typeof", typeof_, &vm->globals);
     
     // Move these into Ilex library?
-    defineNative("seconds", seconds, &_vm->globals);
-    defineNative("milliseconds", milliseconds, &_vm->globals);
+    defineNative(vm, "seconds", seconds, &vm->globals);
+    defineNative(vm, "milliseconds", milliseconds, &vm->globals);
     
-    defineNative("ilexVersion", ilexVersionString, &_vm->globals);
-    defineNative("ilexVersionMajor", ilexVersionMajor, &_vm->globals);
-    defineNative("ilexVersionMinor", ilexVersionMinor, &_vm->globals);
-    defineNative("ilexVersionBuild", ilexVersionBuild, &_vm->globals);
+    defineNative(vm, "ilexVersion", ilexVersionString, &vm->globals);
+    defineNative(vm, "ilexVersionMajor", ilexVersionMajor, &vm->globals);
+    defineNative(vm, "ilexVersionMinor", ilexVersionMinor, &vm->globals);
+    defineNative(vm, "ilexVersionBuild", ilexVersionBuild, &vm->globals);
     
-    defineNative("memAllocated", ilexMemUsed, &_vm->globals);
-    defineNative("memUsagePrint", ilexPrintMemUsed, &_vm->globals);
-    defineNative("memUsageGet", ilexGetMemUsed, &_vm->globals);
+    defineNative(vm, "memAllocated", ilexMemUsed, &vm->globals);
+    defineNative(vm, "memUsagePrint", ilexPrintMemUsed, &vm->globals);
+    defineNative(vm, "memUsageGet", ilexGetMemUsed, &vm->globals);
 }

@@ -9,20 +9,12 @@
 
 #include "common.h"
 #include "compiler.h"
-#include "lexer.h"
 #include "memory.h"
+#include "vm.h"
 
 #ifdef DEBUG_PRINT_CODE
 #   include "debug.h"
 #endif
-
-typedef struct {
-    Token current;
-    Token previous;
-    Token next;
-    bool hadError;
-    bool panicMode;
-} Parser;
 
 typedef enum {
     PREC_NONE,
@@ -39,7 +31,7 @@ typedef enum {
     PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)(bool canAssign);
+typedef void (*ParseFn)(Compiler *compiler, bool canAssign);
 
 typedef struct {
     ParseFn prefix;
@@ -47,62 +39,23 @@ typedef struct {
     Precedence precedence;
 } ParseRule;
 
-typedef struct {
-    Token name;
-    int depth;
-    bool isConst;
-    bool isCaptured;
-} Local;
-
-typedef struct {
-    uint8_t index;
-    bool isLocal;
-} Upvalue;
-
-typedef enum {
-    TYPE_FUNCTION,
-    TYPE_INITIALIZER,
-    TYPE_METHOD,
-    TYPE_SCRIPT
-} FunctionType;
-
-typedef struct Compiler {
-    struct Compiler *enclosing;
-    ObjFunction *function;
-    FunctionType type;
-
-    Local locals[UINT8_COUNT];
-    int localCount;
-    Upvalue upvalues[UINT8_COUNT];
-    int scopeDepth;
-} Compiler;
-
-typedef struct ClassCompiler {
-    struct ClassCompiler *enclosing;
-    bool hasSuperclass;
-} ClassCompiler;
-
-Parser parser;
-Compiler *current = NULL; // Will not work with multiple threads. This should be passed to the functions that need it.
-ClassCompiler* currentClass = NULL;
-
-static void expression();
-static void statement();
-static void declaration();
-static void block();
+static void expression(Compiler *compiler);
+static void statement(Compiler *compiler);
+static void declaration(Compiler *compiler);
+static void block(Compiler *compiler);
 static ParseRule* getRule(IlexTokenType type);
-static void parsePrecedence(Precedence precedence);
+static void parsePrecedence(Compiler *compiler, Precedence precedence);
 
-static Chunk *currentChunk() {
-    return &current->function->chunk;
+static Chunk *currentChunk(Compiler *compiler) {
+    return &compiler->function->chunk;
 }
 
-static void errorAt(Token* token, const char* message) {
-    if (parser.panicMode) {
+static void errorAt(Parser *parser, Token* token, const char* message) {
+    if (parser->panicMode) {
         return;
     }
 
-    parser.panicMode = true;
+    parser->panicMode = true;
     fprintf(stderr, "[line %d] Error", token->line);
 
     if (token->type == TK_EOF) {
@@ -114,149 +67,156 @@ static void errorAt(Token* token, const char* message) {
     }
 
     fprintf(stderr, ": %s\n", message);
-    parser.hadError = true;
+    parser->hadError = true;
 }
 
-static void error(const char *message, ...) {
+static void error(Parser *parser, const char *message, ...) {
     char *msg = (char*)malloc(sizeof(char) * 256);
     va_list args;
     va_start(args, message);
     vsnprintf(msg, 256, message, args);
     va_end(args);
 
-    errorAt(&parser.previous, msg);
+    errorAt(parser, &parser->previous, msg);
     free(msg);
 }
 
-static void errorAtCurrent(const char *message) {
-    errorAt(&parser.current, message);
+static void errorAtCurrent(Parser *parser, const char *message) {
+    errorAt(parser, &parser->current, message);
 }
 
-static void firstAdvance() {
-    parser.next = nextToken();
+static void firstAdvance(Compiler *compiler) {
+    compiler->parser->next = nextToken();
 
-    if (parser.next.type == TK_ERROR) {
-        errorAtCurrent(parser.current.start);
+    if (compiler->parser->next.type == TK_ERROR) {
+        errorAtCurrent(compiler->parser, compiler->parser->current.start);
     }
 }
 
-static void advance() {
-    parser.previous = parser.current;
+static void advance(Parser *parser) {
+    parser->previous = parser->current;
 
     for (;;) {
-        parser.current = parser.next;
-        parser.next = nextToken();
-        if (parser.current.type != TK_ERROR) {
+        parser->current = parser->next;
+        parser->next = nextToken();
+        if (parser->current.type != TK_ERROR) {
             break;
         }
 
-        errorAtCurrent(parser.current.start);
+        errorAtCurrent(parser, parser->current.start);
     }
 }
 
-static void eat(IlexTokenType type, const char *message) {
-    if (parser.current.type == type) {
-        advance();
+static void eat(Parser *parser, IlexTokenType type, const char *message) {
+    if (parser->current.type == type) {
+        advance(parser);
         return;
     }
 
-    errorAtCurrent(message);
+    errorAtCurrent(parser, message);
 }
 
-static bool check(IlexTokenType type) {
-    return parser.current.type == type;
+static bool check(Compiler *compiler, IlexTokenType type) {
+    return compiler->parser->current.type == type;
 }
 
-static bool lookahead(IlexTokenType type) {
-    return parser.next.type == type;
+static bool lookahead(Compiler *compiler, IlexTokenType type) {
+    return compiler->parser->next.type == type;
 }
 
-static bool match(IlexTokenType type) {
-    if (!check(type)) {
+static bool match(Compiler *compiler, IlexTokenType type) {
+    if (!check(compiler, type)) {
         return false;
     }
-    advance();
+    advance(compiler->parser);
 
     return true;
 }
 
-static void emitByte(uint8_t byte) {
-    writeChunk(currentChunk(), byte, parser.previous.line);
+static void emitByte(Compiler *compiler, uint8_t byte) {
+    writeChunk(compiler->parser->vm, currentChunk(compiler), byte, compiler->parser->previous.line);
 }
 
-static void emitBytes(uint8_t byte1, uint8_t byte2) {
-    emitByte(byte1);
-    emitByte(byte2);
+static void emitBytes(Compiler *compiler, uint8_t byte1, uint8_t byte2) {
+    emitByte(compiler, byte1);
+    emitByte(compiler, byte2);
 }
 
-static void emitLoop(int loopStart) {
-    emitByte(OP_LOOP);
+static void emitLoop(Compiler *compiler, int loopStart) {
+    emitByte(compiler, OP_LOOP);
 
-    int offset = currentChunk()->count - loopStart + 2;
+    int offset = currentChunk(compiler)->count - loopStart + 2;
     if (offset > UINT16_MAX) {
-        error("Loop body too large.");
+        error(compiler->parser, "Loop body too large.");
     }
 
-    emitByte((offset >> 8) & 0xff);
-    emitByte(offset & 0xff);
+    emitByte(compiler, (offset >> 8) & 0xff);
+    emitByte(compiler, offset & 0xff);
 }
 
-static int emitJump(uint8_t instruction) {
-    emitByte(instruction);
-    emitByte(0xff);
-    emitByte(0xff);
+static int emitJump(Compiler *compiler, uint8_t instruction) {
+    emitByte(compiler, instruction);
+    emitByte(compiler, 0xff);
+    emitByte(compiler, 0xff);
 
-    return currentChunk()->count - 2;
+    return currentChunk(compiler)->count - 2;
 }
 
-static void emitReturn() {
-    if (current->type == TYPE_INITIALIZER) {
-        emitBytes(OP_GET_LOCAL, 0);  // this
+static void emitReturn(Compiler *compiler) {
+    if (compiler->type == TYPE_INITIALIZER) {
+        emitBytes(compiler, OP_GET_LOCAL, 0);  // this
     } else {
-        emitByte(OP_NULL);
+        emitByte(compiler, OP_NULL);
     }
 
-    emitByte(OP_RETURN);
+    emitByte(compiler, OP_RETURN);
 }
 
-static uint8_t makeConstant(Value value) {
-    int constant = addConstant(currentChunk(), value);
+static uint8_t makeConstant(Compiler *compiler, Value value) {
+    int constant = addConstant(compiler->parser->vm, currentChunk(compiler), value);
     if (constant > UINT8_MAX) {
-        error("Too many constants in one chunk.");
+        error(compiler->parser, "Too many constants in one chunk.");
         return 0;
     }
 
     return (uint8_t)constant;
 }
 
-static void emitConstant(Value value) {
-    emitBytes(OP_CONSTANT, makeConstant(value));
+static void emitConstant(Compiler *compiler, Value value) {
+    emitBytes(compiler, OP_CONSTANT, makeConstant(compiler, value));
 }
 
-static void patchJump(int offset) {
-    int jump = currentChunk()->count - offset - 2;
+static void patchJump(Compiler *compiler, int offset) {
+    int jump = currentChunk(compiler)->count - offset - 2;
 
     if (jump > UINT16_MAX) {
-        error("Too much code to jump over.");
+        error(compiler->parser, "Too much code to jump over.");
     }
 
-    currentChunk()->code[offset] = (jump >> 8) & 0xff;
-    currentChunk()->code[offset + 1] = jump & 0xff;
+    currentChunk(compiler)->code[offset] = (jump >> 8) & 0xff;
+    currentChunk(compiler)->code[offset + 1] = jump & 0xff;
 }
 
-static void initCompiler(Compiler *compiler, FunctionType type) {
-    compiler->enclosing = current;
+static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, FunctionType type) {
+    compiler->parser = parser;
+    compiler->enclosing = parent;
     compiler->function = NULL;
     compiler->type = type;
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
-    compiler->function = newFunction();
-    current = compiler;
-    if (type != TYPE_SCRIPT) {
-        current->function->name = copyString(parser.previous.start, parser.previous.len);
+    compiler->function = newFunction(parser->vm);
+
+    if (parent != NULL) {
+        compiler->class = parent->class;
     }
 
-    Local *local = &current->locals[current->localCount++];
+    parser->vm->compiler = compiler;
+
+    if (type != TYPE_SCRIPT) {
+        compiler->function->name = copyString(parser->vm, parser->previous.start, parser->previous.len);
+    }
+
+    Local *local = &compiler->locals[compiler->localCount++];
     local->depth = 0;
     local->isCaptured = false;
     if (type != TYPE_FUNCTION) {
@@ -268,8 +228,8 @@ static void initCompiler(Compiler *compiler, FunctionType type) {
     }
 }
 
-static uint8_t identifierConstant(Token *name) {
-    return makeConstant(OBJ_VAL(copyString(name->start, name->len)));
+static uint8_t identifierConstant(Compiler *compiler, Token *name) {
+    return makeConstant(compiler, OBJ_VAL(copyString(compiler->parser->vm, name->start, name->len)));
 }
 
 static bool identifiersEqual(Token *a, Token *b) {
@@ -285,7 +245,7 @@ static int resolveLocal(Compiler *compiler, Token *name) {
         Local *local = &compiler->locals[i];
         if (identifiersEqual(name, &local->name)) {
             if (local->depth == -1) {
-                error("Can't read local variable in its own initializer.");
+                error(compiler->parser, "Can't read local variable in its own initializer.");
             }
             return i;
         }
@@ -305,7 +265,7 @@ static int addUpvalue(Compiler *compiler, uint8_t index, bool isLocal) {
     }
 
     if (upvalueCount == UINT8_COUNT) {
-        error("Too many closure variables in function.");
+        error(compiler->parser, "Too many closure variables in function.");
         return 0;
     }
 
@@ -334,147 +294,149 @@ static int resolveUpvalue(Compiler *compiler, Token *name) {
     return -1;
 }
 
-static void addLocal(Token name) {
-    if (current->localCount == UINT8_COUNT) {
-        error("To many local variables in function.");
+static void addLocal(Compiler *compiler, Token name) {
+    if (compiler->localCount == UINT8_COUNT) {
+        error(compiler->parser, "To many local variables in function.");
         return;
     }
 
-    Local *local = &current->locals[current->localCount++];
+    Local *local = &compiler->locals[compiler->localCount++];
     local->name = name;
     local->depth = -1;
     local->isCaptured = false;
 }
 
-static void declareVariable() {
-    if (current->scopeDepth == 0) {
+static void declareVariable(Compiler *compiler) {
+    if (compiler->scopeDepth == 0) {
         return;
     }
 
-    Token *name = &parser.previous;
-    for (int i = current->localCount - 1; i >= 0; i--) {
-        Local *local = &current->locals[i];
-        if (local->depth != -1 && local->depth < current->scopeDepth) {
+    Token *name = &compiler->parser->previous;
+    for (int i = compiler->localCount - 1; i >= 0; i--) {
+        Local *local = &compiler->locals[i];
+        if (local->depth != -1 && local->depth < compiler->scopeDepth) {
             break;
         }
 
         if (identifiersEqual(name, &local->name)) {
-            error("Already a variable with this name in this scope.");
+            error(compiler->parser, "Already a variable with this name in this scope.");
         }
     }
 
-    addLocal(*name);
+    addLocal(compiler, *name);
 }
 
-static uint8_t parseVariable(const char *errorMessage) {
-    eat(TK_IDENT, errorMessage);
-    declareVariable();
+static uint8_t parseVariable(Compiler *compiler, const char *errorMessage) {
+    eat(compiler->parser, TK_IDENT, errorMessage);
+    declareVariable(compiler);
 
-    if (current->scopeDepth > 0) {
+    if (compiler->scopeDepth > 0) {
         return 0;
     }
 
-    return identifierConstant(&parser.previous);
+    return identifierConstant(compiler, &compiler->parser->previous);
 }
 
-static void defineVariable(uint8_t global, bool isConst) {
-    if (current->scopeDepth > 0) {
-        current->locals[current->localCount - 1].depth = current->scopeDepth;
-        current->locals[current->localCount - 1].isConst = isConst;
+static void defineVariable(Compiler *compiler, uint8_t global, bool isConst) {
+    if (compiler->scopeDepth > 0) {
+        compiler->locals[compiler->localCount - 1].depth = compiler->scopeDepth;
+        compiler->locals[compiler->localCount - 1].isConst = isConst;
+
         return;
     }
 
     if (isConst) {
-        tableSet(&vm.consts, AS_STRING(currentChunk()->constants.values[global]), NULL_VAL);
+        tableSet(compiler->parser->vm, &compiler->parser->vm->consts, AS_STRING(currentChunk(compiler)->constants.values[global]), NULL_VAL);
     }
-    emitBytes(OP_DEFINE_GLOBAL, global);
+    emitBytes(compiler, OP_DEFINE_GLOBAL, global);
 }
 
-static uint8_t argumentList() {
+static uint8_t argumentList(Compiler *compiler) {
     uint8_t argCount = 0;
-    if (!check(TK_RPAREN)) {
+    if (!check(compiler, TK_RPAREN)) {
         do {
-            expression();
+            expression(compiler);
             if (argCount == 255) {
-                error("Can't have more than 255 arguments.");
+                error(compiler->parser, "Can't have more than 255 arguments.");
             }
             argCount++;
-        } while (match(TK_COMMA));
+        } while (match(compiler, TK_COMMA));
     }
 
-    eat(TK_RPAREN, "Expect ')' after arguments.");
+    eat(compiler->parser, TK_RPAREN, "Expect ')' after arguments.");
     return argCount;
 }
 
-static ObjFunction *endCompiler() {
-    emitReturn();
-    ObjFunction *function = current->function;
+static ObjFunction *endCompiler(Compiler *compiler) {
+    emitReturn(compiler);
+    ObjFunction *function = compiler->function;
 
 #ifdef DEBUG_PRINT_CODE
-    if (!parser.hadError) {
-        disassembleChunk(currentChunk(), function->name != NULL ? function->name->str : "<script>");
+    if (!compiler->parser->hadError) {
+        disassembleChunk(currentChunk(compiler), function->name != NULL ? function->name->str : "<script>");
     }
 #endif
 
-    current = current->enclosing;
+    compiler->parser->vm->compiler = compiler->enclosing;
     return function;
 }
 
-static void beginScope() {
-    current->scopeDepth++;
+static void beginScope(Compiler *compiler) {
+    compiler->scopeDepth++;
 }
 
-static void endScope() {
-    current->scopeDepth--;
+static void endScope(Compiler *compiler) {
+    compiler->scopeDepth--;
 
-    while (current->localCount > 0 && current->locals[current->localCount - 1].depth > current->scopeDepth) {
-        if (current->locals[current->localCount - 1].isCaptured) {
-            emitByte(OP_CLOSE_UPVALUE);
+    while (compiler->localCount > 0 && compiler->locals[compiler->localCount - 1].depth > compiler->scopeDepth) {
+        if (compiler->locals[compiler->localCount - 1].isCaptured) {
+            emitByte(compiler, OP_CLOSE_UPVALUE);
         } else {
-            emitByte(OP_POP);
+            emitByte(compiler, OP_POP);
         }
-        current->localCount--;
+
+        compiler->localCount--;
     }
 }
 
-static void grouping(bool canAssign) {
-    expression();
-    eat(TK_RPAREN, "Expect ')' after expression.");
+static void grouping(Compiler *compiler, bool canAssign) {
+    expression(compiler);
+    eat(compiler->parser, TK_RPAREN, "Expect ')' after expression.");
 }
 
-static void number(bool canAssign) {
-    double val = strtod(parser.previous.start, NULL);
-    emitConstant(NUMBER_VAL(val));
+static void number(Compiler *compiler, bool canAssign) {
+    double val = strtod(compiler->parser->previous.start, NULL);
+    emitConstant(compiler, NUMBER_VAL(val));
 }
 
-static void and_(bool canAssign) {
-    int endJump = emitJump(OP_JUMP_IF_FALSE);
+static void and_(Compiler *compiler, bool canAssign) {
+    int endJump = emitJump(compiler, OP_JUMP_IF_FALSE);
 
-    emitByte(OP_POP);
-    parsePrecedence(PREC_AND);
+    emitByte(compiler, OP_POP);
+    parsePrecedence(compiler, PREC_AND);
 
-    patchJump(endJump);
+    patchJump(compiler, endJump);
 }
 
-static void or_(bool canAssign) {
+static void or_(Compiler *compiler, bool canAssign) {
     // TODO: Jump if true.
-    int elseJump = emitJump(OP_JUMP_IF_FALSE);
-    int endJump = emitJump(OP_JUMP);
+    int elseJump = emitJump(compiler, OP_JUMP_IF_FALSE);
+    int endJump = emitJump(compiler, OP_JUMP);
 
-    patchJump(elseJump);
-    emitByte(OP_POP);
+    patchJump(compiler, elseJump);
+    emitByte(compiler, OP_POP);
 
-    parsePrecedence(PREC_OR);
-    patchJump(endJump);
+    parsePrecedence(compiler, PREC_OR);
+    patchJump(compiler, endJump);
 }
 
-static void orr(bool canAssgin) {
+static void orr(Compiler *compiler, bool canAssgin) {
     // This means it is being used like x = val || otherVal
-    IlexTokenType operatorType = parser.previous.type;
+    IlexTokenType operatorType = compiler->parser->previous.type;
     ParseRule *rule = getRule(operatorType);
-    parsePrecedence((Precedence)(rule->precedence + 1));
+    parsePrecedence(compiler, (Precedence)(rule->precedence + 1));
     
-    emitByte(OP_OR);
+    emitByte(compiler, OP_OR);
 }
 
 int parseEscapeSequences(char *str, int len) {
@@ -507,104 +469,105 @@ int parseEscapeSequences(char *str, int len) {
     return len;
 }
 
-static Value parseString() {
-    int strLen = parser.previous.len - 2;
-    char *str = ALLOCATE(char, strLen + 1);
+static Value parseString(Compiler *compiler) {
+    Parser *parser = compiler->parser;
+    int strLen = parser->previous.len - 2;
+    char *str = ALLOCATE(parser->vm, char, strLen + 1);
     
-    memcpy(str, parser.previous.start + 1, strLen);
+    memcpy(str, parser->previous.start + 1, strLen);
     int len = parseEscapeSequences(str, strLen);
     
     if (len != strLen) {
-        str = SHRINK_ARRAY(str, char, strLen + 1, len + 1);
+        str = SHRINK_ARRAY(parser->vm, str, char, strLen + 1, len + 1);
     }
     str[len] = '\0';
     
-    return OBJ_VAL(takeString(str, len));
+    return OBJ_VAL(takeString(parser->vm, str, len));
 }
 
-static void string(bool canAssign) {
-    emitConstant(parseString());
+static void string(Compiler *compiler, bool canAssign) {
+    emitConstant(compiler, parseString(compiler));
 }
 
-static void checkIfConst(uint8_t setOp, int arg) {
+static void checkIfConst(Compiler *compiler, uint8_t setOp, int arg) {
     if (setOp == OP_SET_LOCAL) {
-        if (current->locals[arg].isConst) {
+        if (compiler->locals[arg].isConst) {
             // TODO(Skyler): Find a better way to do this.
-            char *name = (char*)malloc(current->locals[arg].name.len + 1);
-            memcpy(name, current->locals[arg].name.start, current->locals[arg].name.len);
-            error("Cannot assign to const variable '%s'.", name);
+            char *name = (char*)malloc(compiler->locals[arg].name.len + 1);
+            memcpy(name, compiler->locals[arg].name.start, compiler->locals[arg].name.len);
+            error(compiler->parser, "Cannot assign to const variable '%s'.", name);
             free(name);
         }
     } else if (setOp == OP_SET_GLOBAL) {
         Value _;
-        ObjString *name = AS_STRING(currentChunk()->constants.values[arg]);
-        if (tableGet(&vm.consts, name, &_)) {
-            error("Cannot assign to const variable '%s'.", name->str);
+        ObjString *name = AS_STRING(currentChunk(compiler)->constants.values[arg]);
+        if (tableGet(&compiler->parser->vm->consts, name, &_)) {
+            error(compiler->parser, "Cannot assign to const variable '%s'.", name->str);
         }
     }
 }
 
-static void namedVariable(Token name, bool canAssign) {
+static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
     uint8_t getOp, setOp;
-    int arg = resolveLocal(current, &name);
+    int arg = resolveLocal(compiler, &name);
 
     if (arg != -1) {
         getOp = OP_GET_LOCAL;
         setOp = OP_SET_LOCAL;
-    } else if ((arg = resolveUpvalue(current, &name)) != -1) {
+    } else if ((arg = resolveUpvalue(compiler, &name)) != -1) {
         getOp = OP_GET_UPVALUE;
         setOp = OP_SET_UPVALUE;
     } else {
-        arg = identifierConstant(&name);
+        arg = identifierConstant(compiler, &name);
         getOp = OP_GET_GLOBAL;
         setOp = OP_SET_GLOBAL;
     }
 
 #define EMIT_OP_EQ(token) do { \
-                              checkIfConst(setOp, arg); \
-                              namedVariable(name, false); \
-                              expression(); \
-                              emitByte(token); \
-                              emitBytes(setOp, (uint8_t)arg); \
+                              checkIfConst(compiler, setOp, arg); \
+                              namedVariable(compiler, name, false); \
+                              expression(compiler); \
+                              emitByte(compiler, token); \
+                              emitBytes(compiler, setOp, (uint8_t)arg); \
                           } while (false) \
     
-    if (canAssign && match(TK_ASSIGN)) {
-        checkIfConst(setOp, arg);
-        expression();
-        emitBytes(setOp, (uint8_t)arg);
-    } else if (canAssign && match(TK_PLUSEQ)) {
+    if (canAssign && match(compiler, TK_ASSIGN)) {
+        checkIfConst(compiler, setOp, arg);
+        expression(compiler);
+        emitBytes(compiler, setOp, (uint8_t)arg);
+    } else if (canAssign && match(compiler, TK_PLUSEQ)) {
         EMIT_OP_EQ(OP_ADD);
-    } else if (canAssign && match(TK_MINUSEQ)) {
+    } else if (canAssign && match(compiler, TK_MINUSEQ)) {
         EMIT_OP_EQ(OP_SUB);
-    } else if (canAssign && match(TK_MULEQ)) {
+    } else if (canAssign && match(compiler, TK_MULEQ)) {
         EMIT_OP_EQ(OP_MUL);
-    } else if (canAssign && match(TK_DIVEQ)) {
+    } else if (canAssign && match(compiler, TK_DIVEQ)) {
         EMIT_OP_EQ(OP_DIV);
-    } else if (canAssign && match(TK_POWEQ)) {
+    } else if (canAssign && match(compiler, TK_POWEQ)) {
         EMIT_OP_EQ(OP_POW);
-    } else if (canAssign && match(TK_MODEQ)) {
+    } else if (canAssign && match(compiler, TK_MODEQ)) {
         EMIT_OP_EQ(OP_MOD);
-    } else if (canAssign && match(TK_NULL_COALESCE_EQ)) {
+    } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
         EMIT_OP_EQ(OP_NULL_COALESCE);
-    } else if (canAssign && match(TK_INC)) {
-        checkIfConst(setOp, arg);
-        namedVariable(name, false);
-        emitByte(OP_INC);
-        emitBytes(setOp, (uint8_t)arg);
-    } else if (canAssign && match(TK_DEC)) {
-        checkIfConst(setOp, arg);
-        namedVariable(name, false);
-        emitByte(OP_DEC);
-        emitBytes(setOp, (uint8_t)arg);
+    } else if (canAssign && match(compiler, TK_INC)) {
+        checkIfConst(compiler, setOp, arg);
+        namedVariable(compiler, name, false);
+        emitByte(compiler, OP_INC);
+        emitBytes(compiler, setOp, (uint8_t)arg);
+    } else if (canAssign && match(compiler, TK_DEC)) {
+        checkIfConst(compiler, setOp, arg);
+        namedVariable(compiler, name, false);
+        emitByte(compiler, OP_DEC);
+        emitBytes(compiler, setOp, (uint8_t)arg);
     } else {
-        emitBytes(getOp, (uint8_t)arg);
+        emitBytes(compiler, getOp, (uint8_t)arg);
     }
 
 #undef EMIT_OP_EQ
 }
 
-static void variable(bool canAssign) {
-    namedVariable(parser.previous, canAssign);
+static void variable(Compiler *compiler, bool canAssign) {
+    namedVariable(compiler, compiler->parser->previous, canAssign);
 }
 
 static Token syntheticToken(const char *str) {
@@ -615,157 +578,157 @@ static Token syntheticToken(const char *str) {
     return token;
 }
 
-static void super_(bool canAssign) {
-    if (currentClass == NULL) {
-        error("Can't use 'super' outside of a class.");
-    } else if (!currentClass->hasSuperclass) {
-        error("Can't use 'super' in a class woth no superclass.");
+static void super_(Compiler *compiler, bool canAssign) {
+    if (compiler->class == NULL) {
+        error(compiler->parser, "Can't use 'super' outside of a class.");
+    } else if (!compiler->class->hasSuperclass) {
+        error(compiler->parser, "Can't use 'super' in a class woth no superclass.");
     }
 
-    eat(TK_DOT, "Expect '.' after 'super'.");
-    eat(TK_IDENT, "Expect superclass method name.");
-    uint8_t name = identifierConstant(&parser.previous);
+    eat(compiler->parser, TK_DOT, "Expect '.' after 'super'.");
+    eat(compiler->parser, TK_IDENT, "Expect superclass method name.");
+    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
 
-    namedVariable(syntheticToken("this"), false);
-    if (match(TK_LPAREN)) {
-        uint8_t argc = argumentList();
-        namedVariable(syntheticToken("super"), false);
-        emitBytes(OP_SUPER_INVOKE, name);
-        emitByte(argc);
+    namedVariable(compiler, syntheticToken("this"), false);
+    if (match(compiler, TK_LPAREN)) {
+        uint8_t argc = argumentList(compiler);
+        namedVariable(compiler, syntheticToken("super"), false);
+        emitBytes(compiler, OP_SUPER_INVOKE, name);
+        emitByte(compiler, argc);
     } else {
-        namedVariable(syntheticToken("super"), false);
-        emitBytes(OP_GET_SUPER, name);
+        namedVariable(compiler, syntheticToken("super"), false);
+        emitBytes(compiler, OP_GET_SUPER, name);
     }
 }
 
-static void this_(bool canAssign) {
-    if (currentClass == NULL) {
-        error("Can't use 'this' outside of a class.");
+static void this_(Compiler *compiler, bool canAssign) {
+    if (compiler->class == NULL) {
+        error(compiler->parser, "Can't use 'this' outside of a class.");
         return;
     }
 
-    variable(false);
+    variable(compiler, false);
 }
 
-static void binary(bool canAssign) {
-    IlexTokenType operatorType = parser.previous.type;
+static void binary(Compiler *compiler, bool canAssign) {
+    IlexTokenType operatorType = compiler->parser->previous.type;
     ParseRule *rule = getRule(operatorType);
-    parsePrecedence((Precedence)(rule->precedence + 1));
+    parsePrecedence(compiler, (Precedence)(rule->precedence + 1));
 
     switch (operatorType) {
-        case TK_NOTEQ:         emitByte(OP_NOTEQ); break;
-        case TK_EQ:            emitByte(OP_EQ); break;
-        case TK_GR:            emitByte(OP_GR); break;
-        case TK_GREQ:          emitByte(OP_GREQ); break;
-        case TK_LT:            emitByte(OP_LT); break;
-        case TK_LTEQ:          emitByte(OP_LTEQ); break;
-        case TK_PLUS:          emitByte(OP_ADD); break;
-        case TK_MINUS:         emitByte(OP_SUB); break;
-        case TK_MUL:           emitByte(OP_MUL); break;
-        case TK_DIV:           emitByte(OP_DIV); break;
-        case TK_POW:           emitByte(OP_POW); break;
-        case TK_MOD:           emitByte(OP_MOD); break;
-        case TK_NULL_COALESCE: emitByte(OP_NULL_COALESCE); break;
+        case TK_NOTEQ:         emitByte(compiler, OP_NOTEQ); break;
+        case TK_EQ:            emitByte(compiler, OP_EQ); break;
+        case TK_GR:            emitByte(compiler, OP_GR); break;
+        case TK_GREQ:          emitByte(compiler, OP_GREQ); break;
+        case TK_LT:            emitByte(compiler, OP_LT); break;
+        case TK_LTEQ:          emitByte(compiler, OP_LTEQ); break;
+        case TK_PLUS:          emitByte(compiler, OP_ADD); break;
+        case TK_MINUS:         emitByte(compiler, OP_SUB); break;
+        case TK_MUL:           emitByte(compiler, OP_MUL); break;
+        case TK_DIV:           emitByte(compiler, OP_DIV); break;
+        case TK_POW:           emitByte(compiler, OP_POW); break;
+        case TK_MOD:           emitByte(compiler, OP_MOD); break;
+        case TK_NULL_COALESCE: emitByte(compiler, OP_NULL_COALESCE); break;
         default: return; // Unreachable.
     }
 }
 
-static void ternary(bool canAssign) {
-    int elseJump = emitJump(OP_JUMP_IF_FALSE);
+static void ternary(Compiler *compiler, bool canAssign) {
+    int elseJump = emitJump(compiler, OP_JUMP_IF_FALSE);
     
-    emitByte(OP_POP);
-    expression();
+    emitByte(compiler, OP_POP);
+    expression(compiler);
     
-    int endJump = emitJump(OP_JUMP);
+    int endJump = emitJump(compiler, OP_JUMP);
     
-    patchJump(elseJump);
-    emitByte(OP_POP); // Condition.
+    patchJump(compiler, elseJump);
+    emitByte(compiler, OP_POP); // Condition.
     
-    eat(TK_COLON, "Expect ':' after expression.");
-    expression();
+    eat(compiler->parser, TK_COLON, "Expect ':' after expression.");
+    expression(compiler);
     
-    patchJump(endJump);
+    patchJump(compiler, endJump);
 }
 
-static void call(bool canAssign) {
-    uint8_t argCount = argumentList();
-    emitBytes(OP_CALL, argCount);
+static void call(Compiler *compiler, bool canAssign) {
+    uint8_t argCount = argumentList(compiler);
+    emitBytes(compiler, OP_CALL, argCount);
 }
 
-static void dot(bool canAssign) {
-    eat(TK_IDENT, "Expect property name after '.'.");
-    uint8_t name = identifierConstant(&parser.previous);
+static void dot(Compiler *compiler, bool canAssign) {
+    eat(compiler->parser, TK_IDENT, "Expect property name after '.'.");
+    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
 
 #define EMIT_OP_EQ(token) do { \
-                              emitBytes(OP_GET_PROPERTY_NO_POP, name); \
-                              expression(); \
-                              emitByte(token); \
-                              emitBytes(OP_SET_PROPERTY, name); \
+                              emitBytes(compiler, OP_GET_PROPERTY_NO_POP, name); \
+                              expression(compiler); \
+                              emitByte(compiler, token); \
+                              emitBytes(compiler, OP_SET_PROPERTY, name); \
                           } while (false) \
     
-    if (canAssign && match(TK_ASSIGN)) {
-        expression();
-        emitBytes(OP_SET_PROPERTY, name);
-    } else if (canAssign && match(TK_PLUSEQ)) {
+    if (canAssign && match(compiler, TK_ASSIGN)) {
+        expression(compiler);
+        emitBytes(compiler, OP_SET_PROPERTY, name);
+    } else if (canAssign && match(compiler, TK_PLUSEQ)) {
         EMIT_OP_EQ(OP_ADD);
-    }  else if (canAssign && match(TK_MINUSEQ)) {
+    }  else if (canAssign && match(compiler, TK_MINUSEQ)) {
         EMIT_OP_EQ(OP_SUB);
-    }  else if (canAssign && match(TK_MULEQ)) {
+    }  else if (canAssign && match(compiler, TK_MULEQ)) {
         EMIT_OP_EQ(OP_MUL);
-    } else if (canAssign && match(TK_DIVEQ)) {
+    } else if (canAssign && match(compiler, TK_DIVEQ)) {
         EMIT_OP_EQ(OP_DIV);
-    } else if (canAssign && match(TK_POWEQ)) {
+    } else if (canAssign && match(compiler, TK_POWEQ)) {
         EMIT_OP_EQ(OP_POW);
-    } else if (canAssign && match(TK_MODEQ)) {
+    } else if (canAssign && match(compiler, TK_MODEQ)) {
         EMIT_OP_EQ(OP_MOD);
-    } else if (canAssign && match(TK_NULL_COALESCE_EQ)) {
+    } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
         EMIT_OP_EQ(OP_NULL_COALESCE);
-    } else if (canAssign && match(TK_INC)) {
-        emitBytes(OP_GET_PROPERTY_NO_POP, name);
-        emitByte(OP_INC);
-        emitBytes(OP_SET_PROPERTY, name);
-    } else if (canAssign && match(TK_DEC)) {
-        emitBytes(OP_GET_PROPERTY_NO_POP, name);
-        emitByte(OP_DEC);
-        emitBytes(OP_SET_PROPERTY, name);
-    } else if (match(TK_LPAREN)) {
-            uint8_t argCount = argumentList();
-            emitBytes(OP_INVOKE, name);
-            emitByte(argCount);
+    } else if (canAssign && match(compiler, TK_INC)) {
+        emitBytes(compiler, OP_GET_PROPERTY_NO_POP, name);
+        emitByte(compiler, OP_INC);
+        emitBytes(compiler, OP_SET_PROPERTY, name);
+    } else if (canAssign && match(compiler, TK_DEC)) {
+        emitBytes(compiler, OP_GET_PROPERTY_NO_POP, name);
+        emitByte(compiler, OP_DEC);
+        emitBytes(compiler, OP_SET_PROPERTY, name);
+    } else if (match(compiler, TK_LPAREN)) {
+            uint8_t argCount = argumentList(compiler);
+            emitBytes(compiler, OP_INVOKE, name);
+            emitByte(compiler, argCount);
     } else {
-        emitBytes(OP_GET_PROPERTY, name);
+        emitBytes(compiler, OP_GET_PROPERTY, name);
     }
 
 #undef EMIT_OP_EQ
 }
 
-static void literal(bool canAssign) {
-    switch (parser.previous.type) {
-        case TK_FALSE: emitByte(OP_FALSE); break;
-        case TK_NULL:  emitByte(OP_NULL); break;
-        case TK_TRUE:  emitByte(OP_TRUE); break;
+static void literal(Compiler *compiler, bool canAssign) {
+    switch (compiler->parser->previous.type) {
+        case TK_FALSE: emitByte(compiler, OP_FALSE); break;
+        case TK_NULL:  emitByte(compiler, OP_NULL); break;
+        case TK_TRUE:  emitByte(compiler, OP_TRUE); break;
         default: return; // Unreachable.
     }
 }
 
-static void unary(bool canAssign) {
-    IlexTokenType op = parser.previous.type;
+static void unary(Compiler *compiler, bool canAssign) {
+    IlexTokenType op = compiler->parser->previous.type;
 
-    parsePrecedence(PREC_UNARY);
+    parsePrecedence(compiler, PREC_UNARY);
 
     switch (op) {
-        case TK_NOT: emitByte(OP_NOT); break;
-        case TK_MINUS: emitByte(OP_NEG); break;
+        case TK_NOT: emitByte(compiler, OP_NOT); break;
+        case TK_MINUS: emitByte(compiler, OP_NEG); break;
         default: return;
     }
 }
 
-static void inc(bool canAssign) {
-    emitByte(OP_INC);
+static void inc(Compiler *compiler, bool canAssign) {
+    emitByte(compiler, OP_INC);
 }
 
-static void dec(bool canAssign) {
-    emitByte(OP_DEC);
+static void dec(Compiler *compiler, bool canAssign) {
+    emitByte(compiler, OP_DEC);
 }
 
 ParseRule rules[] = {
@@ -826,49 +789,50 @@ ParseRule rules[] = {
         [TK_EOF]              = {NULL,     NULL,    PREC_NONE},
 };
 
-static void parsePrecedence(Precedence precedence) {
-    advance();
+static void parsePrecedence(Compiler *compiler, Precedence precedence) {
+    Parser *parser = compiler->parser;
+    advance(parser);
 
-    ParseFn prefixRule = getRule(parser.previous.type)->prefix;
+    ParseFn prefixRule = getRule(parser->previous.type)->prefix;
     
     if (prefixRule == NULL) {
-        error("Expect expression.");
+        error(parser, "Expect expression.");
         return;
     }
 
     bool canAssign = precedence <= PREC_ASSIGN;
-    prefixRule(canAssign);
+    prefixRule(compiler, canAssign);
 
-    while (precedence <= getRule(parser.current.type)->precedence) {
+    while (precedence <= getRule(parser->current.type)->precedence) {
         bool setInfixToOrr = false;
-        if (parser.current.type == TK_OR && precedence == PREC_ASSIGN) {
+        if (parser->current.type == TK_OR && precedence == PREC_ASSIGN) {
             setInfixToOrr = true;
         }
         
-        advance();
+        advance(parser);
         
-        ParseFn infixRule = getRule(parser.previous.type)->infix;
+        ParseFn infixRule = getRule(parser->previous.type)->infix;
         if (setInfixToOrr) {
             infixRule = orr;
         }
         
-        infixRule(canAssign);
+        infixRule(compiler, canAssign);
     }
 
-    if (canAssign && match(TK_ASSIGN)) {
-        error("Invalid assignment target.");
+    if (canAssign && match(compiler, TK_ASSIGN)) {
+        error(parser, "Invalid assignment target.");
     }
 }
 
-static void synchronize() {
-    parser.panicMode = false;
+static void synchronize(Parser *parser) {
+    parser->panicMode = false;
 
-    while (parser.current.type != TK_EOF) {
-        if (parser.previous.type == TK_SEMICOLON) {
+    while (parser->current.type != TK_EOF) {
+        if (parser->previous.type == TK_SEMICOLON) {
             return;
         }
 
-        switch (parser.current.type) {
+        switch (parser->current.type) {
             case TK_CLASS:
             case TK_FN:
             case TK_VAR:
@@ -884,7 +848,7 @@ static void synchronize() {
                 ; // Do nothing.
         }
 
-        advance();
+        advance(parser);
     }
 }
 
@@ -892,362 +856,364 @@ static ParseRule* getRule(IlexTokenType type) {
     return &rules[type];
 }
 
-static void expression() {
-    parsePrecedence(PREC_ASSIGN);
+static void expression(Compiler *compiler) {
+    parsePrecedence(compiler, PREC_ASSIGN);
 }
 
-static void block() {
-    while (!check(TK_RBRACE) && !check(TK_EOF)) {
-        declaration();
+static void block(Compiler *compiler) {
+    while (!check(compiler, TK_RBRACE) && !check(compiler, TK_EOF)) {
+        declaration(compiler);
     }
 
-    eat(TK_RBRACE, "Expect '}' after block.");
+    eat(compiler->parser, TK_RBRACE, "Expect '}' after block.");
 }
 
-static void function(FunctionType type) {
-    Compiler compiler;
-    initCompiler(&compiler, type);
-    beginScope();
+static void function(Compiler *compiler, FunctionType type) {
+    Compiler functionCompiler;
+    initCompiler(compiler->parser, &functionCompiler, compiler, type);
+    beginScope(&functionCompiler);
 
-    eat(TK_LPAREN, "Expect '(' after function name.");
-    if (!check(TK_RPAREN)) {
+    eat(functionCompiler.parser, TK_LPAREN, "Expect '(' after function name.");
+    if (!check(&functionCompiler, TK_RPAREN)) {
         do {
-            current->function->arity++;
-            if (current->function->arity > 255) {
-                errorAtCurrent("Can't have more than 255 parameters.");
+            functionCompiler.function->arity++;
+            if (functionCompiler.function->arity > 255) {
+                errorAtCurrent(functionCompiler.parser, "Can't have more than 255 parameters.");
             }
 
-            uint8_t constant = parseVariable("Expect parameter name.");
-            defineVariable(constant, false); // TODO: Should this be true?
-        } while (match(TK_COMMA));
+            uint8_t constant = parseVariable(&functionCompiler, "Expect parameter name.");
+            defineVariable(&functionCompiler, constant, false); // TODO: Should this be true?
+        } while (match(&functionCompiler, TK_COMMA));
     }
-    eat(TK_RPAREN, "Expect ')' after parameters.");
-    eat(TK_LBRACE, "Expect '{' before function body.");
-    block();
+    eat(functionCompiler.parser, TK_RPAREN, "Expect ')' after parameters.");
+    eat(functionCompiler.parser, TK_LBRACE, "Expect '{' before function body.");
+    block(&functionCompiler);
 
-    ObjFunction *function = endCompiler();
-    emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+    ObjFunction *function = endCompiler(&functionCompiler);
+    emitBytes(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
 
     for (int i = 0; i < function->upvalueCount; ++i) {
-        emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
-        emitByte(compiler.upvalues[i].index);
+        emitByte(compiler, functionCompiler.upvalues[i].isLocal ? 1 : 0);
+        emitByte(compiler, functionCompiler.upvalues[i].index);
     }
 }
 
-static void method() {
-    eat(TK_IDENT, "Expect method name.");
-    uint8_t constant = identifierConstant(&parser.previous);
+static void method(Compiler *compiler) {
+    eat(compiler->parser, TK_IDENT, "Expect method name.");
+    uint8_t constant = identifierConstant(compiler, &compiler->parser->previous);
 
     FunctionType type = TYPE_METHOD;
-    if (parser.previous.len == 4 &&
-        memcmp(parser.previous.start, "init", 4) == 0) {
+    if (compiler->parser->previous.len == 4 &&
+        memcmp(compiler->parser->previous.start, "init", 4) == 0) {
         type = TYPE_INITIALIZER;
     }
-    function(type);
-    emitBytes(OP_METHOD, constant);
+    function(compiler, type);
+    emitBytes(compiler, OP_METHOD, constant);
 }
 
-static void classDeclaration() {
-    eat(TK_IDENT, "Expect class name.");
-    Token className = parser.previous;
-    uint8_t nameConstant = identifierConstant(&parser.previous);
-    declareVariable();
+static void classDeclaration(Compiler *compiler) {
+    eat(compiler->parser, TK_IDENT, "Expect class name.");
+    Token className = compiler->parser->previous;
+    uint8_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
+    declareVariable(compiler);
 
-    emitBytes(OP_CLASS, nameConstant);
-    defineVariable(nameConstant, false);
+    emitBytes(compiler, OP_CLASS, nameConstant);
+    defineVariable(compiler, nameConstant, false);
 
     ClassCompiler classCompiler;
-    classCompiler.enclosing = currentClass;
+    classCompiler.enclosing = compiler->class;
     classCompiler.hasSuperclass = false;
-    currentClass = &classCompiler;
+    compiler->class = &classCompiler;
 
-    if (match(TK_LT)) {
-        eat(TK_IDENT, "Expect superclass name.");
-        variable(false);
+    if (match(compiler, TK_LT)) {
+        eat(compiler->parser, TK_IDENT, "Expect superclass name.");
+        variable(compiler, false);
 
-        if (identifiersEqual(&className, &parser.previous)) {
-            error("A class can't inherit from itself.");
+        if (identifiersEqual(&className, &compiler->parser->previous)) {
+            error(compiler->parser, "A class can't inherit from itself.");
         }
 
-        beginScope();
-        addLocal(syntheticToken("super"));
-        defineVariable(0, false);
+        beginScope(compiler);
+        addLocal(compiler, syntheticToken("super"));
+        defineVariable(compiler, 0, false);
 
-        namedVariable(className, false);
-        emitByte(OP_INHERIT);
+        namedVariable(compiler, className, false);
+        emitByte(compiler, OP_INHERIT);
         classCompiler.hasSuperclass = true;
     }
 
-    namedVariable(className, false);
-    eat(TK_LBRACE, "Expect '{' before class body.");
-    while (!check(TK_RBRACE) && !check(TK_EOF)) {
-        method();
+    namedVariable(compiler, className, false);
+    eat(compiler->parser, TK_LBRACE, "Expect '{' before class body.");
+    while (!check(compiler, TK_RBRACE) && !check(compiler, TK_EOF)) {
+        method(compiler);
     }
-    eat(TK_RBRACE, "Expect '}' after class body.");
-    emitByte(OP_POP);
+    eat(compiler->parser, TK_RBRACE, "Expect '}' after class body.");
+    emitByte(compiler, OP_POP);
 
     if (classCompiler.hasSuperclass) {
-        endScope();
+        endScope(compiler);
     }
 
-    currentClass = currentClass->enclosing;
+    compiler->class = compiler->class->enclosing;
 }
 
-static void fnDeclaration() {
-    uint8_t global = parseVariable("Expect function name.");
+static void fnDeclaration(Compiler *compiler) {
+    uint8_t global = parseVariable(compiler, "Expect function name.");
     //markInitialized();
-    function(TYPE_FUNCTION);
-    defineVariable(global, false);
+    function(compiler, TYPE_FUNCTION);
+    defineVariable(compiler, global, false);
 }
 
-static void varDeclaration(bool isConst) {
+static void varDeclaration(Compiler *compiler, bool isConst) {
     do {
-        uint8_t global = parseVariable("Expect variable name.");
+        uint8_t global = parseVariable(compiler, "Expect variable name.");
 
-        if (match(TK_ASSIGN) || isConst) {
-            expression();
+        if (match(compiler, TK_ASSIGN) || isConst) {
+            expression(compiler);
         } else {
-            emitByte(OP_NULL);
+            emitByte(compiler, OP_NULL);
         }
 
-        defineVariable(global, isConst);
-    } while (match(TK_COMMA));
+        defineVariable(compiler, global, isConst);
+    } while (match(compiler, TK_COMMA));
 
-    match(TK_SEMICOLON);
+    match(compiler, TK_SEMICOLON);
 }
 
-static void varDeclaration2() {
-    eat(TK_IDENT, "Expect variable name.");
-    declareVariable();
+static void varDeclaration2(Compiler *compiler) {
+    eat(compiler->parser, TK_IDENT, "Expect variable name.");
+    declareVariable(compiler);
     uint8_t global;
 
-    if (current->scopeDepth > 0) {
+    if (compiler->scopeDepth > 0) {
         global = 0;
     } else {
-        global = identifierConstant(&parser.previous);
+        global = identifierConstant(compiler, &compiler->parser->previous);
     }
 
-    eat(TK_VAR_DECL, "Expected := after variable name.");
-    expression();
-    defineVariable(global, false);
+    eat(compiler->parser, TK_VAR_DECL, "Expected := after variable name.");
+    expression(compiler);
+    defineVariable(compiler, global, false);
 
-    match(TK_SEMICOLON);
+    match(compiler, TK_SEMICOLON);
 }
 
-static void expressionStatement() {
-    expression();
-    match(TK_SEMICOLON);
-    emitByte(OP_POP);
+static void expressionStatement(Compiler *compiler) {
+    expression(compiler);
+    match(compiler, TK_SEMICOLON);
+    emitByte(compiler, OP_POP);
 }
 
-static void forStatement() {
-    beginScope();
-    eat(TK_LPAREN, "Expect '(' after 'for'.");
+static void forStatement(Compiler *compiler) {
+    beginScope(compiler);
+    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'for'.");
 
     bool initializer = true;
-    if (match(TK_SEMICOLON)) {
+    if (match(compiler, TK_SEMICOLON)) {
         initializer = false;
-    } else if (match(TK_VAR)) {
-        varDeclaration(false);
-    } else if (check(TK_IDENT) && lookahead(TK_VAR_DECL)) {
-        varDeclaration2();
+    } else if (match(compiler, TK_VAR)) {
+        varDeclaration(compiler, false);
+    } else if (check(compiler, TK_IDENT) && lookahead(compiler, TK_VAR_DECL)) {
+        varDeclaration2(compiler);
     } else {
-        expressionStatement();
+        expressionStatement(compiler);
     }
 
     if (initializer) {
-        if (parser.previous.type != TK_SEMICOLON) {
-            errorAtCurrent("Expect ';' after loop initializer.");
+        if (compiler->parser->previous.type != TK_SEMICOLON) {
+            errorAtCurrent(compiler->parser, "Expect ';' after loop initializer.");
         }
     }
 
-    int loopStart = currentChunk()->count;
+    int loopStart = currentChunk(compiler)->count;
     int exitJump = -1;
-    if (!match(TK_SEMICOLON)) {
-        expression();
-        eat(TK_SEMICOLON, "Expect ';' after loop condition.");
+    if (!match(compiler, TK_SEMICOLON)) {
+        expression(compiler);
+        eat(compiler->parser, TK_SEMICOLON, "Expect ';' after loop condition.");
 
         // Jump out of the loop if the condition is false.
-        exitJump = emitJump(OP_JUMP_IF_FALSE);
-        emitByte(OP_POP); // Condition.
+        exitJump = emitJump(compiler, OP_JUMP_IF_FALSE);
+        emitByte(compiler, OP_POP); // Condition.
     }
 
-    if (!match(TK_RPAREN)) {
-        int bodyJump = emitJump(OP_JUMP);
-        int incrementStart = currentChunk()->count;
-        expression();
-        emitByte(OP_POP);
-        eat(TK_RPAREN, "Expect ')' after for clauses.");
+    if (!match(compiler, TK_RPAREN)) {
+        int bodyJump = emitJump(compiler, OP_JUMP);
+        int incrementStart = currentChunk(compiler)->count;
+        expression(compiler);
+        emitByte(compiler, OP_POP);
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after for clauses.");
 
-        emitLoop(loopStart);
+        emitLoop(compiler, loopStart);
         loopStart = incrementStart;
-        patchJump(bodyJump);
+        patchJump(compiler, bodyJump);
     }
 
-    eat(TK_LBRACE, "Expect '{' after ')'.");
-    beginScope();
-    block();
-    endScope();
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
+    beginScope(compiler);
+    block(compiler);
+    endScope(compiler);
 
-    emitLoop(loopStart);
+    emitLoop(compiler, loopStart);
 
     if (exitJump != -1) {
-        patchJump(exitJump);
-        emitByte(OP_POP); // Condition.
+        patchJump(compiler, exitJump);
+        emitByte(compiler, OP_POP); // Condition.
     }
 
-    endScope();
+    endScope(compiler);
 }
 
-static void assertStatement() {
-    eat(TK_LPAREN, "Expect '(' after 'assert'.");
+static void assertStatement(Compiler *compiler) {
+    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'assert'.");
 
-    int constant = addConstant(currentChunk(), OBJ_VAL(copyString("", 0)));
+    int constant = addConstant(compiler->parser->vm, currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, "", 0)));
 
-    expression();
+    expression(compiler);
 
-    if (match(TK_COMMA)) {
-        eat(TK_STRING, "Expect assert error string after ','.");
-        constant = addConstant(currentChunk(), OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.len - 2)));
+    if (match(compiler, TK_COMMA)) {
+        eat(compiler->parser, TK_STRING, "Expect assert error string after ','.");
+        constant = addConstant(compiler->parser->vm,  currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, compiler->parser->previous.start + 1, compiler->parser->previous.len - 2)));
     }
-    eat(TK_RPAREN, "Expect ')' after condition.");
-    match(TK_SEMICOLON);
+    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    match(compiler, TK_SEMICOLON);
 
-    emitBytes(OP_ASSERT, (uint8_t)constant);
+    emitBytes(compiler, OP_ASSERT, (uint8_t)constant);
 }
 
-static void ifStatement() {
-    eat(TK_LPAREN, "Expect '(' after 'if'.");
-    expression();
-    eat(TK_RPAREN, "Expect ')' after condition.");
+static void ifStatement(Compiler *compiler) {
+    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'if'.");
+    expression(compiler);
+    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
 
-    int thenJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP);
+    int thenJump = emitJump(compiler, OP_JUMP_IF_FALSE);
+    emitByte(compiler, OP_POP);
 
-    eat(TK_LBRACE, "Expect '{' after ')'.");
-    beginScope();
-    block();
-    endScope();
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
+    beginScope(compiler);
+    block(compiler);
+    endScope(compiler);
 
-    int elseJump = emitJump(OP_JUMP);
-    patchJump(thenJump);
-    emitByte(OP_POP);
+    int elseJump = emitJump(compiler, OP_JUMP);
+    patchJump(compiler, thenJump);
+    emitByte(compiler, OP_POP);
 
-    if (match(TK_ELIF)) {
-        ifStatement();
-    } else if (match(TK_ELSE)) {
-        if (match(TK_IF)) {
-            ifStatement();
+    if (match(compiler, TK_ELIF)) {
+        ifStatement(compiler);
+    } else if (match(compiler, TK_ELSE)) {
+        if (match(compiler, TK_IF)) {
+            ifStatement(compiler);
         } else {
-            eat(TK_LBRACE, "Expect '{' after 'else'.");
-            beginScope();
-            block();
-            endScope();
+            eat(compiler->parser, TK_LBRACE, "Expect '{' after 'else'.");
+            beginScope(compiler);
+            block(compiler);
+            endScope(compiler);
         }
     }
-    patchJump(elseJump);
+    patchJump(compiler, elseJump);
 }
 
-static void returnStatement() {
-    if (current->type == TYPE_SCRIPT) {
-        error("Can't return from top-level code.");
+static void returnStatement(Compiler *compiler) {
+    if (compiler->type == TYPE_SCRIPT) {
+        error(compiler->parser, "Can't return from top-level code.");
     }
 
-    if (match(TK_SEMICOLON)) {
-        emitReturn();
+    if (match(compiler, TK_SEMICOLON)) {
+        emitReturn(compiler);
     } else {
-        if (current->type == TYPE_INITIALIZER) {
-            error("Can't return a value from an initializer.");
+        if (compiler->type == TYPE_INITIALIZER) {
+            error(compiler->parser, "Can't return a value from an initializer.");
         }
 
-        expression();
-        match(TK_SEMICOLON);
-        emitByte(OP_RETURN);
+        expression(compiler);
+        match(compiler, TK_SEMICOLON);
+        emitByte(compiler, OP_RETURN);
     }
 }
 
-static void whileStatement() {
-    int loopStart = currentChunk()->count;
-    eat(TK_LPAREN, "Expect '(' after 'while'.");
-    expression();
-    eat(TK_RPAREN, "Expect ')' after condition.");
+static void whileStatement(Compiler *compiler) {
+    int loopStart = currentChunk(compiler)->count;
+    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'while'.");
+    expression(compiler);
+    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
 
-    int exitJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP);
+    int exitJump = emitJump(compiler, OP_JUMP_IF_FALSE);
+    emitByte(compiler, OP_POP);
 
-    eat(TK_LBRACE, "Expect '{' after ').");
-    beginScope();
-    block();
-    endScope();
-    emitLoop(loopStart);
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after ').");
+    beginScope(compiler);
+    block(compiler);
+    endScope(compiler);
+    emitLoop(compiler, loopStart);
 
-    patchJump(exitJump);
-    emitByte(OP_POP);
+    patchJump(compiler, exitJump);
+    emitByte(compiler, OP_POP);
 }
 
-static void declaration() {
-    if (match(TK_CLASS)) {
-        classDeclaration();
-    } else if (match(TK_FN)) {
-        fnDeclaration();
-    } else if (match(TK_VAR)) {
-        varDeclaration(false);
-    } else if (check(TK_IDENT) && lookahead(TK_VAR_DECL)) {
-        varDeclaration2();
-    } else if (match(TK_CONST)) {
-        varDeclaration(true);
+static void declaration(Compiler *compiler) {
+    if (match(compiler, TK_CLASS)) {
+        classDeclaration(compiler);
+    } else if (match(compiler, TK_FN)) {
+        fnDeclaration(compiler);
+    } else if (match(compiler, TK_VAR)) {
+        varDeclaration(compiler, false);
+    } else if (check(compiler, TK_IDENT) && lookahead(compiler, TK_VAR_DECL)) {
+        varDeclaration2(compiler);
+    } else if (match(compiler, TK_CONST)) {
+        varDeclaration(compiler, true);
     } else {
-        statement();
+        statement(compiler);
     }
 
-    if (parser.panicMode) {
-        synchronize();
+    if (compiler->parser->panicMode) {
+        synchronize(compiler->parser);
     }
 }
 
-static void statement() {
-    if (match(TK_FOR)) {
-        forStatement();
-    } else if (match(TK_IF)) {
-        ifStatement();
-    } else if (match(TK_RETURN)) {
-        returnStatement();
-    } else if (match(TK_WHILE)) {
-        whileStatement();
-    } else if (match(TK_ASSERT)) {
-        assertStatement();
-    } else if (match(TK_LBRACE)) {
-        beginScope();
-        block();
-        endScope();
+static void statement(Compiler *compiler) {
+    if (match(compiler, TK_FOR)) {
+        forStatement(compiler);
+    } else if (match(compiler, TK_IF)) {
+        ifStatement(compiler);
+    } else if (match(compiler, TK_RETURN)) {
+        returnStatement(compiler);
+    } else if (match(compiler, TK_WHILE)) {
+        whileStatement(compiler);
+    } else if (match(compiler, TK_ASSERT)) {
+        assertStatement(compiler);
+    } else if (match(compiler, TK_LBRACE)) {
+        beginScope(compiler);
+        block(compiler);
+        endScope(compiler);
     } else {
-        expressionStatement();
+        expressionStatement(compiler);
     }
 }
 
-ObjFunction *compile(const char *source) {
-    initLexer(source);
-    Compiler compiler;
-    firstAdvance();
-    initCompiler(&compiler, TYPE_SCRIPT);
-
+ObjFunction *compile(VM *vm, const char *source) {
+    Parser parser;
+    parser.vm = vm;
     parser.hadError = false;
     parser.panicMode = false;
 
-    advance();
-    while (!match(TK_EOF)) {
-        declaration();
+    initLexer(source);
+    Compiler compiler;
+    initCompiler(&parser, &compiler, NULL, TYPE_SCRIPT);
+    firstAdvance(&compiler);
+
+    advance(compiler.parser);
+    while (!match(&compiler, TK_EOF)) {
+        declaration(&compiler);
     }
 
-    ObjFunction *function = endCompiler();
+    ObjFunction *function = endCompiler(&compiler);
     return parser.hadError ? NULL : function;
 }
 
-void markCompilerRoots() {
-    Compiler *compiler = current;
+void markCompilerRoots(VM *vm) {
+    Compiler *compiler = vm->compiler;
 
     while (compiler != NULL) {
-        markObject((Obj*)compiler->function);
+        markObject(vm, (Obj*)compiler->function);
         compiler = compiler->enclosing;
     }
 }

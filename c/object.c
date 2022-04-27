@@ -12,14 +12,14 @@
 #include "value.h"
 #include "vm.h"
 
-#define ALLOCATE_OBJ(type, objectType) (type*)allocateObject(sizeof(type), objectType)
+#define ALLOCATE_OBJ(vm, type, objectType) (type*)allocateObject(vm, sizeof(type), objectType)
 
-static Obj* allocateObject(size_t size, ObjType type) {
-    Obj *object = (Obj*)reallocate(NULL, 0, size);
+static Obj* allocateObject(VM *vm, size_t size, ObjType type) {
+    Obj *object = (Obj*)reallocate(vm, NULL, 0, size);
     object->type = type;
     object->isMarked = false;
-    object->next = vm.objects;
-    vm.objects = object;
+    object->next = vm->objects;
+    vm->objects = object;
 
 #ifdef DEBUG_LOG_GC
     printf("%p allocate %zu for %d\n", (void*)object, size, type);
@@ -28,28 +28,28 @@ static Obj* allocateObject(size_t size, ObjType type) {
     return object;
 }
 
-ObjBoundMethod *newBoundMethod(Value receiver, ObjClosure *method) {
-    ObjBoundMethod *bound = ALLOCATE_OBJ(ObjBoundMethod, OBJ_BOUND_METHOD);
+ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method) {
+    ObjBoundMethod *bound = ALLOCATE_OBJ(vm, ObjBoundMethod, OBJ_BOUND_METHOD);
     bound->receiver = receiver;
     bound->method = method;
     return bound;
 }
 
-ObjClass *newClass(ObjString *name) {
-    ObjClass* objClass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
+ObjClass *newClass(VM *vm, ObjString *name) {
+    ObjClass* objClass = ALLOCATE_OBJ(vm, ObjClass, OBJ_CLASS);
     objClass->name = name;
     initTable(&objClass->methods);
 
     return objClass;
 }
 
-ObjClosure *newClosure(ObjFunction *function) {
-    ObjUpvalue **upvalues = ALLOCATE(ObjUpvalue*, function->upvalueCount);
+ObjClosure *newClosure(VM *vm, ObjFunction *function) {
+    ObjUpvalue **upvalues = ALLOCATE(vm, ObjUpvalue*, function->upvalueCount);
     for (int i = 0; i < function->upvalueCount; ++i) {
         upvalues[i] = NULL;
     }
 
-    ObjClosure *closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
+    ObjClosure *closure = ALLOCATE_OBJ(vm, ObjClosure, OBJ_CLOSURE);
     closure->function = function;
     closure->upvalues = upvalues;
     closure->upvalueCount = function->upvalueCount;
@@ -57,8 +57,8 @@ ObjClosure *newClosure(ObjFunction *function) {
     return closure;
 }
 
-ObjFunction *newFunction() {
-    ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
+ObjFunction *newFunction(VM *vm) {
+    ObjFunction* function = ALLOCATE_OBJ(vm, ObjFunction, OBJ_FUNCTION);
     function->arity = 0;
     function->upvalueCount = 0;
     function->name = NULL;
@@ -67,30 +67,30 @@ ObjFunction *newFunction() {
     return function;
 }
 
-ObjInstance *newInstance(ObjClass *objClass) {
-    ObjInstance *instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE);
+ObjInstance *newInstance(VM *vm, ObjClass *objClass) {
+    ObjInstance *instance = ALLOCATE_OBJ(vm, ObjInstance, OBJ_INSTANCE);
     instance->objClass = objClass;
     initTable(&instance->fields);
 
     return instance;
 }
 
-ObjNative *newNative(NativeFn function) {
-    ObjNative* native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+ObjNative *newNative(VM *vm, NativeFn function) {
+    ObjNative* native = ALLOCATE_OBJ(vm, ObjNative, OBJ_NATIVE);
     native->function = function;
 
     return native;
 }
 
-static ObjString *allocateString(char *str, int len, uint32_t hash) {
-    ObjString *string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
+static ObjString *allocateString(VM *vm, char *str, int len, uint32_t hash) {
+    ObjString *string = ALLOCATE_OBJ(vm, ObjString, OBJ_STRING);
     string->len = len;
     string->str = str;
     string->hash = hash;
 
-    push(OBJ_VAL(string));
-    tableSet(&vm.strings, string, NULL_VAL);
-    pop();
+    push(vm, OBJ_VAL(string));
+    tableSet(vm, &vm->strings, string, NULL_VAL);
+    pop(vm);
 
     return string;
 }
@@ -105,41 +105,41 @@ static uint32_t hashString(const char *key, int length) {
     return hash;
 }
 
-char *newCString(char *str) {
+char *newCString(VM *vm, char *str) {
     size_t len = strlen(str);
 
-    char* ret = ALLOCATE(char, len + 1);
+    char* ret = ALLOCATE(vm, char, len + 1);
     memcpy(ret, str, len);
     ret[len] = '\0';
 
     return ret;
 }
 
-ObjString *takeString(char *str, int len) {
+ObjString *takeString(VM *vm, char *str, int len) {
     uint32_t hash = hashString(str, len);
-    ObjString *interned = tableFindString(&vm.strings, str, len, hash);
+    ObjString *interned = tableFindString(&vm->strings, str, len, hash);
     if (interned != NULL) {
-        FREE_ARRAY(char, str, len + 1);
+        FREE_ARRAY(vm, char, str, len + 1);
         return interned;
     }
-    return allocateString(str, len, hash);
+    return allocateString(vm, str, len, hash);
 }
 
-ObjString *copyString(const char *str, int len) {
+ObjString *copyString(VM *vm, const char *str, int len) {
     uint32_t hash = hashString(str, len);
-    ObjString *interned = tableFindString(&vm.strings, str, len, hash);
+    ObjString *interned = tableFindString(&vm->strings, str, len, hash);
     if (interned != NULL) {
         return interned;
     }
-    char *heapStr = ALLOCATE(char, len + 1);
+    char *heapStr = ALLOCATE(vm, char, len + 1);
     memcpy(heapStr, str, len);
     heapStr[len] = '\0';
 
-    return allocateString(heapStr, len, hash);
+    return allocateString(vm, heapStr, len, hash);
 }
 
-ObjUpvalue *newUpvalue(Value *slot) {
-    ObjUpvalue *upvalue = ALLOCATE_OBJ(ObjUpvalue, OBJ_UPVALUE);
+ObjUpvalue *newUpvalue(VM *vm, Value *slot) {
+    ObjUpvalue *upvalue = ALLOCATE_OBJ(vm, ObjUpvalue, OBJ_UPVALUE);
     upvalue->closed = NULL_VAL;
     upvalue->location = slot;
     upvalue->next = NULL;
@@ -156,9 +156,9 @@ static void printFunction(ObjFunction *function) {
     printf("<fn %s>", function->name->str);
 }
 
-static char *functionToString(ObjFunction *function) {
+static char *functionToString(VM *vm, ObjFunction *function) {
     if (function->name == NULL) {
-        return newCString("<script>");
+        return newCString(vm, "<script>");
     }
     
     char *ret = (char*)malloc(sizeof(char) * function->name->len + 6);
@@ -174,9 +174,9 @@ static char *instanceToString(ObjInstance *instance) {
     return ret;
 }
 
-static char *libraryToString(ObjLibrary *library) {
+static char *libraryToString(VM *vm, ObjLibrary *library) {
     if (library->name == NULL) {
-        return newCString("<library>");
+        return newCString(vm, "<library>");
     }
     
     char *ret = (char*)malloc(sizeof(char) * library->name->len + 11);
@@ -185,33 +185,33 @@ static char *libraryToString(ObjLibrary *library) {
     return ret;
 }
 
-char *objectType(Value value) {
+char *objectType(VM *vm, Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD:
         case OBJ_FUNCTION:
-        case OBJ_CLOSURE: return newCString("function");
-        case OBJ_CLASS: return newCString("class");
+        case OBJ_CLOSURE: return newCString(vm, "function");
+        case OBJ_CLASS: return newCString(vm, "class");
         case OBJ_INSTANCE: {
             ObjInstance *instance = AS_INSTANCE(value);
-            return newCString(instance->objClass->name->str);
+            return newCString(vm, instance->objClass->name->str);
         }
-        case OBJ_LIBRARY: return newCString("library");
-        case OBJ_NATIVE: return newCString("cFunction");
-        case OBJ_STRING: return newCString("string");
-        case OBJ_UPVALUE: return newCString("upvalue");
+        case OBJ_LIBRARY: return newCString(vm, "library");
+        case OBJ_NATIVE: return newCString(vm, "cFunction");
+        case OBJ_STRING: return newCString(vm, "string");
+        case OBJ_UPVALUE: return newCString(vm, "upvalue");
     }
 
-    return newCString("unknown");
+    return newCString(vm, "unknown");
 }
 
-void printObject(Value value) {
+void printObject(VM *vm, Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD: printFunction(AS_BOUND_METHOD(value)->method->function); return;
         case OBJ_CLASS: printf("%s", AS_CLASS(value)->name->str); return;
         case OBJ_CLOSURE: printFunction(AS_CLOSURE(value)->function); return;
         case OBJ_FUNCTION: printFunction(AS_FUNCTION(value)); return;
         case OBJ_INSTANCE: printf("%s instance", AS_INSTANCE(value)->objClass->name->str); return; //TODO: toString()
-        case OBJ_LIBRARY: printf("%s", libraryToString(AS_LIBRARY(value))); return;
+        case OBJ_LIBRARY: printf("%s", libraryToString(vm, AS_LIBRARY(value))); return;
         case OBJ_NATIVE: printf("<native fn>"); return;
         case OBJ_STRING: printf("%s", AS_CSTRING(value)); return;
         case OBJ_UPVALUE: printf("Should never happen."); return;
@@ -220,18 +220,18 @@ void printObject(Value value) {
     printf("unknown object");
 }
 
-char *objectToString(Value value) {
+char *objectToString(VM *vm, Value value) {
     switch (OBJ_TYPE(value)) {
-        case OBJ_BOUND_METHOD: return functionToString(AS_BOUND_METHOD(value)->method->function);
-        case OBJ_CLASS: return newCString(AS_CLASS(value)->name->str);
-        case OBJ_CLOSURE: return functionToString(AS_CLOSURE(value)->function);
-        case OBJ_FUNCTION: return functionToString(AS_FUNCTION(value));
+        case OBJ_BOUND_METHOD: return functionToString(vm, AS_BOUND_METHOD(value)->method->function);
+        case OBJ_CLASS: return newCString(vm, AS_CLASS(value)->name->str);
+        case OBJ_CLOSURE: return functionToString(vm, AS_CLOSURE(value)->function);
+        case OBJ_FUNCTION: return functionToString(vm, AS_FUNCTION(value));
         case OBJ_INSTANCE: return instanceToString(AS_INSTANCE(value));
-        case OBJ_LIBRARY: return libraryToString(AS_LIBRARY(value));
-        case OBJ_NATIVE: return newCString("<native fn>");
-        case OBJ_STRING: return newCString(AS_STRING(value)->str);
-        case OBJ_UPVALUE: return newCString("Should never happen.");
+        case OBJ_LIBRARY: return libraryToString(vm, AS_LIBRARY(value));
+        case OBJ_NATIVE: return newCString(vm, "<native fn>");
+        case OBJ_STRING: return newCString(vm, AS_STRING(value)->str);
+        case OBJ_UPVALUE: return newCString(vm, "Should never happen.");
     }
     
-    return newCString("unknown object");
+    return newCString(vm, "unknown object");
 }

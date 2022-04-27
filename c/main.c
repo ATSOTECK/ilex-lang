@@ -36,9 +36,9 @@ static char* readFile(const char* path) {
     return buffer;
 }
 
-static void runFile(const char *path) {
+static void runFile(VM *vm, const char *path) {
     char *source = readFile(path);
-    InterpretResult res = interpret(source, path);
+    InterpretResult res = interpret(vm, source);
     free(source);
 
     if (res == INTERPRET_COMPILE_ERROR) {
@@ -51,14 +51,16 @@ static void runFile(const char *path) {
 }
 
 int main(int argc, char **argv) {
+    VM *vm;
     if (argc == 2) {
-        runFile(argv[1]);
+        vm = initVM(argv[1]);
+        runFile(vm, argv[1]);
     } else {
         fprintf(stderr, "Usage: ilex [path]\n");
         exit(64);
     }
 
-    freeVM();
+    freeVM(vm);
 
     return 0;
 }

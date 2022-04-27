@@ -9,6 +9,7 @@
 #include "object.h"
 #include "table.h"
 #include "value.h"
+#include "compiler.h"
 
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
@@ -20,6 +21,7 @@ typedef struct {
 } CallFrame;
 
 struct VM_ {
+    Compiler *compiler;
     CallFrame frames[FRAMES_MAX];
     int frameCount;
     Value stack[STACK_MAX];
@@ -47,16 +49,14 @@ typedef enum {
     INTERPRET_RUNTIME_ERROR
 } InterpretResult;
 
-extern VM vm;
+VM *initVM(const char *path);
+void freeVM(VM *vm);
 
-void initVM(const char *path);
-void freeVM();
+void runtimeError(VM *vm, const char *format, ...);
+InterpretResult interpret(VM *vm, const char *source);
+void defineNative(VM *vm, const char *name, NativeFn function, Table *table);
 
-void runtimeError(const char *format, ...);
-InterpretResult interpret(const char *source, const char *path);
-void defineNative(const char *name, NativeFn function, Table *table);
-
-void push(Value v);
-Value pop();
+void push(VM *vm, Value v);
+Value pop(VM *vm);
 
 #endif //C_VM_H

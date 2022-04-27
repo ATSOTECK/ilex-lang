@@ -5,10 +5,56 @@
 #ifndef __C_COMPILER_H__
 #define __C_COMPILER_H__
 
+#include "lexer.h"
 #include "object.h"
-#include "vm.h"
 
-ObjFunction *compile(const char *source);
-void markCompilerRoots();
+typedef struct {
+    VM *vm;
+    Token current;
+    Token previous;
+    Token next;
+    bool hadError;
+    bool panicMode;
+} Parser;
+
+typedef struct {
+    Token name;
+    int depth;
+    bool isConst;
+    bool isCaptured;
+} Local;
+
+typedef struct {
+    uint8_t index;
+    bool isLocal;
+} Upvalue;
+
+typedef enum {
+    TYPE_FUNCTION,
+    TYPE_INITIALIZER,
+    TYPE_METHOD,
+    TYPE_SCRIPT
+} FunctionType;
+
+typedef struct ClassCompiler {
+    struct ClassCompiler *enclosing;
+    bool hasSuperclass;
+} ClassCompiler;
+
+typedef struct Compiler {
+    Parser *parser;
+    struct Compiler *enclosing;
+    ClassCompiler *class;
+    ObjFunction *function;
+    FunctionType type;
+
+    Local locals[UINT8_COUNT];
+    int localCount;
+    Upvalue upvalues[UINT8_COUNT];
+    int scopeDepth;
+} Compiler;
+
+ObjFunction *compile(VM *vm, const char *source);
+void markCompilerRoots(VM *vm);
 
 #endif //__C_COMPILER_H__

@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "value.h"
+#include "ilex_include.h"
 
 typedef enum {
     OP_CONSTANT,
@@ -70,8 +71,8 @@ typedef struct {
 } Chunk;
 
 void initChunk(Chunk *chunk);
-void freeChunk(Chunk *chunk);
-void writeChunk(Chunk *chunk, uint8_t byte, int line);
-int addConstant(Chunk *chunk, Value value);
+void freeChunk(VM *vm, Chunk *chunk);
+void writeChunk(VM *vm, Chunk *chunk, uint8_t byte, int line);
+int addConstant(VM *vm, Chunk *chunk, Value value);
 
 #endif //C_CHUNK_H

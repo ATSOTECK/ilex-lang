@@ -1,4 +1,3 @@
-/-
 var breakfast = "beignets"
 var beverage = "cafe au lait"
 breakfast = "beignets with " + beverage
@@ -90,14 +89,13 @@ someVar = nullVar ? nullVar : 12
 println("someVar:", someVar)
 someVar = nullVar ?? 13
 println("someVar:", someVar)
--/
 
 nullVar := ""
-//someVar = nullVar ? nullVar : 12
-//println("someVar:", someVar)
+someVar = nullVar ? nullVar : 12
+println("someVar:", someVar)
 someVar := nullVar || 13
 println("someVar:", someVar)
-/-
+
 ln()
 
 aVar := null
@@ -118,4 +116,3 @@ aVar ??= 12
 println("aVar:", aVar)
 
 println(milliseconds(), "ms");
--/

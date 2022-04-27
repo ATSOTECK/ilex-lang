@@ -27,41 +27,41 @@ void initValueArray(ValueArray *array) {
     array->count = 0;
 }
 
-void writeValueArray(ValueArray *array, Value value) {
+void writeValueArray(VM *vm, ValueArray *array, Value value) {
     if (array->capacity < array->count + 1) {
         int oldCapacity = array->capacity;
         array->capacity = GROW_CAPACITY(oldCapacity);
-        array->values = GROW_ARRAY(Value, array->values, oldCapacity, array->capacity);
+        array->values = GROW_ARRAY(vm, Value, array->values, oldCapacity, array->capacity);
     }
 
     array->values[array->count] = value;
     array->count++;
 }
 
-void freeValueArray(ValueArray *array) {
-    FREE_ARRAY(Value, array->values, array->capacity);
+void freeValueArray(VM *vm, ValueArray *array) {
+    FREE_ARRAY(vm, Value, array->values, array->capacity);
     initValueArray(array);
 }
 
-char *valueType(Value value) {
+char *valueType(VM *vm, Value value) {
     if (IS_BOOL(value)) {
-        return newCString("bool");
+        return newCString(vm, "bool");
     } else if (IS_NUMBER(value)) {
-        return newCString("number");
+        return newCString(vm, "number");
     } else if (IS_NULL(value)) {
-        return newCString("null");
+        return newCString(vm, "null");
     } else if (IS_OBJ(value)) {
-        return objectType(value);
+        return objectType(vm, value);
     }
 
-    return newCString("unknown");
+    return newCString(vm, "unknown");
 }
 
-char *valueToString(Value value) {
+char *valueToString(VM *vm, Value value) {
     if (IS_BOOL(value)) {
-        return newCString(AS_BOOL(value) ? "true" : "false");
+        return newCString(vm, AS_BOOL(value) ? "true" : "false");
     } else if (IS_NULL(value)) {
-        return newCString("null");
+        return newCString(vm, "null");
     } else if (IS_NUMBER(value)) {
         double num = AS_NUMBER(value);
         int len = snprintf(NULL, 0, "%.15g", num) + 1;
@@ -70,15 +70,15 @@ char *valueToString(Value value) {
         
         return ret;
     } else if (IS_OBJ(value)) {
-        return objectToString(value);
+        return objectToString(vm, value);
     }
     
     // Should never be reached.
-    return newCString("unknown value");
+    return newCString(vm, "unknown value");
 }
 
-void printValue(Value value) {
-    char *str = valueToString(value);
+void printValue(VM *vm, Value value) {
+    char *str = valueToString(vm, value);
     printf("%s", str);
     free(str);
 }
