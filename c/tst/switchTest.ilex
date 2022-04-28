@@ -1,0 +1,26 @@
+fn num(arg) {
+    switch (arg) {
+        case 1: println(1)
+        case 2, 3, 4, 5: println(2)
+        case 6, 7, 8, 9: println(3)
+        default: println("yeet")
+    }
+}
+
+fn str(arg) {
+    switch (arg) {
+        case "one" -> println("one") // fallthrough to two
+        case "two", "three", "four", "five": println("two")
+        case "six", "seven", "eight", "nine": println("three")
+        case "yeet": {
+            println("ya")
+            println("yeet")
+        }
+        case "ya" -> println("woo")
+        case "ya2": println("woo 2")
+        default: println("yote")
+    }
+}
+
+num(1)
+str("ya")

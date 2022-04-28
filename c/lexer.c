@@ -136,15 +136,17 @@ static IlexTokenType identType() {
                     case 'n': return checkKeyword(2, 1, "d", TK_AND);
                     case 's': return checkKeyword(2, 4, "sert", TK_ASSERT);
                 }
-            } break;
+            }
         case 'b': return checkKeyword(1, 4, "reak", TK_BREAK);
         case 'c':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
+                    case 'a': return checkKeyword(2, 2, "se", TK_CASE);
                     case 'l': return checkKeyword(2, 3, "ass", TK_CLASS);
                     case 'o': return checkKeyword(2, 3, "nst", TK_CONST);
                 }
             }
+        case 'd': return checkKeyword(1, 6, "efault", TK_DEFAULT);
         case 'e':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
@@ -165,12 +167,18 @@ static IlexTokenType identType() {
                     case 'n': return TK_FN;
                     case 'o': return checkKeyword(2, 1, "r", TK_FOR);
                 }
-            } break;
+            }
         case 'i': return checkKeyword(1, 1, "f", TK_IF);
         case 'n': return checkKeyword(1, 3, "ull", TK_NULL);
         case 'o': return checkKeyword(1, 1, "r", TK_OR);
         case 'r': return checkKeyword(1, 5, "eturn", TK_RETURN);
-        case 's': return checkKeyword(1, 4, "uper", TK_SUPER);
+        case 's':
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'u': return checkKeyword(2, 3, "per", TK_SUPER);
+                    case 'w': return checkKeyword(2, 4, "itch", TK_SWITCH);
+                }
+            }
         case 't':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
@@ -270,6 +278,8 @@ Token nextToken() {
                 return makeToken(TK_DEC);
             } else if (match('=')) {
                 return makeToken(TK_MINUSEQ);
+            } else if (match('>')) {
+                return makeToken(TK_FALLTHROUGH);
             } else {
                 return makeToken(TK_MINUS);
             }

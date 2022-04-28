@@ -656,6 +656,31 @@ static InterpretResult run(VM *vm) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
             } break;
+            case OP_MULTI_CASE: {
+                int count = READ_BYTE();
+                Value switchValue = peek(vm, count + 1);
+                Value caseValue = pop(vm);
+                for (int i = 0; i < count; ++i) {
+                    if (valuesEqual(switchValue, caseValue)) {
+                        i++;
+                        while(i <= count) {
+                            pop(vm);
+                            i++;
+                        } break;
+                    }
+                    caseValue = pop(vm);
+                }
+                push(vm,caseValue);
+            } break;
+            case OP_CMP_JMP: {
+                uint16_t offset = READ_SHORT();
+                Value a = pop(vm);
+                if (!valuesEqual(peek(vm,0), a)) {
+                    frame->ip += offset;
+                } else {
+                    pop(vm); // switch expression.
+                }
+            } break;
         }
     }
 

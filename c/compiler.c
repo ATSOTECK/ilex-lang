@@ -1080,6 +1080,76 @@ static void assertStatement(Compiler *compiler) {
     emitBytes(compiler, OP_ASSERT, (uint8_t)constant);
 }
 
+static void switchStatement(Compiler *compiler) {
+    int caseEnds[256];
+    int caseCount = 0;
+
+    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'switch'.");
+    expression(compiler);
+    eat(compiler->parser, TK_RPAREN, "Expect ')' after expression.");
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
+    eat(compiler->parser, TK_CASE, "Expect at least one 'case' block.");
+
+    int nextJmp = -1;
+    do {
+        expression(compiler);
+        int multipleCases = 0;
+        if (match(compiler, TK_COMMA)) {
+            do {
+                multipleCases++;
+                expression(compiler);
+            } while (match(compiler, TK_COMMA));
+            emitBytes(compiler, OP_MULTI_CASE, multipleCases);
+        }
+        if (!check(compiler, TK_COLON) && !check(compiler, TK_FALLTHROUGH)) {
+            eat(compiler->parser, TK_COLON, "Expect ':' or '->' after expression.");
+        }
+
+        int compareJump = compareJump = emitJump(compiler, OP_CMP_JMP);
+
+        /*
+        fflush(stdout);
+        if (nextJmp > 0) {
+            patchJump(compiler, compareJump);
+        }*/
+
+        if (match(compiler, TK_FALLTHROUGH)) {
+            //nextJmp = emitJump(compiler, OP_JUMP);
+        } else {
+            match(compiler, TK_COLON);
+            nextJmp = -1;
+        }
+
+        // printf("jmp %d\n", compareJump);
+
+        statement(compiler);
+
+        caseEnds[caseCount++] = emitJump(compiler, OP_JUMP);
+        patchJump(compiler, compareJump);
+
+        if (caseCount > 255) {
+            errorAtCurrent(compiler->parser, "Switch statements can't have more than 255 case blocks");
+        }
+
+    } while (match(compiler, TK_CASE));
+
+    if (match(compiler,TK_DEFAULT)){
+        emitByte(compiler, OP_POP); // expression.
+        eat(compiler->parser, TK_COLON, "Expect ':' after 'default'."); // -> would not make sense here.
+        statement(compiler);
+    }
+
+    if (match(compiler,TK_CASE)){
+        error(compiler->parser, "Unexpected case after 'default'.");
+    }
+
+    eat(compiler->parser, TK_RBRACE, "Expect '}' after cases.");
+
+    for (int i = 0; i < caseCount; i++) {
+        patchJump(compiler, caseEnds[i]);
+    }
+}
+
 static void ifStatement(Compiler *compiler) {
     eat(compiler->parser, TK_LPAREN, "Expect '(' after 'if'.");
     expression(compiler);
@@ -1180,6 +1250,8 @@ static void statement(Compiler *compiler) {
         whileStatement(compiler);
     } else if (match(compiler, TK_ASSERT)) {
         assertStatement(compiler);
+    } else if (match(compiler, TK_SWITCH)) {
+        switchStatement(compiler);
     } else if (match(compiler, TK_LBRACE)) {
         beginScope(compiler);
         block(compiler);

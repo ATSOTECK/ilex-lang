@@ -58,6 +58,8 @@ typedef enum {
     OP_ASSERT,
     OP_NULL_COALESCE,
     OP_OR,
+    OP_MULTI_CASE,
+    OP_CMP_JMP,
 } OpCode;
 
 typedef struct {

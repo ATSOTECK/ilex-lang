@@ -43,6 +43,7 @@ typedef enum {
     TK_OPT, // ?.
     TK_NULL_COALESCE, // ??
     TK_NULL_COALESCE_EQ, // ??=
+    TK_FALLTHROUGH, // ->
 
     TK_VAR_DECL, // :=
     TK_SCOPE, // ::
@@ -57,9 +58,11 @@ typedef enum {
     TK_AS,
     TK_ASSERT,
     TK_BREAK, // TODO
+    TK_CASE,
     TK_CLASS,
     TK_CONST, // TODO
     TK_CONTINUE, // TODO
+    TK_DEFAULT,
     TK_ELIF,
     TK_ELSE,
     TK_ENUM,
@@ -72,7 +75,7 @@ typedef enum {
     TK_OR,
     TK_RETURN,
     TK_SUPER,
-    TK_SWITCH, // TODO
+    TK_SWITCH,
     TK_THIS,
     TK_TRUE,
     TK_USE,
