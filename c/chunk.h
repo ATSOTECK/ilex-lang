@@ -61,6 +61,8 @@ typedef enum {
     OP_OR,
     OP_MULTI_CASE,
     OP_CMP_JMP,
+    OP_ENUM,
+    OP_ENUM_SET_VALUE,
 } OpCode;
 
 typedef struct {

@@ -1,0 +1,41 @@
+enum Test {
+    First,
+    Second,
+    Third,
+}
+
+println(Test::First)
+println(Test::Second)
+println(Test::Third)
+
+enum Test2 {
+    First = "32",
+    Second = "Yeet",
+    Third,
+}
+
+ln()
+println(Test2::First)
+println(Test2::Second)
+println(Test2::Third)
+
+enum Test3 {
+    First = 123,
+    Second = "Yote",
+    Third
+}
+
+ln()
+println(Test3::First)
+println(Test3::Second)
+println(Test3::Third)
+
+x := Test3::First
+assert (x == 123, "x should be 123")
+
+x = Test2::Second
+assert (x == "Yeet", "x should be Yeet")
+
+ln()
+println(Test)
+println(typeof(Test))

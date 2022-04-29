@@ -58,6 +58,7 @@ char *valueType(VM *vm, Value value) {
 }
 
 char *valueToString(VM *vm, Value value) {
+    //TODO(Skyler): Don't use GC.
     if (IS_BOOL(value)) {
         return newCString(vm, AS_BOOL(value) ? "true" : "false");
     } else if (IS_NULL(value)) {
@@ -78,7 +79,8 @@ char *valueToString(VM *vm, Value value) {
 }
 
 void printValue(VM *vm, Value value) {
-    char *str = valueToString(vm, value);
+    //TODO(Skyler): Optimize.
+    char *str = valueToString(vm, value); // str will be garbage collected. TODO(Skyler): Don't use GC.
     printf("%s", str);
-    free(str);
+    //free(str);
 }

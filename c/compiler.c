@@ -702,6 +702,12 @@ static void dot(Compiler *compiler, bool canAssign) {
 #undef EMIT_OP_EQ
 }
 
+static void scope(Compiler *compiler, bool canAssign) {
+    eat(compiler->parser, TK_IDENT, "Expect property name after '::'.");
+    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+    emitBytes(compiler, OP_GET_PROPERTY, name);
+}
+
 static void literal(Compiler *compiler, bool canAssign) {
     switch (compiler->parser->previous.type) {
         case TK_FALSE: emitByte(compiler, OP_FALSE); break;
@@ -738,6 +744,7 @@ ParseRule rules[] = {
         [TK_RBRACE]           = {NULL,     NULL,    PREC_NONE},
         [TK_COMMA]            = {NULL,     NULL,    PREC_NONE},
         [TK_DOT]              = {NULL,     dot,     PREC_CALL},
+        [TK_SCOPE]            = {NULL,     scope,   PREC_CALL},
         [TK_MINUS]            = {unary,    binary,  PREC_TERM},
         [TK_PLUS]             = {NULL,     binary,  PREC_TERM},
         [TK_PLUSEQ]           = {NULL,     NULL,    PREC_NONE},
@@ -780,8 +787,13 @@ ParseRule rules[] = {
         [TK_VAR]              = {NULL,     NULL,    PREC_NONE},
         [TK_CONST]            = {NULL,     NULL,    PREC_NONE},
         [TK_VAR_DECL]         = {NULL,     NULL,    PREC_NONE},
+        [TK_ENUM]             = {NULL,     NULL,    PREC_NONE},
         [TK_WHILE]            = {NULL,     NULL,    PREC_NONE},
+        [TK_SWITCH]           = {NULL,     NULL,    PREC_NONE},
+        [TK_CASE]             = {NULL,     NULL,    PREC_NONE},
+        [TK_DEFAULT]          = {NULL,     NULL,    PREC_NONE},
         [TK_ASSERT]           = {NULL,     NULL,    PREC_NONE},
+        [TK_PANIC]            = {NULL,     NULL,    PREC_NONE},
         [TK_INC]              = {NULL,     inc,     PREC_TERM},
         [TK_DEC]              = {NULL,     dec,     PREC_TERM},
         [TK_TER]              = {NULL,     ternary, PREC_ASSIGN},
@@ -997,6 +1009,37 @@ static void varDeclaration2(Compiler *compiler) {
     defineVariable(compiler, global, false);
 
     match(compiler, TK_SEMICOLON);
+}
+
+static void enumDeclaration(Compiler *compiler) {
+    eat(compiler->parser, TK_IDENT, "Expect enum name.");
+
+    uint8_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
+    declareVariable(compiler);
+    emitBytes(compiler, OP_ENUM, nameConstant);
+    eat(compiler->parser, TK_LBRACE, "Expect '{' before enum body.");
+    int index = 0;
+
+    do {
+        if (check(compiler, TK_RBRACE)) {
+            break;
+        }
+
+        eat(compiler->parser, TK_IDENT, "Expect enum value identifier.");
+        uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+
+        if (match(compiler, TK_ASSIGN)) {
+            expression(compiler);
+        } else {
+            emitConstant(compiler, NUMBER_VAL(index));
+        }
+
+        emitBytes(compiler, OP_ENUM_SET_VALUE, name);
+        index++;
+    } while (match(compiler, TK_COMMA));
+
+    eat(compiler->parser, TK_RBRACE, "Expect '}' after enum body.");
+    defineVariable(compiler, nameConstant, false);
 }
 
 static void expressionStatement(Compiler *compiler) {
@@ -1247,6 +1290,8 @@ static void declaration(Compiler *compiler) {
         varDeclaration2(compiler);
     } else if (match(compiler, TK_CONST)) {
         varDeclaration(compiler, true);
+    } else if (match(compiler, TK_ENUM)) {
+        enumDeclaration(compiler);
     } else {
         statement(compiler);
     }

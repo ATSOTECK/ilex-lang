@@ -259,6 +259,17 @@ static bool invoke(VM *vm, ObjString *name, int argCount) {
             runtimeError(vm, "String has no method %s().", name->str);
             return false;
         }
+        case OBJ_ENUM: {
+            ObjEnum *enumObj = AS_ENUM(receiver);
+            Value value;
+
+            if (tableGet(&enumObj->values, name, &value)) {
+                return callValue(vm, value, argCount);
+            }
+
+            runtimeError(vm, "'%s' enum has no property '%s'.", enumObj->name->str, name->str);
+            return false;
+        }
     }
 
     runtimeError(vm, "Only instances have methods.");
@@ -401,23 +412,50 @@ static InterpretResult run(VM *vm) {
                 push(vm, *frame->closure->upvalues[slot]->location);
             } break;
             case OP_GET_PROPERTY: {
-                if (!IS_INSTANCE(peek(vm, 0))) {
-                    runtimeError(vm, "Only instances have properties.");
+                Value receiver = peek(vm, 0);
+                if (!IS_OBJ(receiver)) {
+                    char *type = valueType(vm, receiver);
+                    runtimeError(vm, "%s has no properties.", type);
+                    //free(type);
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                ObjInstance *instance = AS_INSTANCE(peek(vm, 0));
-                ObjString *name = READ_STRING();
+                switch ((getObjType(receiver))) {
+                    case OBJ_INSTANCE: {
+                        ObjInstance *instance = AS_INSTANCE(receiver);
+                        ObjString *name = READ_STRING();
 
-                Value value;
-                if (tableGet(&instance->fields, name, &value)) {
-                    pop(vm); // Instance.
-                    push(vm, value);
-                    break;
-                }
+                        Value value;
+                        if (tableGet(&instance->fields, name, &value)) {
+                            pop(vm); // Instance.
+                            push(vm, value);
+                            break;
+                        }
 
-                if (!bindMethod(vm, instance->objClass, name)) {
-                    return INTERPRET_RUNTIME_ERROR;
+                        if (!bindMethod(vm, instance->objClass, name)) {
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    } break;
+                    case OBJ_ENUM: {
+                        ObjEnum *enumObj = AS_ENUM(receiver);
+                        ObjString *name = READ_STRING();
+                        Value value;
+
+                        if (tableGet(&enumObj->values, name, &value)) {
+                            pop(vm); // Enum.
+                            push(vm, value);
+                            break;
+                        }
+
+                        runtimeError(vm, "'%s' enum has no property: '%s'.", enumObj->name->str, name->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    default: {
+                        char *type = valueType(vm, receiver);
+                        runtimeError(vm, "%s has no properties.", type);
+                        //free(type);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
                 }
             } break;
             case OP_GET_PROPERTY_NO_POP: {
@@ -704,6 +742,17 @@ static InterpretResult run(VM *vm) {
                 } else {
                     pop(vm); // switch expression.
                 }
+            } break;
+            case OP_ENUM: {
+                ObjEnum *enumObj = newEnum(vm, READ_STRING());
+                push(vm, OBJ_VAL(enumObj));
+            } break;
+            case OP_ENUM_SET_VALUE: {
+                Value value = peek(vm, 0);
+                ObjEnum *enumObj = AS_ENUM(peek(vm, 1));
+
+                tableSet(vm, &enumObj->values, READ_STRING(), value);
+                pop(vm);
             } break;
         }
     }

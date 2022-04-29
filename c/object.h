@@ -21,6 +21,7 @@
 #define IS_LIBRARY(value)      isObjType(value, OBJ_LIBRARY)
 #define IS_NATIVE(value)       isObjType(value, OBJ_NATIVE)
 #define IS_STRING(value)       isObjType(value, OBJ_STRING)
+#define IS_ENUM(value)         isObjType(value, OBJ_ENUM)
 
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
 #define AS_CLASS(value)        ((ObjClass*)AS_OBJ(value))
@@ -31,6 +32,7 @@
 #define AS_NATIVE(value)       (((ObjNative*)AS_OBJ(value))->function)
 #define AS_STRING(value)       ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value)      (((ObjString*)AS_OBJ(value))->str)
+#define AS_ENUM(value)         ((ObjEnum*)AS_OBJ(value))
 
 typedef enum {
     OBJ_BOUND_METHOD,
@@ -42,6 +44,7 @@ typedef enum {
     OBJ_NATIVE,
     OBJ_STRING,
     OBJ_UPVALUE,
+    OBJ_ENUM,
 } ObjType;
 
 struct Obj {
@@ -119,6 +122,12 @@ typedef struct {
     Value *data;
 } ObjList;
 
+typedef struct {
+    Obj obj;
+    ObjString *name;
+    Table values;
+} ObjEnum;
+
 ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
 ObjClass *newClass(VM *vm, ObjString *name);
 ObjClosure *newClosure(VM *vm, ObjFunction *function);
@@ -131,9 +140,9 @@ char *newCStringLen(VM *vm, const char *str, int len);
 ObjString *takeString(VM *vm, char *str, int len);
 ObjString *copyString(VM *vm, const char* chars, int length);
 ObjUpvalue *newUpvalue(VM *vm, Value *slot);
-ObjLibrary *newList();
+ObjList *newList();
+ObjEnum *newEnum(VM *vm, ObjString *name);
 char *objectType(VM *vm, Value value);
-void printObject(VM *vm, Value value);
 char *objectToString(VM *vm, Value value);
 
 static inline bool isObjType(Value value, ObjType type) {

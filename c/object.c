@@ -155,6 +155,14 @@ ObjUpvalue *newUpvalue(VM *vm, Value *slot) {
     return upvalue;
 }
 
+ObjEnum *newEnum(VM *vm, ObjString *name) {
+    ObjEnum *enumObj = ALLOCATE_OBJ(vm, ObjEnum, OBJ_ENUM);
+    enumObj->name = name;
+    initTable(&enumObj->values);
+
+    return enumObj;
+}
+
 static void printFunction(ObjFunction *function) {
     if (function->name == NULL) {
         printf("<script>");
@@ -164,6 +172,7 @@ static void printFunction(ObjFunction *function) {
     printf("<fn %s>", function->name->str);
 }
 
+//TODO(Skyler): The next 4 functions currently cause memory leaks.
 static char *functionToString(VM *vm, ObjFunction *function) {
     if (function->name == NULL) {
         return newCString(vm, "<script>");
@@ -193,6 +202,16 @@ static char *libraryToString(VM *vm, ObjLibrary *library) {
     return ret;
 }
 
+static char *enumToString(VM *vm, ObjEnum *objEnum) {
+    char *enumString = malloc(sizeof(char) * (objEnum->name->len + 8));
+    memcpy(enumString, "<enum ", 6);
+    memcpy(enumString + 6, objEnum->name->str, objEnum->name->len);
+    memcpy(enumString + 6 + objEnum->name->len, ">", 1);
+    enumString[7 + objEnum->name->len] = '\0';
+
+    return enumString;
+}
+
 char *objectType(VM *vm, Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD:
@@ -207,28 +226,14 @@ char *objectType(VM *vm, Value value) {
         case OBJ_NATIVE: return newCString(vm, "cFunction");
         case OBJ_STRING: return newCString(vm, "string");
         case OBJ_UPVALUE: return newCString(vm, "upvalue");
+        case OBJ_ENUM: return newCString(vm, "enum");
     }
 
     return newCString(vm, "unknown");
 }
 
-void printObject(VM *vm, Value value) {
-    switch (OBJ_TYPE(value)) {
-        case OBJ_BOUND_METHOD: printFunction(AS_BOUND_METHOD(value)->method->function); return;
-        case OBJ_CLASS: printf("%s", AS_CLASS(value)->name->str); return;
-        case OBJ_CLOSURE: printFunction(AS_CLOSURE(value)->function); return;
-        case OBJ_FUNCTION: printFunction(AS_FUNCTION(value)); return;
-        case OBJ_INSTANCE: printf("%s instance", AS_INSTANCE(value)->objClass->name->str); return; //TODO: toString()
-        case OBJ_LIBRARY: printf("%s", libraryToString(vm, AS_LIBRARY(value))); return;
-        case OBJ_NATIVE: printf("<native fn>"); return;
-        case OBJ_STRING: printf("%s", AS_CSTRING(value)); return;
-        case OBJ_UPVALUE: printf("Should never happen."); return;
-    }
-    
-    printf("unknown object");
-}
-
 char *objectToString(VM *vm, Value value) {
+    //TODO(Skyler): Don't use GC.
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD: return functionToString(vm, AS_BOUND_METHOD(value)->method->function);
         case OBJ_CLASS: return newCString(vm, AS_CLASS(value)->name->str);
@@ -239,6 +244,7 @@ char *objectToString(VM *vm, Value value) {
         case OBJ_NATIVE: return newCString(vm, "<native fn>");
         case OBJ_STRING: return newCString(vm, AS_STRING(value)->str);
         case OBJ_UPVALUE: return newCString(vm, "Should never happen.");
+        case OBJ_ENUM: return enumToString(vm, AS_ENUM(value));
     }
     
     return newCString(vm, "unknown object");
