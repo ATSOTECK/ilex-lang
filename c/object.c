@@ -115,6 +115,14 @@ char *newCString(VM *vm, char *str) {
     return ret;
 }
 
+char *newCStringLen(VM *vm, const char *str, int len) {
+    char* ret = ALLOCATE(vm, char, len + 1);
+    memcpy(ret, str, len);
+    ret[len] = '\0';
+
+    return ret;
+}
+
 ObjString *takeString(VM *vm, char *str, int len) {
     uint32_t hash = hashString(str, len);
     ObjString *interned = tableFindString(&vm->strings, str, len, hash);

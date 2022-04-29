@@ -26,7 +26,7 @@ static void resetStack(VM *vm) {
 }
 
 void runtimeError(VM *vm, const char *format, ...) {
-    fprintf(stderr, "Runtime Error: ");
+    fprintf(stderr, "\033[31mRuntime Error:\033[m ");
 
     va_list args;
     va_start(args, format);
@@ -136,7 +136,7 @@ Value peek(VM *vm, int amount) {
 
 static bool call(VM *vm, ObjClosure *closure, int argCount) {
     if (argCount != closure->function->arity) {
-        runtimeError("Expected %d arguments but got %d.", closure->function->arity, argCount);
+        runtimeError(vm ,"Expected %d arguments but got %d.", closure->function->arity, argCount);
         return false;
     }
 

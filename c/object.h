@@ -127,6 +127,7 @@ ObjInstance *newInstance(VM *vm, ObjClass *objClass);
 ObjLibrary *newLibrary(VM *vm, ObjString* name);
 ObjNative *newNative(VM *vm, NativeFn function);
 char *newCString(VM *vm, char *str);
+char *newCStringLen(VM *vm, const char *str, int len);
 ObjString *takeString(VM *vm, char *str, int len);
 ObjString *copyString(VM *vm, const char* chars, int length);
 ObjUpvalue *newUpvalue(VM *vm, Value *slot);

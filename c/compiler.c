@@ -56,7 +56,7 @@ static void errorAt(Parser *parser, Token* token, const char* message) {
     }
 
     parser->panicMode = true;
-    fprintf(stderr, "[line %d] Error", token->line);
+    fprintf(stderr, "[line %d] \033[31mError\033[m", token->line);
 
     if (token->type == TK_EOF) {
         fprintf(stderr, " at end");
@@ -842,6 +842,7 @@ static void synchronize(Parser *parser) {
             case TK_WHILE:
             case TK_RETURN:
             case TK_ASSERT:
+            case TK_SWITCH:
                 return;
 
             default:
@@ -849,6 +850,7 @@ static void synchronize(Parser *parser) {
         }
 
         advance(parser);
+        return;
     }
 }
 
@@ -1129,6 +1131,12 @@ static void switchStatement(Compiler *compiler) {
 
         if (caseCount > 255) {
             errorAtCurrent(compiler->parser, "Switch statements can't have more than 255 case blocks");
+        }
+
+        if (!check(compiler, TK_CASE) && !check(compiler, TK_RBRACE) && !check(compiler, TK_DEFAULT)) {
+            char *msg = newCStringLen(compiler->parser->vm, compiler->parser->current.start, compiler->parser->current.len);
+            error(compiler->parser, "Unexpected token '%s'.", msg);
+            synchronize(compiler->parser);
         }
 
     } while (match(compiler, TK_CASE));
