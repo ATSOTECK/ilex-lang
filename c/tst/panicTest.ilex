@@ -1,0 +1,9 @@
+fn panic(arg) {
+    println("This is a user panic.", arg)
+}
+
+panic("yeet")
+
+panic! ("At the disco!")
+
+assert (false, "THis should never run.")

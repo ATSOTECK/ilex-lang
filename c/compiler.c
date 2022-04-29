@@ -961,7 +961,6 @@ static void classDeclaration(Compiler *compiler) {
 
 static void fnDeclaration(Compiler *compiler) {
     uint8_t global = parseVariable(compiler, "Expect function name.");
-    //markInitialized();
     function(compiler, TYPE_FUNCTION);
     defineVariable(compiler, global, false);
 }
@@ -1080,6 +1079,16 @@ static void assertStatement(Compiler *compiler) {
     match(compiler, TK_SEMICOLON);
 
     emitBytes(compiler, OP_ASSERT, (uint8_t)constant);
+}
+
+static void panicStatement(Compiler *compiler) {
+    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'panic!'.");
+    eat(compiler->parser, TK_STRING, "Expect panic! error string after '('.");
+    int constant = addConstant(compiler->parser->vm,  currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, compiler->parser->previous.start + 1, compiler->parser->previous.len - 2)));
+    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    match(compiler, TK_SEMICOLON);
+
+    emitBytes(compiler, OP_PANIC, (uint8_t)constant);
 }
 
 static void switchStatement(Compiler *compiler) {
@@ -1258,6 +1267,8 @@ static void statement(Compiler *compiler) {
         whileStatement(compiler);
     } else if (match(compiler, TK_ASSERT)) {
         assertStatement(compiler);
+    } else if (match(compiler, TK_PANIC)) {
+        panicStatement(compiler);
     } else if (match(compiler, TK_SWITCH)) {
         switchStatement(compiler);
     } else if (match(compiler, TK_LBRACE)) {

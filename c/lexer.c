@@ -121,11 +121,26 @@ static void skipWhitespace() {
 }
 
 static IlexTokenType checkKeyword(int start, int len, const char *rest, IlexTokenType type) {
+    int curr = lexer.current - lexer.start;
+    int llen = start + len;
     if (lexer.current - lexer.start == start + len && memcmp(lexer.start + start, rest, len) == 0) {
         return type;
     }
 
     return TK_IDENT;
+}
+
+static bool match(char expected) {
+    if (atEnd()) {
+        return false;
+    }
+
+    if (*lexer.current != expected) {
+        return false;
+    }
+    lexer.current++;
+
+    return true;
 }
 
 static IlexTokenType identType() {
@@ -171,6 +186,14 @@ static IlexTokenType identType() {
         case 'i': return checkKeyword(1, 1, "f", TK_IF);
         case 'n': return checkKeyword(1, 3, "ull", TK_NULL);
         case 'o': return checkKeyword(1, 1, "r", TK_OR);
+        case 'p': {
+            int tk = checkKeyword(1, 4, "anic", TK_PANIC);
+            if (tk == TK_PANIC && match('!')) {
+                return tk;
+            } else {
+                return TK_IDENT;
+            }
+        }
         case 'r': return checkKeyword(1, 5, "eturn", TK_RETURN);
         case 's':
             if (lexer.current - lexer.start > 1) {
@@ -192,19 +215,6 @@ static IlexTokenType identType() {
     }
     
     return TK_IDENT;
-}
-
-static bool match(char expected) {
-    if (atEnd()) {
-        return false;
-    }
-
-    if (*lexer.current != expected) {
-        return false;
-    }
-    lexer.current++;
-
-    return true;
 }
 
 static Token string() {

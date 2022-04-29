@@ -56,6 +56,7 @@ typedef enum {
     OP_METHOD,
     OP_USE,
     OP_ASSERT,
+    OP_PANIC,
     OP_NULL_COALESCE,
     OP_OR,
     OP_MULTI_CASE,

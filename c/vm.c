@@ -73,6 +73,25 @@ void assertError(VM *vm, const char *format, ...) {
     resetStack(vm);
 }
 
+void panicError(VM *vm, const char *msg) {
+    printf("\033[31mPanic!\033[m %s\n", msg);
+
+    for (int i = vm->frameCount - 1; i >= 0; i--) {
+        CallFrame *frame = &vm->frames[i];
+        ObjFunction *function = frame->closure->function;
+        size_t instruction = frame->ip - function->chunk.code - 1;
+        int line = function->chunk.lines[instruction];
+        fprintf(stderr, "[line %d] in ", line);
+        if (function->name == NULL) {
+            fprintf(stderr, "script %s\n", vm->scriptName->str);
+        } else {
+            fprintf(stderr, "function %s()\n", function->name->str);
+        }
+    }
+
+    resetStack(vm);
+}
+
 void defineNative(VM *vm, const char *name, NativeFn function, Table *table) {
     push(vm, OBJ_VAL(copyString(vm, name, (int)strlen(name))));
     push(vm, OBJ_VAL(newNative(vm, function)));
@@ -618,7 +637,7 @@ static InterpretResult run(VM *vm) {
 
                 if (vm->frameCount == 0) {
                     pop(vm);
-                    return INTERPRET_OK;
+                    return INTERPRET_GOOD;
                 }
 
                 vm->stackTop = frame->slots;
@@ -648,14 +667,19 @@ static InterpretResult run(VM *vm) {
 
                 if (isFalsy(condition)) {
                     if (!error->str[0]) {
-                        assertError(vm, "Assertion Failed.");
+                        assertError(vm, "\033[31mAssertion Failed.\033[m");
                     } else {
-                        assertError(vm, "Assertion failed with message: %s", error->str);
+                        assertError(vm, "\033[31mAssertion failed\033[m with message: %s", error->str);
                     }
                     
-                    return INTERPRET_RUNTIME_ERROR;
+                    return INTERPRET_ASSERT_ERROR;
                 }
             } break;
+            case OP_PANIC: {
+                ObjString *error = READ_STRING();
+                panicError(vm, error->str);
+                return INTERPRET_PANIC_ERROR;
+            }
             case OP_MULTI_CASE: {
                 int count = READ_BYTE();
                 Value switchValue = peek(vm, count + 1);

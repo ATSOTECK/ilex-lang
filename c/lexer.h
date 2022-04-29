@@ -73,6 +73,7 @@ typedef enum {
     TK_IF,
     TK_NULL,
     TK_OR,
+    TK_PANIC,
     TK_RETURN,
     TK_SUPER,
     TK_SWITCH,

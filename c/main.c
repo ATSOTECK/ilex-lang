@@ -41,12 +41,13 @@ static void runFile(VM *vm, const char *path) {
     InterpretResult res = interpret(vm, source);
     free(source);
 
-    if (res == INTERPRET_COMPILE_ERROR) {
-        exit(65);
-    }
-
-    if (res == INTERPRET_RUNTIME_ERROR) {
-        exit(70);
+    switch (res) {
+        case INTERPRET_COMPILE_ERROR: exit(99);
+        case INTERPRET_RUNTIME_ERROR: exit(114);
+        case INTERPRET_ASSERT_ERROR:  exit(97);
+        case INTERPRET_PANIC_ERROR:   exit(112);
+        case INTERPRET_GOOD:
+        default: break;
     }
 }
 
