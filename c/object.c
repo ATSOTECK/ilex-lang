@@ -75,6 +75,30 @@ ObjInstance *newInstance(VM *vm, ObjClass *objClass) {
     return instance;
 }
 
+ObjScript *newScript(VM *vm, ObjString* name) {
+    Value moduleVal;
+    if (tableGet(&vm->scripts, name, &moduleVal)) {
+        return AS_SCRIPT(moduleVal);
+    }
+
+    ObjScript *script = ALLOCATE_OBJ(vm, ObjScript, OBJ_SCRIPT);
+    initTable(&script->values);
+    script->name = name;
+    script->path = NULL;
+
+    push(vm, OBJ_VAL(script));
+    ObjString *file = copyString(vm, "$file", 5);
+    push(vm, OBJ_VAL(file));
+
+    tableSet(vm, &script->values, file, OBJ_VAL(name));
+    tableSet(vm, &vm->scripts, name, OBJ_VAL(script));
+
+    pop(vm);
+    pop(vm);
+
+    return script;
+}
+
 ObjNative *newNative(VM *vm, NativeFn function) {
     ObjNative* native = ALLOCATE_OBJ(vm, ObjNative, OBJ_NATIVE);
     native->function = function;
@@ -191,13 +215,13 @@ static char *instanceToString(ObjInstance *instance) {
     return ret;
 }
 
-static char *libraryToString(ObjLibrary *library) {
-    if (library->name == NULL) {
+static char *scriptToString(ObjScript *script) {
+    if (script->name == NULL) {
         return newCString("<library>");
     }
     
-    char *ret = (char*)malloc(sizeof(char) * library->name->len + 11);
-    snprintf(ret, library->name->len + 11, "<library %s>", library->name->str);
+    char *ret = (char*)malloc(sizeof(char) * script->name->len + 11);
+    snprintf(ret, script->name->len + 11, "<library %s>", script->name->str);
     
     return ret;
 }
@@ -222,7 +246,7 @@ char *objectType(Value value) {
             ObjInstance *instance = AS_INSTANCE(value);
             return newCString(instance->objClass->name->str);
         }
-        case OBJ_LIBRARY: return newCString("library");
+        case OBJ_SCRIPT: return newCString("script");
         case OBJ_NATIVE: return newCString("cFunction");
         case OBJ_STRING: return newCString("string");
         case OBJ_UPVALUE: return newCString("upvalue");
@@ -239,7 +263,7 @@ char *objectToString(Value value) {
         case OBJ_CLOSURE: return functionToString(AS_CLOSURE(value)->function);
         case OBJ_FUNCTION: return functionToString(AS_FUNCTION(value));
         case OBJ_INSTANCE: return instanceToString(AS_INSTANCE(value));
-        case OBJ_LIBRARY: return libraryToString(AS_LIBRARY(value));
+        case OBJ_SCRIPT: return scriptToString(AS_SCRIPT(value));
         case OBJ_NATIVE: return newCString("<native fn>");
         case OBJ_STRING: return newCString(AS_STRING(value)->str);
         case OBJ_UPVALUE: return newCString("Should never happen.");

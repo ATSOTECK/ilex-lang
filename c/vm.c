@@ -10,6 +10,7 @@
 #include "object.h"
 #include "memory.h"
 
+#include "libs/lib_builtIn.h"
 #include "libs/lib_natives.h"
 #include "libs/lib_string.h"
 
@@ -110,11 +111,13 @@ VM *initVM(const char *path) {
     vm->grayCount = 0;
     vm->grayCapacity = 0;
     vm->grayStack = NULL;
+    vm->lastScript = NULL;
 
     initTable(&vm->globals);
     initTable(&vm->consts);
     initTable(&vm->strings);
 
+    initTable(&vm->scripts);
     initTable(&vm->stringFunctions);
 
     vm->initString = NULL;
@@ -753,6 +756,26 @@ static InterpretResult run(VM *vm) {
 
                 tableSet(vm, &enumObj->values, READ_STRING(), value);
                 pop(vm);
+            } break;
+            case OP_USE_BUILTIN: {
+                int idx = READ_BYTE();
+                ObjString *fileName = READ_STRING();
+                Value libVal;
+
+                // Skip if used already.
+                if (tableGet(&vm->scripts, fileName, &libVal)) {
+                    // vm->lastScript = AS_SCRIPT(libVal);
+                    push(vm, libVal);
+                    break;
+                }
+
+                Value lib = useBuiltInLib(vm, idx);
+
+                if (IS_EMPTY(lib)) {
+                    return INTERPRET_COMPILE_ERROR;
+                }
+
+                push(vm, lib);
             } break;
         }
     }

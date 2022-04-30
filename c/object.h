@@ -18,7 +18,7 @@
 #define IS_CLOSURE(value)      isObjType(value, OBJ_CLOSURE)
 #define IS_FUNCTION(value)     isObjType(value, OBJ_FUNCTION)
 #define IS_INSTANCE(value)     isObjType(value, OBJ_INSTANCE)
-#define IS_LIBRARY(value)      isObjType(value, OBJ_LIBRARY)
+#define IS_SCRIPT(value)       isObjType(value, OBJ_SCRIPT)
 #define IS_NATIVE(value)       isObjType(value, OBJ_NATIVE)
 #define IS_STRING(value)       isObjType(value, OBJ_STRING)
 #define IS_ENUM(value)         isObjType(value, OBJ_ENUM)
@@ -28,7 +28,7 @@
 #define AS_CLOSURE(value)      ((ObjClosure*)AS_OBJ(value))
 #define AS_FUNCTION(value)     ((ObjFunction*)AS_OBJ(value))
 #define AS_INSTANCE(value)     ((ObjInstance*)AS_OBJ(value))
-#define AS_LIBRARY(value)      ((ObjLibrary*)AS_OBJ(value))
+#define AS_SCRIPT(value)       ((ObjScript*)AS_OBJ(value))
 #define AS_NATIVE(value)       (((ObjNative*)AS_OBJ(value))->function)
 #define AS_STRING(value)       ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value)      (((ObjString*)AS_OBJ(value))->str)
@@ -40,7 +40,7 @@ typedef enum {
     OBJ_CLOSURE,
     OBJ_FUNCTION,
     OBJ_INSTANCE,
-    OBJ_LIBRARY,
+    OBJ_SCRIPT,
     OBJ_NATIVE,
     OBJ_STRING,
     OBJ_UPVALUE,
@@ -55,11 +55,10 @@ struct Obj {
 
 typedef struct {
     Obj obj;
-
     ObjString *name;
+    ObjString *path;
     Table values;
-    Table privateValues;
-} ObjLibrary;
+} ObjScript;
 
 typedef struct {
     Obj obj;
@@ -133,7 +132,7 @@ ObjClass *newClass(VM *vm, ObjString *name);
 ObjClosure *newClosure(VM *vm, ObjFunction *function);
 ObjFunction *newFunction(VM *vm);
 ObjInstance *newInstance(VM *vm, ObjClass *objClass);
-ObjLibrary *newLibrary(VM *vm, ObjString* name);
+ObjScript *newScript(VM *vm, ObjString* name);
 ObjNative *newNative(VM *vm, NativeFn function);
 char *newCString(const char *str);
 char *newCStringLen(const char *str, int len);

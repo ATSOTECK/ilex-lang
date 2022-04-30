@@ -63,6 +63,7 @@ typedef enum {
     OP_CMP_JMP,
     OP_ENUM,
     OP_ENUM_SET_VALUE,
+    OP_USE_BUILTIN,
 } OpCode;
 
 typedef struct {

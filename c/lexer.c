@@ -121,8 +121,6 @@ static void skipWhitespace() {
 }
 
 static IlexTokenType checkKeyword(int start, int len, const char *rest, IlexTokenType type) {
-    int curr = lexer.current - lexer.start;
-    int llen = start + len;
     if (lexer.current - lexer.start == start + len && memcmp(lexer.start + start, rest, len) == 0) {
         return type;
     }
@@ -149,7 +147,12 @@ static IlexTokenType identType() {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'n': return checkKeyword(2, 1, "d", TK_AND);
-                    case 's': return checkKeyword(2, 4, "sert", TK_ASSERT);
+                    case 's':
+                        if (lexer.start[2] == 's') {
+                            return checkKeyword(2, 4, "sert", TK_ASSERT);
+                        } else {
+                            return TK_AS;
+                        }
                 }
             }
         case 'b': return checkKeyword(1, 4, "reak", TK_BREAK);
@@ -181,6 +184,7 @@ static IlexTokenType identType() {
                     case 'a': return checkKeyword(2, 3, "lse", TK_FALSE);
                     case 'n': return TK_FN;
                     case 'o': return checkKeyword(2, 1, "r", TK_FOR);
+                    case 'r': return checkKeyword(2, 2, "om", TK_FROM);
                 }
             }
         case 'i': return checkKeyword(1, 1, "f", TK_IF);
@@ -347,6 +351,7 @@ Token nextToken() {
             }
         }
         case '"': return string();
+        default: break;
     }
 
     return errorToken("Unexpected character.");

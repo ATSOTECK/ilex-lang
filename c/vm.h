@@ -32,6 +32,8 @@ struct VM_ {
     ObjString *initString;
     ObjUpvalue *openUpvalues;
 
+    Table scripts;
+    ObjScript *lastScript; // Used for 'from'.
     Table stringFunctions;
 
     size_t bytesAllocated;

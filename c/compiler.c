@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "libs/lib_builtIn.h"
 #include "common.h"
 #include "compiler.h"
 #include "memory.h"
@@ -797,6 +798,9 @@ ParseRule rules[] = {
         [TK_INC]              = {NULL,     inc,     PREC_TERM},
         [TK_DEC]              = {NULL,     dec,     PREC_TERM},
         [TK_TER]              = {NULL,     ternary, PREC_ASSIGN},
+        [TK_USE]              = {NULL,     NULL,    PREC_NONE},
+        [TK_FROM]             = {NULL,     NULL,    PREC_NONE},
+        [TK_AS]               = {NULL,     NULL,    PREC_NONE},
         [TK_ERROR]            = {NULL,     NULL,    PREC_NONE},
         [TK_EOF]              = {NULL,     NULL,    PREC_NONE},
 };
@@ -855,6 +859,7 @@ static void synchronize(Parser *parser) {
             case TK_RETURN:
             case TK_ASSERT:
             case TK_SWITCH:
+            case TK_USE:
                 return;
 
             default:
@@ -1280,6 +1285,30 @@ static void whileStatement(Compiler *compiler) {
     emitByte(compiler, OP_POP);
 }
 
+static void useStatement(Compiler *compiler) {
+    if (match(compiler, TK_LT)) {
+        eat(compiler->parser, TK_IDENT, "Expected library name after '<'.");
+        //TODO: Could have TK_AS next.
+        uint8_t libName = identifierConstant(compiler, &compiler->parser->previous);
+        declareVariable(compiler);
+
+        int idx = findBuiltInLib((char*)compiler->parser->previous.start,
+                                 compiler->parser->previous.len - compiler->parser->current.len);
+
+        if (idx == -1) {
+            error(compiler->parser, "Unknown library.");
+        }
+
+        emitBytes(compiler, OP_USE_BUILTIN, idx);
+        emitByte(compiler, libName);
+
+        defineVariable(compiler, libName, false);
+        eat(compiler->parser, TK_GR, "Expected '>' after library name.");
+    }
+
+    match(compiler, TK_SEMICOLON);
+}
+
 static void declaration(Compiler *compiler) {
     if (match(compiler, TK_CLASS)) {
         classDeclaration(compiler);
@@ -1317,6 +1346,8 @@ static void statement(Compiler *compiler) {
         panicStatement(compiler);
     } else if (match(compiler, TK_SWITCH)) {
         switchStatement(compiler);
+    } else if (match(compiler, TK_USE)) {
+        useStatement(compiler);
     } else if (match(compiler, TK_LBRACE)) {
         beginScope(compiler);
         block(compiler);
