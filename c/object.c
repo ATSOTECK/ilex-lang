@@ -105,18 +105,18 @@ static uint32_t hashString(const char *key, int length) {
     return hash;
 }
 
-char *newCString(VM *vm, char *str) {
+char *newCString(const char *str) {
     size_t len = strlen(str);
 
-    char* ret = ALLOCATE(vm, char, len + 1);
+    char* ret = (char*)malloc(sizeof(char) * (len + 1));
     memcpy(ret, str, len);
     ret[len] = '\0';
 
     return ret;
 }
 
-char *newCStringLen(VM *vm, const char *str, int len) {
-    char* ret = ALLOCATE(vm, char, len + 1);
+char *newCStringLen(const char *str, int len) {
+    char* ret = (char*)malloc(sizeof(char) * (len + 1));
     memcpy(ret, str, len);
     ret[len] = '\0';
 
@@ -173,9 +173,9 @@ static void printFunction(ObjFunction *function) {
 }
 
 //TODO(Skyler): The next 4 functions currently cause memory leaks.
-static char *functionToString(VM *vm, ObjFunction *function) {
+static char *functionToString(ObjFunction *function) {
     if (function->name == NULL) {
-        return newCString(vm, "<script>");
+        return newCString("<script>");
     }
     
     char *ret = (char*)malloc(sizeof(char) * function->name->len + 6);
@@ -191,9 +191,9 @@ static char *instanceToString(ObjInstance *instance) {
     return ret;
 }
 
-static char *libraryToString(VM *vm, ObjLibrary *library) {
+static char *libraryToString(ObjLibrary *library) {
     if (library->name == NULL) {
-        return newCString(vm, "<library>");
+        return newCString("<library>");
     }
     
     char *ret = (char*)malloc(sizeof(char) * library->name->len + 11);
@@ -202,7 +202,7 @@ static char *libraryToString(VM *vm, ObjLibrary *library) {
     return ret;
 }
 
-static char *enumToString(VM *vm, ObjEnum *objEnum) {
+static char *enumToString(ObjEnum *objEnum) {
     char *enumString = malloc(sizeof(char) * (objEnum->name->len + 8));
     memcpy(enumString, "<enum ", 6);
     memcpy(enumString + 6, objEnum->name->str, objEnum->name->len);
@@ -212,40 +212,39 @@ static char *enumToString(VM *vm, ObjEnum *objEnum) {
     return enumString;
 }
 
-char *objectType(VM *vm, Value value) {
+char *objectType(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD:
         case OBJ_FUNCTION:
-        case OBJ_CLOSURE: return newCString(vm, "function");
-        case OBJ_CLASS: return newCString(vm, "class");
+        case OBJ_CLOSURE: return newCString("function");
+        case OBJ_CLASS: return newCString("class");
         case OBJ_INSTANCE: {
             ObjInstance *instance = AS_INSTANCE(value);
-            return newCString(vm, instance->objClass->name->str);
+            return newCString(instance->objClass->name->str);
         }
-        case OBJ_LIBRARY: return newCString(vm, "library");
-        case OBJ_NATIVE: return newCString(vm, "cFunction");
-        case OBJ_STRING: return newCString(vm, "string");
-        case OBJ_UPVALUE: return newCString(vm, "upvalue");
-        case OBJ_ENUM: return newCString(vm, "enum");
+        case OBJ_LIBRARY: return newCString("library");
+        case OBJ_NATIVE: return newCString("cFunction");
+        case OBJ_STRING: return newCString("string");
+        case OBJ_UPVALUE: return newCString("upvalue");
+        case OBJ_ENUM: return newCString("enum");
     }
 
-    return newCString(vm, "unknown");
+    return newCString("unknown");
 }
 
-char *objectToString(VM *vm, Value value) {
-    //TODO(Skyler): Don't use GC.
+char *objectToString(Value value) {
     switch (OBJ_TYPE(value)) {
-        case OBJ_BOUND_METHOD: return functionToString(vm, AS_BOUND_METHOD(value)->method->function);
-        case OBJ_CLASS: return newCString(vm, AS_CLASS(value)->name->str);
-        case OBJ_CLOSURE: return functionToString(vm, AS_CLOSURE(value)->function);
-        case OBJ_FUNCTION: return functionToString(vm, AS_FUNCTION(value));
+        case OBJ_BOUND_METHOD: return functionToString(AS_BOUND_METHOD(value)->method->function);
+        case OBJ_CLASS: return newCString(AS_CLASS(value)->name->str);
+        case OBJ_CLOSURE: return functionToString(AS_CLOSURE(value)->function);
+        case OBJ_FUNCTION: return functionToString(AS_FUNCTION(value));
         case OBJ_INSTANCE: return instanceToString(AS_INSTANCE(value));
-        case OBJ_LIBRARY: return libraryToString(vm, AS_LIBRARY(value));
-        case OBJ_NATIVE: return newCString(vm, "<native fn>");
-        case OBJ_STRING: return newCString(vm, AS_STRING(value)->str);
-        case OBJ_UPVALUE: return newCString(vm, "Should never happen.");
-        case OBJ_ENUM: return enumToString(vm, AS_ENUM(value));
+        case OBJ_LIBRARY: return libraryToString(AS_LIBRARY(value));
+        case OBJ_NATIVE: return newCString("<native fn>");
+        case OBJ_STRING: return newCString(AS_STRING(value)->str);
+        case OBJ_UPVALUE: return newCString("Should never happen.");
+        case OBJ_ENUM: return enumToString(AS_ENUM(value));
     }
     
-    return newCString(vm, "unknown object");
+    return newCString("unknown object");
 }

@@ -66,9 +66,9 @@ void initValueArray(ValueArray *array);
 void writeValueArray(VM *vm, ValueArray *array, Value value);
 void freeValueArray(VM *vm, ValueArray *array);
 
-char *valueType(VM *vm, Value value);
+char *valueType(Value value);
 
-char *valueToString(VM *vm, Value value);
-void printValue(VM *vm, Value value);
+char *valueToString(Value value);
+void printValue(Value value);
 
 #endif //C_VALUE_H

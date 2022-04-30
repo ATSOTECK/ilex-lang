@@ -6,6 +6,7 @@
 #include "../memory.h"
 
 #include <ctype.h>
+#include <stdlib.h>
 
 static Value stringToUpper(VM *vm, int argc, Value *args) {
     ObjString *string = AS_STRING(args[0]);
@@ -43,7 +44,9 @@ static Value stringContains(VM *vm, int argc, Value *args) {
     }
 
     if (!IS_STRING(args[1])) {
-        runtimeError(vm, "Function contains() expected type 'string' but got '%s'.", valueType(vm, args[1]));
+        char *str = valueType(args[1]);
+        runtimeError(vm, "Function contains() expected type 'string' but got '%s'.", str);
+        free(str);
     }
 
     char *string = AS_CSTRING(args[0]);

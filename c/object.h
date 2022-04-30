@@ -135,15 +135,15 @@ ObjFunction *newFunction(VM *vm);
 ObjInstance *newInstance(VM *vm, ObjClass *objClass);
 ObjLibrary *newLibrary(VM *vm, ObjString* name);
 ObjNative *newNative(VM *vm, NativeFn function);
-char *newCString(VM *vm, char *str);
-char *newCStringLen(VM *vm, const char *str, int len);
+char *newCString(const char *str);
+char *newCStringLen(const char *str, int len);
 ObjString *takeString(VM *vm, char *str, int len);
 ObjString *copyString(VM *vm, const char* chars, int length);
 ObjUpvalue *newUpvalue(VM *vm, Value *slot);
 ObjList *newList();
 ObjEnum *newEnum(VM *vm, ObjString *name);
-char *objectType(VM *vm, Value value);
-char *objectToString(VM *vm, Value value);
+char *objectType(Value value);
+char *objectToString(Value value);
 
 static inline bool isObjType(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;

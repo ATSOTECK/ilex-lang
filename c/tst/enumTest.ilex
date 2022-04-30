@@ -39,3 +39,5 @@ assert (x == "Yeet", "x should be Yeet")
 ln()
 println(Test)
 println(typeof(Test))
+
+println("Enum test \033[32mpassed\033[0m in", milliseconds(), "ms!")

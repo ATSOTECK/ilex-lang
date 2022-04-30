@@ -414,9 +414,9 @@ static InterpretResult run(VM *vm) {
             case OP_GET_PROPERTY: {
                 Value receiver = peek(vm, 0);
                 if (!IS_OBJ(receiver)) {
-                    char *type = valueType(vm, receiver);
+                    char *type = valueType(receiver);
                     runtimeError(vm, "%s has no properties.", type);
-                    //free(type);
+                    free(type);
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -451,9 +451,9 @@ static InterpretResult run(VM *vm) {
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     default: {
-                        char *type = valueType(vm, receiver);
+                        char *type = valueType(receiver);
                         runtimeError(vm, "%s has no properties.", type);
-                        //free(type);
+                        free(type);
                         return INTERPRET_RUNTIME_ERROR;
                     }
                 }

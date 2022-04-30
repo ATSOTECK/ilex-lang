@@ -10,7 +10,7 @@
 
 static Value println(VM *vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
-        printValue(vm, args[i]);
+        printValue(args[i]);
         if (i < argc - 1) {
             printf(" ");
         }
@@ -42,7 +42,7 @@ static Value ln(VM *vm, int argc, Value *args) {
 
 static Value print(VM *vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
-        printValue(vm, args[i]);
+        printValue(args[i]);
         if (i < argc - 1) {
             printf(" ");
         }
@@ -53,7 +53,7 @@ static Value print(VM *vm, int argc, Value *args) {
 
 static Value stdErr(VM *vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
-        char *str = valueToString(vm, args[i]);
+        char *str = valueToString(args[i]);
         fprintf(stderr, "%s", str);
         free(str);
         if (i < argc - 1) {
@@ -72,7 +72,7 @@ static Value typeof_(VM *vm, int argc, Value *args) {
         return NULL_VAL;
     }
 
-    char* type = valueType(vm, args[0]);
+    char* type = valueType(args[0]);
     return OBJ_VAL(takeString(vm, type, strlen(type)));
 }
 
@@ -91,7 +91,7 @@ static Value milliseconds(VM *vm, int argc, Value* args) {
 }
 
 static Value ilexVersionString(VM *vm, int argc, Value *args) {
-    return OBJ_VAL(takeString(vm, newCString(vm, ILEX_VERSION), strlen(ILEX_VERSION)));
+    return OBJ_VAL(takeString(vm, newCString(ILEX_VERSION), strlen(ILEX_VERSION)));
 }
 
 static Value ilexVersionMajor(VM *vm, int argc, Value *args) {
@@ -111,7 +111,7 @@ static Value ilexMemUsed(VM *vm, int argc, Value *args) {
 }
 
 static Value ilexPrintMemUsed(VM *vm, int argc, Value *args) {
-    double bytes = vm->bytesAllocated;
+    double bytes = (double)vm->bytesAllocated;
     
     int times = 0;
     while (bytes > 1000) {

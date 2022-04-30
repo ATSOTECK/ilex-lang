@@ -43,26 +43,26 @@ void freeValueArray(VM *vm, ValueArray *array) {
     initValueArray(array);
 }
 
-char *valueType(VM *vm, Value value) {
+char *valueType(Value value) {
     if (IS_BOOL(value)) {
-        return newCString(vm, "bool");
+        return newCString("bool");
     } else if (IS_NUMBER(value)) {
-        return newCString(vm, "number");
+        return newCString("number");
     } else if (IS_NULL(value)) {
-        return newCString(vm, "null");
+        return newCString("null");
     } else if (IS_OBJ(value)) {
-        return objectType(vm, value);
+        return objectType(value);
     }
 
-    return newCString(vm, "unknown");
+    return newCString("unknown");
 }
 
-char *valueToString(VM *vm, Value value) {
+char *valueToString(Value value) {
     //TODO(Skyler): Don't use GC.
     if (IS_BOOL(value)) {
-        return newCString(vm, AS_BOOL(value) ? "true" : "false");
+        return newCString(AS_BOOL(value) ? "true" : "false");
     } else if (IS_NULL(value)) {
-        return newCString(vm, "null");
+        return newCString("null");
     } else if (IS_NUMBER(value)) {
         double num = AS_NUMBER(value);
         int len = snprintf(NULL, 0, "%.15g", num) + 1;
@@ -71,16 +71,15 @@ char *valueToString(VM *vm, Value value) {
         
         return ret;
     } else if (IS_OBJ(value)) {
-        return objectToString(vm, value);
+        return objectToString(value);
     }
     
     // Should never be reached.
-    return newCString(vm, "unknown value");
+    return newCString("unknown value");
 }
 
-void printValue(VM *vm, Value value) {
-    //TODO(Skyler): Optimize.
-    char *str = valueToString(vm, value); // str will be garbage collected. TODO(Skyler): Don't use GC.
+void printValue(Value value) {
+    char *str = valueToString(value);
     printf("%s", str);
-    //free(str);
+    free(str);
 }

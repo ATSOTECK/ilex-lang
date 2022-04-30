@@ -1186,8 +1186,9 @@ static void switchStatement(Compiler *compiler) {
         }
 
         if (!check(compiler, TK_CASE) && !check(compiler, TK_RBRACE) && !check(compiler, TK_DEFAULT)) {
-            char *msg = newCStringLen(compiler->parser->vm, compiler->parser->current.start, compiler->parser->current.len);
+            char *msg = newCStringLen(compiler->parser->current.start, compiler->parser->current.len);
             error(compiler->parser, "Unexpected token '%s'.", msg);
+            free(msg);
             synchronize(compiler->parser);
         }
 
