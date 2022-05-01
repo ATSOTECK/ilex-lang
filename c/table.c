@@ -3,6 +3,7 @@
 //
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "memory.h"
@@ -160,5 +161,18 @@ void markTable(VM *vm, Table *table) {
         Entry *entry = &table->entries[i];
         markObject(vm, (Obj*)entry->key);
         markValue(vm, entry->value);
+    }
+}
+
+void printTable(Table *table) {
+    for (int i = 0; i < table->capacity; ++i) {
+        Entry entry = table->entries[i];
+        if (entry.key == NULL) {
+            printf("[NULL, ");
+        } else {
+            printf("[%s, ", entry.key->str);
+        }
+        printValue(entry.value);
+        printf("]\n");
     }
 }

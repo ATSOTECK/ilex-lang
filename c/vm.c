@@ -94,9 +94,11 @@ void panicError(VM *vm, const char *msg) {
 }
 
 void defineNative(VM *vm, const char *name, NativeFn function, Table *table) {
-    push(vm, OBJ_VAL(copyString(vm, name, (int)strlen(name))));
-    push(vm, OBJ_VAL(newNative(vm, function)));
-    tableSet(vm, table, AS_STRING(vm->stack[0]), vm->stack[1]);
+    ObjString *nativeName = copyString(vm, name, (int)strlen(name));
+    push(vm, OBJ_VAL(nativeName));
+    ObjNative *nativeFunction = newNative(vm, function);
+    push(vm, OBJ_VAL(nativeFunction));
+    tableSet(vm, table, nativeName, OBJ_VAL(nativeFunction));
     pop(vm);
     pop(vm);
 }
@@ -272,6 +274,17 @@ static bool invoke(VM *vm, ObjString *name, int argCount) {
 
             runtimeError(vm, "'%s' enum has no property '%s'.", enumObj->name->str, name->str);
             return false;
+        }
+        case OBJ_SCRIPT: {
+            ObjScript *script = AS_SCRIPT(receiver);
+
+            Value value;
+            if (!tableGet(&script->values, name, &value)) {
+                runtimeError(vm, "Undefined property '%s'.", name->str);
+                return false;
+            }
+
+            return callValue(vm, value, argCount);
         }
     }
 

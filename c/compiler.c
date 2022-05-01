@@ -706,7 +706,14 @@ static void dot(Compiler *compiler, bool canAssign) {
 static void scope(Compiler *compiler, bool canAssign) {
     eat(compiler->parser, TK_IDENT, "Expect property name after '::'.");
     uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
-    emitBytes(compiler, OP_GET_PROPERTY, name);
+
+    if (match(compiler, TK_LPAREN)) {
+        int argc = argumentList(compiler);
+        emitBytes(compiler, OP_INVOKE, name);
+        emitByte(compiler, argc);
+    } else {
+        emitBytes(compiler, OP_GET_PROPERTY, name);
+    }
 }
 
 static void literal(Compiler *compiler, bool canAssign) {

@@ -280,6 +280,7 @@ Token nextToken() {
     }
 
     switch (c) {
+        case '$': return ident();
         case '(': return makeToken(TK_LPAREN);
         case ')': return makeToken(TK_RPAREN);
         case '{': return makeToken(TK_LBRACE);

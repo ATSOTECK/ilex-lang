@@ -23,7 +23,7 @@ static Value mathSqrt(VM *vm, int argc, Value *args) {
         return NULL_VAL;
     }
 
-    return AS_NUMBER(sqrt(AS_NUMBER(args[0])));
+    return NUMBER_VAL(sqrt(AS_NUMBER(args[0])));
 }
 
 Value useMathLib(VM *vm) {
@@ -32,7 +32,7 @@ Value useMathLib(VM *vm) {
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));
 
-    defineNative(vm, "math", mathSqrt, &vm->scripts);
+    defineNative(vm, "sqrt", mathSqrt, &lib->values);
 
     pop(vm);
     pop(vm);
