@@ -5,6 +5,10 @@ sqrt12 := math::sqrt(12)
 assert(sqrt12 > 3.4 && sqrt12 < 3.5) // Close enough.
 //println(math::$file)
 
+M := math
+two := M::sqrt(4)
+assert(two == 2)
+
 num := 0;
 assert(num == 0);
 
