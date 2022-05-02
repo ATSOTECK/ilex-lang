@@ -164,7 +164,13 @@ static IlexTokenType identType() {
                 switch (lexer.start[1]) {
                     case 'a': return checkKeyword(2, 2, "se", TK_CASE);
                     case 'l': return checkKeyword(2, 3, "ass", TK_CLASS);
-                    case 'o': return checkKeyword(2, 3, "nst", TK_CONST);
+                    case 'o': {
+                        IlexTokenType tk = checkKeyword(2, 3, "nst", TK_CONST);
+                        if (tk == TK_IDENT) {
+                            return checkKeyword(2, 6, "ntinue", TK_CONTINUE);
+                        }
+                        return tk;
+                    }
                 }
             }
         case 'd': return checkKeyword(1, 6, "efault", TK_DEFAULT);

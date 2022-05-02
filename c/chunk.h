@@ -65,6 +65,7 @@ typedef enum {
     OP_ENUM_SET_VALUE,
     OP_USE_BUILTIN,
     OP_USE_BUILTIN_VAR,
+    OP_BREAK,
 } OpCode;
 
 typedef struct {

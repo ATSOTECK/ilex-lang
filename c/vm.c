@@ -838,6 +838,7 @@ static InterpretResult run(VM *vm) {
                     push(vm, libVar);
                 }
             } break;
+            case OP_BREAK: break; // lol
         }
     }
 

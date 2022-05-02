@@ -207,9 +207,11 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     compiler->scopeDepth = 0;
     compiler->function = newFunction(parser->vm);
     compiler->currentLibName = 0;
+    compiler->loop = NULL;
 
     if (parent != NULL) {
         compiler->class = parent->class;
+        compiler->loop = parent->loop;
     }
 
     parser->vm->compiler = compiler;
@@ -809,6 +811,8 @@ ParseRule rules[] = {
         [TK_USE]              = {NULL,     NULL,    PREC_NONE},
         [TK_FROM]             = {NULL,     NULL,    PREC_NONE},
         [TK_AS]               = {NULL,     NULL,    PREC_NONE},
+        [TK_BREAK]            = {NULL,     NULL,    PREC_NONE},
+        [TK_CONTINUE]         = {NULL,     NULL,    PREC_NONE},
         [TK_ERROR]            = {NULL,     NULL,    PREC_NONE},
         [TK_EOF]              = {NULL,     NULL,    PREC_NONE},
 };
@@ -868,6 +872,7 @@ static void synchronize(Parser *parser) {
             case TK_ASSERT:
             case TK_SWITCH:
             case TK_USE:
+            case TK_BREAK:
                 return;
 
             default:
@@ -1061,6 +1066,91 @@ static void expressionStatement(Compiler *compiler) {
     emitByte(compiler, OP_POP);
 }
 
+static int getArgCount(const uint8_t *code, const ValueArray constants, int ip) {
+    switch (code[ip]) {
+        case OP_NULL:
+        case OP_TRUE:
+        case OP_FALSE:
+        case OP_POP:
+        case OP_EQ:
+        case OP_GR:
+        case OP_LT:
+        case OP_ADD:
+        case OP_SUB:
+        case OP_MUL:
+        case OP_DIV:
+        case OP_POW:
+        case OP_MOD:
+        case OP_NOT:
+        case OP_NEG:
+        case OP_CLOSE_UPVALUE:
+        case OP_RETURN:
+        case OP_BREAK:
+            return 0;
+
+        case OP_CONSTANT:
+        case OP_GET_LOCAL:
+        case OP_SET_LOCAL:
+        case OP_GET_GLOBAL:
+        case OP_GET_UPVALUE:
+        case OP_SET_UPVALUE:
+        case OP_GET_PROPERTY:
+        case OP_GET_PROPERTY_NO_POP:
+        case OP_SET_PROPERTY:
+        case OP_GET_SUPER:
+        case OP_CALL:
+        case OP_METHOD:
+        case OP_USE:
+        case OP_MULTI_CASE:
+            return 1;
+
+        case OP_JUMP:
+        case OP_CMP_JMP:
+        case OP_JUMP_IF_FALSE:
+        case OP_LOOP:
+        case OP_INVOKE:
+        case OP_CLASS:
+        case OP_USE_BUILTIN:
+            return 2;
+
+        case OP_USE_BUILTIN_VAR: {
+            int argCount = code[ip + 2];
+
+            return 2 + argCount;
+        }
+
+        case OP_CLOSURE: {
+            int constant = code[ip + 1];
+            ObjFunction* loadedFn = AS_FUNCTION(constants.values[constant]);
+
+            // There is one byte for the constant, then two for each upvalue.
+            return 1 + (loadedFn->upvalueCount * 2);
+        }
+    }
+
+    return 0;
+}
+
+static void endLoop(Compiler *compiler) {
+    if (compiler->loop->end != -1) {
+        patchJump(compiler, compiler->loop->end);
+        emitByte(compiler, OP_POP); // Condition.
+    }
+
+    int i = compiler->loop->body;
+    while (i < compiler->function->chunk.count) {
+        if (compiler->function->chunk.code[i] == OP_BREAK) {
+            compiler->function->chunk.code[i] = OP_JUMP;
+            patchJump(compiler, i + 1);
+            i += 3;
+        } else {
+            i += 1 + getArgCount(compiler->function->chunk.code, compiler->function->chunk.constants, i);
+        }
+    }
+
+    compiler->loop = compiler->loop->enclosing;
+}
+
 static void forStatement(Compiler *compiler) {
     beginScope(compiler);
     eat(compiler->parser, TK_LPAREN, "Expect '(' after 'for'.");
@@ -1082,14 +1172,19 @@ static void forStatement(Compiler *compiler) {
         }
     }
 
-    int loopStart = currentChunk(compiler)->count;
-    int exitJump = -1;
+    Loop loop;
+    loop.start = currentChunk(compiler)->count;
+    loop.scopeDepth = compiler->scopeDepth;
+    loop.enclosing = compiler->loop;
+    compiler->loop = &loop;
+    compiler->loop->end = -1; // Exit condition.
+
     if (!match(compiler, TK_SEMICOLON)) {
         expression(compiler);
         eat(compiler->parser, TK_SEMICOLON, "Expect ';' after loop condition.");
 
         // Jump out of the loop if the condition is false.
-        exitJump = emitJump(compiler, OP_JUMP_IF_FALSE);
+        compiler->loop->end = emitJump(compiler, OP_JUMP_IF_FALSE);
         emitByte(compiler, OP_POP); // Condition.
     }
 
@@ -1100,8 +1195,8 @@ static void forStatement(Compiler *compiler) {
         emitByte(compiler, OP_POP);
         eat(compiler->parser, TK_RPAREN, "Expect ')' after for clauses.");
 
-        emitLoop(compiler, loopStart);
-        loopStart = incrementStart;
+        emitLoop(compiler, compiler->loop->start);
+        compiler->loop->start = incrementStart;
         patchJump(compiler, bodyJump);
     }
 
@@ -1110,13 +1205,8 @@ static void forStatement(Compiler *compiler) {
     block(compiler);
     endScope(compiler);
 
-    emitLoop(compiler, loopStart);
-
-    if (exitJump != -1) {
-        patchJump(compiler, exitJump);
-        emitByte(compiler, OP_POP); // Condition.
-    }
-
+    emitLoop(compiler, compiler->loop->start);
+    endLoop(compiler);
     endScope(compiler);
 }
 
@@ -1275,22 +1365,26 @@ static void returnStatement(Compiler *compiler) {
 }
 
 static void whileStatement(Compiler *compiler) {
-    int loopStart = currentChunk(compiler)->count;
+    Loop loop;
+    loop.start = currentChunk(compiler)->count;
+    loop.scopeDepth = compiler->scopeDepth;
+    loop.enclosing = compiler->loop;
+    compiler->loop = &loop;
+
     eat(compiler->parser, TK_LPAREN, "Expect '(' after 'while'.");
     expression(compiler);
     eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
 
-    int exitJump = emitJump(compiler, OP_JUMP_IF_FALSE);
+    compiler->loop->end = emitJump(compiler, OP_JUMP_IF_FALSE);
     emitByte(compiler, OP_POP);
 
     eat(compiler->parser, TK_LBRACE, "Expect '{' after ').");
     beginScope(compiler);
     block(compiler);
     endScope(compiler);
-    emitLoop(compiler, loopStart);
 
-    patchJump(compiler, exitJump);
-    emitByte(compiler, OP_POP);
+    emitLoop(compiler, compiler->loop->start);
+    endLoop(compiler);
 }
 
 static void useStatement(Compiler *compiler, bool isFrom) {
@@ -1362,6 +1456,38 @@ static void useStatement(Compiler *compiler, bool isFrom) {
     match(compiler, TK_SEMICOLON);
 }
 
+static void continueStatement(Compiler *compiler) {
+    if (compiler->loop == NULL) {
+        error(compiler->parser, "Can't have 'continue' outside of a loop.");
+        return;
+    }
+
+    match(compiler, TK_SEMICOLON);
+
+    // Discard any locals created inside the loop.
+    for (int i = compiler->localCount - 1; i >= 0 && compiler->locals[i].depth > compiler->loop->scopeDepth; --i) {
+        emitByte(compiler, OP_POP);
+    }
+
+    emitLoop(compiler, compiler->loop->start);
+}
+
+static void breakStatement(Compiler *compiler) {
+    if (compiler->loop == NULL) {
+        error(compiler->parser, "Can't have 'break' outside of a loop.");
+        return;
+    }
+
+    match(compiler, TK_SEMICOLON);
+
+    // Discard any locals created inside the loop.
+    for (int i = compiler->localCount - 1; i >= 0 && compiler->locals[i].depth > compiler->loop->scopeDepth; i--) {
+        emitByte(compiler, OP_POP);
+    }
+
+    emitJump(compiler, OP_BREAK);
+}
+
 static void declaration(Compiler *compiler) {
     if (match(compiler, TK_CLASS)) {
         classDeclaration(compiler);
@@ -1401,6 +1527,10 @@ static void statement(Compiler *compiler) {
         switchStatement(compiler);
     } else if (match(compiler, TK_USE)) {
         useStatement(compiler, false);
+    } else if (match(compiler, TK_CONTINUE)) {
+        continueStatement(compiler);
+    } else if (match(compiler, TK_BREAK)) {
+        breakStatement(compiler);
     } else if (match(compiler, TK_LBRACE)) {
         beginScope(compiler);
         block(compiler);

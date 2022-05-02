@@ -36,6 +36,14 @@ typedef enum {
     TYPE_SCRIPT
 } FunctionType;
 
+typedef struct Loop {
+    struct Loop *enclosing;
+    int start;
+    int body;
+    int end;
+    int scopeDepth;
+} Loop;
+
 typedef struct ClassCompiler {
     struct ClassCompiler *enclosing;
     bool hasSuperclass;
@@ -53,6 +61,7 @@ typedef struct Compiler {
     Upvalue upvalues[UINT8_COUNT];
     int scopeDepth;
     uint8_t currentLibName;
+    Loop *loop;
 } Compiler;
 
 ObjFunction *compile(VM *vm, const char *source);
