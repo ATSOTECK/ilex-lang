@@ -1,0 +1,20 @@
+use { pi, sin, cos, toRad } from <math>
+use <ilex>
+
+fn one(theta) {
+    return sin(theta) ** 2 + cos(theta) ** 2
+}
+
+x := one(toRad(90))
+assert(x == 1)
+
+println("One:", x)
+
+println("sin(pi) =", sin(pi))
+println("cos(pi) =", cos(pi))
+
+theta := toRad(270)
+assert(sin(2 * theta) == 2 * sin(theta) * cos(theta))
+assert(cos(2 * theta) == cos(theta) ** 2 - sin(theta) ** 2)
+
+println("This was run with version", ilex::version(), "of \033[32mIlex\033[0m.")

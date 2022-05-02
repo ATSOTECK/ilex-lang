@@ -812,6 +812,32 @@ static InterpretResult run(VM *vm) {
 
                 push(vm, lib);
             } break;
+            case OP_USE_BUILTIN_VAR: {
+                ObjString *fileName = READ_STRING();
+                int varCount = READ_BYTE();
+
+                Value libVal;
+                ObjScript *script;
+
+                if (tableGet(&vm->scripts, fileName, &libVal)) {
+                    script = AS_SCRIPT(libVal);
+                } else {
+                    runtimeError(vm, "Unknown error.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                for (int i = 0; i < varCount; i++) {
+                    Value libVar;
+                    ObjString *variable = READ_STRING();
+
+                    if (!tableGet(&script->values, variable, &libVar)) {
+                        runtimeError(vm, "'%s' can't be found in library '%s'.", variable->str, script->name->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    push(vm, libVar);
+                }
+            } break;
         }
     }
 

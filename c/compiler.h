@@ -52,6 +52,7 @@ typedef struct Compiler {
     int localCount;
     Upvalue upvalues[UINT8_COUNT];
     int scopeDepth;
+    uint8_t currentLibName;
 } Compiler;
 
 ObjFunction *compile(VM *vm, const char *source);

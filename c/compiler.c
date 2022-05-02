@@ -206,6 +206,7 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
     compiler->function = newFunction(parser->vm);
+    compiler->currentLibName = 0;
 
     if (parent != NULL) {
         compiler->class = parent->class;
@@ -1292,11 +1293,16 @@ static void whileStatement(Compiler *compiler) {
     emitByte(compiler, OP_POP);
 }
 
-static void useStatement(Compiler *compiler) {
+static void useStatement(Compiler *compiler, bool isFrom) {
+    if (compiler->scopeDepth > 0) {
+        error(compiler->parser, "'use' must be at top level code.");
+        return;
+    }
+
     if (match(compiler, TK_LT)) {
         eat(compiler->parser, TK_IDENT, "Expected library name after '<'.");
         //TODO: Could have TK_AS next.
-        uint8_t libName = identifierConstant(compiler, &compiler->parser->previous);
+        compiler->currentLibName = identifierConstant(compiler, &compiler->parser->previous);
         declareVariable(compiler);
 
         int idx = findBuiltInLib((char*)compiler->parser->previous.start,
@@ -1307,10 +1313,50 @@ static void useStatement(Compiler *compiler) {
         }
 
         emitBytes(compiler, OP_USE_BUILTIN, idx);
-        emitByte(compiler, libName);
+        emitByte(compiler, compiler->currentLibName);
 
-        defineVariable(compiler, libName, false);
+        if (!isFrom) {
+            defineVariable(compiler, compiler->currentLibName, false);
+        }
         eat(compiler->parser, TK_GR, "Expected '>' after library name.");
+    } else if (match(compiler, TK_LBRACE)) {
+        uint8_t variables[255];
+        Token tokens[255];
+        int varCount = 0;
+
+        do {
+            eat(compiler->parser, TK_IDENT, "Expected variable name.");
+            tokens[varCount] = compiler->parser->previous;
+            variables[varCount] = identifierConstant(compiler, &compiler->parser->previous);
+
+            if (++varCount > 255) {
+                error(compiler->parser, "Cannot have more than 255 variables.");
+            }
+        } while(match(compiler, TK_COMMA));
+
+        eat(compiler->parser, TK_RBRACE, "Expected '}' after variable list.");
+        eat(compiler->parser, TK_FROM, "Expected 'from' after '}'");
+
+        bool builtin = false;
+        if (check(compiler, TK_LT)) {
+            builtin = true;
+        }
+
+        useStatement(compiler, true);
+
+        if (builtin) {
+            emitByte(compiler, OP_POP);
+            emitByte(compiler, OP_USE_BUILTIN_VAR);
+            emitBytes(compiler, compiler->currentLibName, varCount);
+
+            for (int i = 0; i < varCount; ++i) {
+                emitByte(compiler, variables[i]);
+            }
+
+            for (int i = varCount - 1; i >= 0; --i) {
+                defineVariable(compiler, variables[i], false);
+            }
+        }
     }
 
     match(compiler, TK_SEMICOLON);
@@ -1354,7 +1400,7 @@ static void statement(Compiler *compiler) {
     } else if (match(compiler, TK_SWITCH)) {
         switchStatement(compiler);
     } else if (match(compiler, TK_USE)) {
-        useStatement(compiler);
+        useStatement(compiler, false);
     } else if (match(compiler, TK_LBRACE)) {
         beginScope(compiler);
         block(compiler);

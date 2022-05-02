@@ -43,16 +43,22 @@ typedef uint64_t Value;
 #define NUMBER_VAL(num) numToValue(num)
 #define OBJ_VAL(obj)    (Value)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
 
-static inline double valueToNum(Value value) {
+typedef union {
+    uint64_t bits64;
+    uint32_t bits32[2];
     double num;
-    memcpy(&num, &value, sizeof(Value));
-    return num;
+} Double;
+
+static inline double valueToNum(Value value) {
+    Double data;
+    data.bits64 = value;
+    return data.num;
 }
 
 static inline Value numToValue(double num) {
-    Value value;
-    memcpy(&value, &num, sizeof(double));
-    return value;
+    Double data;
+    data.num = num;
+    return data.bits64;
 }
 
 typedef struct {

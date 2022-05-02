@@ -1,9 +1,16 @@
+use { pi, e, max, min } from <math>
 use <math>
-//use { pi } from <math as M>
+use { version } from <ilex>
+
+println("e", e)
+println("math::e", math::e)
+
+x := min(12, 5)
+println(version())
 
 sqrt12 := math::sqrt(12)
 assert(sqrt12 > 3.4 && sqrt12 < 3.5) // Close enough.
-println(math::$file)
+println("math::$file", math::$file)
 
 println("pi", math::pi)
 println("2/sqrt(pi)", math::_2_sqrtpi)
