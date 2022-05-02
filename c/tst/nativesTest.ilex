@@ -1,5 +1,5 @@
 x := 12
-println("Hello world!", x)
+println('Hello world!', x)
 
 t := seconds()
 str := "yeet"
@@ -40,6 +40,9 @@ memUsagePrint()
 println("Memory used:", memUsageGet())
 
 println("This\nis\na\ntest.")
+
+println('String with \'')
+println("String with \"");
 
 println("\033[31;1;4mHello\033[0m");
 println("\033[32mThis should be green\033[0m")

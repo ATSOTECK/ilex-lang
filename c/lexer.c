@@ -11,6 +11,7 @@
 typedef struct {
     const char *start;
     const char *current;
+    char previous;
     int line;
 } Lexer;
 
@@ -19,6 +20,7 @@ Lexer lexer;
 void initLexer(const char *source) {
     lexer.start = source;
     lexer.current = source;
+    lexer.previous = '\0';
     lexer.line = 1;
 }
 
@@ -59,6 +61,7 @@ static Token errorToken(const char* message) {
 }
 
 static char advance() {
+    lexer.previous = *lexer.current;
     lexer.current++;
     return lexer.current[-1];
 }
@@ -221,8 +224,15 @@ static IlexTokenType identType() {
     return TK_IDENT;
 }
 
-static Token string() {
-    while (peek() != '"' && !atEnd()) {
+static Token string(char strChar) {
+    bool overwrite = false;
+    while ((peek() != strChar || overwrite) && !atEnd()) {
+        overwrite = false;
+        
+        if (peek() == '\\' && peekNext() == strChar) {
+            overwrite = true;
+        }
+        
         if (peek() == '\n') {
             lexer.line++;
         }
@@ -351,7 +361,8 @@ Token nextToken() {
                 return makeToken(TK_OR);
             }
         }
-        case '"': return string();
+        case '"': return string('"');
+        case '\'': return string('\'');
         default: break;
     }
 

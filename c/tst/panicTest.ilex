@@ -6,4 +6,4 @@ panic("yeet")
 
 panic! ("At the disco!")
 
-assert (false, "THis should never run.")
+assert (false, "This should never run.")

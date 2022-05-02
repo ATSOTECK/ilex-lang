@@ -10,15 +10,17 @@ assert(len == 4)
 assert("This is a string".contains("is"))
 
 str := "yeet"
-assert(str.toUpper() == "YEET");
+assert(str.toUpper() == "YEET")
 
 str = "YEET"
-assert(str.toLower() == "yeet");
+assert(str.toLower() == "yeet")
 
 assert(str.len() == 4)
 
 str = "This is a string"
 assert(str.contains("a"))
+
+assert('yeet' == "yeet")
 
 println("String test passed in", milliseconds(), "ms!")
 
