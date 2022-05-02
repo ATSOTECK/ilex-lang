@@ -56,6 +56,16 @@ void markObject(VM *vm, Obj *obj) {
 
     obj->isMarked = true;
 
+    switch (obj->type) {
+        //TODO(Skyler): Add more object types.
+        case OBJ_SCRIPT: {
+            ObjScript *script = (ObjScript*)obj;
+            markObject(vm, (Obj*)script->name);
+            markObject(vm, (Obj*)script->path);
+            markTable(vm, &script->values);
+        } break;
+    }
+
     if (vm->grayCapacity < vm->grayCount + 1) {
         vm->grayCapacity = GROW_CAPACITY(vm->grayCapacity);
         vm->grayStack = (Obj**)realloc(vm->grayStack, sizeof(Obj*) * vm->grayCapacity);
@@ -180,6 +190,7 @@ static void markRoots(VM *vm) {
         markObject(vm, (Obj*)upvalue);
     }
 
+    markTable(vm, &vm->scripts);
     markTable(vm, &vm->globals);
     markTable(vm, &vm->consts);
     markTable(vm, &vm->stringFunctions);

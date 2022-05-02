@@ -3,6 +3,7 @@
 //
 
 #include "../vm.h"
+#include "../memory.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,6 +78,11 @@ static Value ilexGetMemUsed(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
+static Value ilexCollectGarbage(VM *vm, int argc, Value *args) {
+    collectGarbage(vm);
+    return NUMBER_VAL(0);
+}
+
 Value useIlexLib(VM *vm) {
     ObjString *name = copyString(vm, "ilex", 4);
     push(vm, OBJ_VAL(name));
@@ -89,8 +95,10 @@ Value useIlexLib(VM *vm) {
     defineNative(vm, "versionBuild", ilexVersionBuild, &lib->values);
 
     defineNative(vm, "memAllocated", ilexMemUsed, &lib->values);
-    defineNative(vm, "memUsagePrint", ilexPrintMemUsed, &lib->values);
-    defineNative(vm, "memUsageGet", ilexGetMemUsed, &lib->values);
+    defineNative(vm, "printMemUsage", ilexPrintMemUsed, &lib->values);
+    defineNative(vm, "getMemUsage", ilexGetMemUsed, &lib->values);
+
+    defineNative(vm, "collectGarbage", ilexCollectGarbage, &lib->values);
 
     pop(vm);
     pop(vm);

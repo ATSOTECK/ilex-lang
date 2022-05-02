@@ -38,13 +38,17 @@ print("yote\n")
 printErr("This is an error yo.")
 
 println("bytes allocated:", ilex::memAllocated())
-ilex::memUsagePrint()
-println("Memory used:", ilex::memUsageGet())
+ilex::printMemUsage()
+println("Memory used:", ilex::getMemUsage())
 
 println("This\nis\na\ntest.")
 
 println('String with \'')
 println("String with \"");
+
+ilex::printMemUsage()
+ilex::collectGarbage()
+ilex::printMemUsage()
 
 println("\033[31;1;4mHello\033[0m");
 println("\033[32mThis should be green\033[0m")
