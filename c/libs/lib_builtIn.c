@@ -6,6 +6,7 @@
 
 BuiltInLibs libs[] = {
         {"math", &useMathLib},
+        {"ilex", &useIlexLib},
         {NULL, NULL},
 };
 

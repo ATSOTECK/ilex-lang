@@ -1,3 +1,5 @@
+use <ilex>
+
 x := 12
 println('Hello world!', x)
 
@@ -21,10 +23,10 @@ println("typeof cat", typeof(cat))
 println("Seconds since start:", t)
 println("Milliseconds since start:", milliseconds())
 
-println("This is running in ilex version:", ilexVersion())
-println("Ilex version major:", ilexVersionMajor())
-println("Ilex version minor:", ilexVersionMinor())
-println("Ilex version build:", ilexVersionBuild())
+println("This is running in ilex version:", ilex::version())
+println("Ilex version major:", ilex::versionMajor())
+println("Ilex version minor:", ilex::versionMinor())
+println("Ilex version build:", ilex::versionBuild())
 
 println("ln() test begin")
 ln(5)
@@ -35,9 +37,9 @@ print("yote\n")
 
 printErr("This is an error yo.")
 
-println("bytes allocated:", memAllocated())
-memUsagePrint()
-println("Memory used:", memUsageGet())
+println("bytes allocated:", ilex::memAllocated())
+ilex::memUsagePrint()
+println("Memory used:", ilex::memUsageGet())
 
 println("This\nis\na\ntest.")
 

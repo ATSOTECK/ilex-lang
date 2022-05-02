@@ -95,76 +95,6 @@ static Value milliseconds(VM *vm, int argc, Value* args) {
 #endif
 }
 
-static Value ilexVersionString(VM *vm, int argc, Value *args) {
-    return OBJ_VAL(takeString(vm, newCString(ILEX_VERSION), strlen(ILEX_VERSION)));
-}
-
-static Value ilexVersionMajor(VM *vm, int argc, Value *args) {
-    return NUMBER_VAL(ILEX_VERSION_MAJOR);
-}
-
-static Value ilexVersionMinor(VM *vm, int argc, Value *args) {
-    return NUMBER_VAL(ILEX_VERSION_MINOR);
-}
-
-static Value ilexVersionBuild(VM *vm, int argc, Value *args) {
-    return NUMBER_VAL(ILEX_VERSION_BUILD);
-}
-
-static Value ilexMemUsed(VM *vm, int argc, Value *args) {
-    return NUMBER_VAL(vm->bytesAllocated);
-}
-
-static Value ilexPrintMemUsed(VM *vm, int argc, Value *args) {
-    double bytes = (double)vm->bytesAllocated;
-    
-    int times = 0;
-    while (bytes > 1000) {
-        bytes /= 1000;
-        ++times;
-    }
-    
-    switch (times) {
-        case 0: printf("%d bytes\n", (int)bytes); break;
-        case 1: printf("%.15g kb\n", bytes); break;
-        case 2: printf("%.15g mb\n", bytes); break;
-        case 3: printf("%.15g gb\n", bytes); break;
-        case 4: printf("%.15g tb\n", bytes); break;
-        default: printf(">= 1000tb\n"); break;
-    }
-    
-    return NUMBER_VAL(0);
-}
-
-static Value ilexGetMemUsed(VM *vm, int argc, Value *args) {
-    double bytes = (double)vm->bytesAllocated;
-    
-    int times = 0;
-    while (bytes > 1000) {
-        bytes /= 1000;
-        ++times;
-    }
-    
-    int len = snprintf(NULL, 0, "%.15g", bytes) + 4;
-    if (times == 0) {
-        len += 3;
-    }
-    
-    char *str = (char*)malloc(sizeof(char) * len);
-    
-    switch (times) {
-        case 0: snprintf(str, len, "%d bytes", (int)bytes); break;
-        case 1: snprintf(str, len, "%.15g kb", bytes); break;
-        case 2: snprintf(str, len, "%.15g mb", bytes); break;
-        case 3: snprintf(str, len, "%.15g gb", bytes); break;
-        case 4: snprintf(str, len, "%.15g tb", bytes); break;
-        default: snprintf(str, len, "???"); break;
-    }
-    
-    ObjString *ret = takeString(vm, str, len);
-    return OBJ_VAL(ret);
-}
-
 void defineNatives(VM *vm) {
     defineNative(vm, "flushConsole", flushConsole, &vm->globals);
     defineNative(vm, "println", println, &vm->globals);
@@ -174,17 +104,8 @@ void defineNatives(VM *vm) {
     defineNative(vm, "debug", print, &vm->globals); // Same as print but more searchable.
     defineNative(vm, "printErr", stdErr, &vm->globals);
     defineNative(vm, "typeof", typeof_, &vm->globals);
-    
+
     // Move these into Ilex library?
     defineNative(vm, "seconds", seconds, &vm->globals);
     defineNative(vm, "milliseconds", milliseconds, &vm->globals);
-    
-    defineNative(vm, "ilexVersion", ilexVersionString, &vm->globals);
-    defineNative(vm, "ilexVersionMajor", ilexVersionMajor, &vm->globals);
-    defineNative(vm, "ilexVersionMinor", ilexVersionMinor, &vm->globals);
-    defineNative(vm, "ilexVersionBuild", ilexVersionBuild, &vm->globals);
-    
-    defineNative(vm, "memAllocated", ilexMemUsed, &vm->globals);
-    defineNative(vm, "memUsagePrint", ilexPrintMemUsed, &vm->globals);
-    defineNative(vm, "memUsageGet", ilexGetMemUsed, &vm->globals);
 }
