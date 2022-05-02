@@ -8,6 +8,11 @@
 #include <string.h>
 #include "lib_natives.h"
 
+static Value flushConsole(VM *vm, int argc, Value *args) {
+    fflush(stdout);
+    return NUMBER_VAL(0);
+}
+
 static Value println(VM *vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
         printValue(args[i]);
@@ -161,6 +166,7 @@ static Value ilexGetMemUsed(VM *vm, int argc, Value *args) {
 }
 
 void defineNatives(VM *vm) {
+    defineNative(vm, "flushConsole", flushConsole, &vm->globals);
     defineNative(vm, "println", println, &vm->globals);
     defineNative(vm, "debugln", println, &vm->globals); // Same as println but more searchable.
     defineNative(vm, "ln", ln, &vm->globals);

@@ -103,6 +103,15 @@ void defineNative(VM *vm, const char *name, NativeFn function, Table *table) {
     pop(vm);
 }
 
+void defineNativeValue(VM *vm, const char *name, Value value, Table *table) {
+    ObjString *valueName = copyString(vm, name, (int)strlen(name));
+    push(vm, OBJ_VAL(valueName));
+    push(vm, value);
+    tableSet(vm, table, valueName, value);
+    pop(vm);
+    pop(vm);
+}
+
 VM *initVM(const char *path) {
     VM *vm = (VM*)calloc(1, sizeof(VM));
 
@@ -463,7 +472,20 @@ static InterpretResult run(VM *vm) {
                             break;
                         }
 
-                        runtimeError(vm, "'%s' enum has no property: '%s'.", enumObj->name->str, name->str);
+                        runtimeError(vm, "'%s' enum does not have property: '%s'.", enumObj->name->str, name->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    case OBJ_SCRIPT: {
+                        ObjScript *script  = AS_SCRIPT(receiver);
+                        ObjString *name = READ_STRING();
+                        Value value;
+                        if (tableGet(&script->values, name, &value)) {
+                            pop(vm); // Script.
+                            push(vm, value);
+                            break;
+                        }
+
+                        runtimeError(vm, "%s does not have property: '%s'.", script->name->str, name->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     default: {

@@ -59,6 +59,7 @@ void freeVM(VM *vm);
 void runtimeError(VM *vm, const char *format, ...);
 InterpretResult interpret(VM *vm, const char *source);
 void defineNative(VM *vm, const char *name, NativeFn function, Table *table);
+void defineNativeValue(VM *vm, const char *name, Value value, Table *table);
 
 void push(VM *vm, Value v);
 Value pop(VM *vm);
