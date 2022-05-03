@@ -1,0 +1,12 @@
+use <io>
+
+fn test() {
+    str := io::input('Enter something: ')
+    println('You entered', str)
+    
+    num := str.toNumber() ?? 0
+    
+    println(num + 1)
+}
+
+test()

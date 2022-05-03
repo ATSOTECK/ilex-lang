@@ -1399,8 +1399,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         compiler->currentLibName = identifierConstant(compiler, &compiler->parser->previous);
         declareVariable(compiler);
 
-        int idx = findBuiltInLib((char*)compiler->parser->previous.start,
-                                 compiler->parser->previous.len - compiler->parser->current.len);
+        int idx = findBuiltInLib((char*)compiler->parser->previous.start, compiler->parser->previous.len);
 
         if (idx == -1) {
             error(compiler->parser, "Unknown library.");

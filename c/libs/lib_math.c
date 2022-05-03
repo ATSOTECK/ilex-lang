@@ -8,6 +8,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define argCheckNum(name) do {\
                             if (argc != 1) { \
@@ -290,7 +291,7 @@ Value useMathLib(VM *vm) {
 
 #undef argCheckNum
 
-    defineNativeValue(vm, "pi",        NUMBER_VAL(3.14159265358979), &lib->values);
+    defineNativeValue(vm, "pi",        NUMBER_VAL(3.14159265358979323846264338327950288), &lib->values);
     defineNativeValue(vm, "pi_2",      NUMBER_VAL(1.57079632679489), &lib->values);
     defineNativeValue(vm, "pi_4",      NUMBER_VAL(0.78539816339744), &lib->values);
     defineNativeValue(vm, "_1_pi",     NUMBER_VAL(0.31830988618379), &lib->values);

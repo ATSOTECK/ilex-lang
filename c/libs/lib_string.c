@@ -6,6 +6,7 @@
 #include "../memory.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 
 static Value stringToUpper(VM *vm, int argc, Value *args) {
@@ -40,7 +41,7 @@ static Value stringLen(VM *vm, int argc, Value *args) {
 static Value stringContains(VM *vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function contains() expected 1 argument but got %d", argc);
-        return EMPTY_VAL;
+        return NULL_VAL;
     }
 
     if (!IS_STRING(args[1])) {
@@ -55,9 +56,30 @@ static Value stringContains(VM *vm, int argc, Value *args) {
     return BOOL_VAL(strstr(string, toFind) != NULL);
 }
 
+static Value stringToNumber(VM *vm, int argc, Value *args) {
+    if (argc != 0) {
+        runtimeError(vm, "Function toNumber() expected 0 arguments but got %d.", argc);
+        return NULL_VAL;
+    }
+
+    char *numberString = AS_CSTRING(args[0]);
+    char *end;
+    errno = 0;
+
+    double number = strtod(numberString, &end);
+
+    // Failed conversion
+    if (errno != 0 || *end != '\0') {
+        return NULL_VAL;
+    }
+
+    return NUMBER_VAL(number);
+}
+
 void defineStringFunctions(VM *vm) {
     defineNative(vm, "toUpper", stringToUpper, &vm->stringFunctions);
     defineNative(vm, "toLower", stringToLower, &vm->stringFunctions);
     defineNative(vm, "len", stringLen, &vm->stringFunctions);
     defineNative(vm, "contains", stringContains, &vm->stringFunctions);
+    defineNative(vm, "toNumber", stringToNumber, &vm->stringFunctions);
 }
