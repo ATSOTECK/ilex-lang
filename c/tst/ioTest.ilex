@@ -2,6 +2,8 @@
 //use * from <io>
 use { input } from <io>
 
+use <math as M>
+
 fn test() {
     str := input('Enter something: ')
     println('You entered', str)
@@ -9,6 +11,8 @@ fn test() {
     num := str.toNumber() ?? 0
     
     println(num + 1)
+    
+    println(M::pi)
 }
 
 /-

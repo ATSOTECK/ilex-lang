@@ -873,6 +873,8 @@ static void synchronize(Parser *parser) {
             case TK_ASSERT:
             case TK_SWITCH:
             case TK_USE:
+            case TK_FROM:
+            case TK_AS:
             case TK_BREAK:
                 return;
 
@@ -1396,16 +1398,31 @@ static void useStatement(Compiler *compiler, bool isFrom) {
 
     if (match(compiler, TK_LT)) {
         eat(compiler->parser, TK_IDENT, "Expected library name after '<'.");
-        //TODO: Could have TK_AS next.
-        compiler->currentLibName = identifierConstant(compiler, &compiler->parser->previous);
-        declareVariable(compiler);
 
         int idx = findBuiltInLib((char*)compiler->parser->previous.start, compiler->parser->previous.len);
-        compiler->currentScript = AS_SCRIPT(useBuiltInLib(compiler->parser->vm, idx));
-
         if (idx == -1) {
             error(compiler->parser, "Unknown library.");
+            return;
         }
+
+        compiler->currentScript = AS_SCRIPT(useBuiltInLib(compiler->parser->vm, idx));
+
+        bool isAs = false;
+        if (match(compiler, TK_AS)) {
+            if (isFrom) {
+                error(compiler->parser, "Can't have 'as' in a use from statement.");
+                return;
+            }
+
+            eat(compiler->parser, TK_IDENT, "Expected name after 'as'.");
+            compiler->currentLibName = identifierConstant(compiler, &compiler->parser->previous);
+            isAs = true;
+        }
+
+        if (!isAs) {
+            compiler->currentLibName = identifierConstant(compiler, &compiler->parser->previous);
+        }
+        declareVariable(compiler);
 
         emitBytes(compiler, OP_USE_BUILTIN, idx);
         emitByte(compiler, compiler->currentLibName);
