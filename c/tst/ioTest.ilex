@@ -1,3 +1,17 @@
+// Both of these work.
+//use * from <io>
+use { input } from <io>
+
+fn test() {
+    str := input('Enter something: ')
+    println('You entered', str)
+    
+    num := str.toNumber() ?? 0
+    
+    println(num + 1)
+}
+
+/-
 use <io>
 
 fn test() {
@@ -8,5 +22,6 @@ fn test() {
     
     println(num + 1)
 }
+-/
 
 test()

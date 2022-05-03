@@ -207,6 +207,7 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     compiler->scopeDepth = 0;
     compiler->function = newFunction(parser->vm);
     compiler->currentLibName = 0;
+    compiler->currentScript = NULL;
     compiler->loop = NULL;
 
     if (parent != NULL) {
@@ -1400,6 +1401,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         declareVariable(compiler);
 
         int idx = findBuiltInLib((char*)compiler->parser->previous.start, compiler->parser->previous.len);
+        compiler->currentScript = AS_SCRIPT(useBuiltInLib(compiler->parser->vm, idx));
 
         if (idx == -1) {
             error(compiler->parser, "Unknown library.");
@@ -1436,6 +1438,56 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         }
 
         useStatement(compiler, true);
+
+        if (builtin) {
+            emitByte(compiler, OP_POP);
+            emitByte(compiler, OP_USE_BUILTIN_VAR);
+            emitBytes(compiler, compiler->currentLibName, varCount);
+
+            for (int i = 0; i < varCount; ++i) {
+                emitByte(compiler, variables[i]);
+            }
+
+            for (int i = varCount - 1; i >= 0; --i) {
+                defineVariable(compiler, variables[i], false);
+            }
+        }
+    } else if (match(compiler, TK_MUL)) {
+        eat(compiler->parser, TK_FROM, "Expected 'from' after '*'.");
+
+        bool builtin = false;
+        if (check(compiler, TK_LT)) {
+            builtin = true;
+        }
+
+        useStatement(compiler, true);
+
+        if (compiler->currentScript == NULL) {
+            error(compiler->parser, "Unknown scrip.");
+            return;
+        }
+
+        Table *values = &compiler->currentScript->values;
+        Entry *e;
+        // Don't use values->count because we don't want vars starting with '$' or '_' and the number of those is not known.
+        int varCount = 0;
+        Token tokens[255];
+        uint8_t variables[255];
+        for (int i = 0; i < values->capacity; ++i) {
+            e = &values->entries[i];
+
+            // Vars starting with '$' are builtin and vars starting with '_' are private so skip them.
+            if (e->key != NULL && e->key->str[0] != '$' && e->key->str[0] != '_') {
+                Token fake;
+                fake.start = e->key->str;
+                fake.len = e->key->len;
+                tokens[varCount++] = fake;
+            }
+        }
+
+        for (int i = 0; i < varCount; ++i) {
+            variables[i] = identifierConstant(compiler, &tokens[i]);
+        }
 
         if (builtin) {
             emitByte(compiler, OP_POP);

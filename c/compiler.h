@@ -61,6 +61,7 @@ typedef struct Compiler {
     Upvalue upvalues[UINT8_COUNT];
     int scopeDepth;
     uint8_t currentLibName;
+    ObjScript *currentScript;
     Loop *loop;
 } Compiler;
 
