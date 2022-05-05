@@ -1,37 +1,34 @@
-## Welcome to GitHub Pages
+---
+layout: default
+title: Welcome
+nav_order: 1
+permalink: /
+---
 
-You can use the [editor on GitHub](https://github.com/ATSOTECK/ilex-lang/edit/main/docs/index.md) to maintain and preview the content for your website in Markdown files.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+# Ilex v0.0.28
+Ilex is a simple easy to use, statically (not yet) typed programming language.
 
-### Markdown
+Ilex is a high-level-statically(TODO) typed programming language. It has a familiar c/go/typescript-like syntax with inspiration from other languages such as Python.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+The main goal of Ilex is to be easy to use. Ilex strives for adequacy and will settle for nothing less (eventually).
 
-```markdown
-Syntax highlighted code block
+## Installing Ilex
+If I haven't been too lazy there should be links to download the executables for windows and mac in the releases section of the github.
 
-# Header 1
-## Header 2
-### Header 3
+### Building With CMake
 
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```bash
+$ git clone https://github.com/ATSOTECK/ilex-lang.git
+$ cd ilex-lang
+$ cmake -DCMAKE_BUILD_TYPE=Release -B ./bin 
+$ cmake --build ./bin
 ```
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
+I haven't actually tested this yet but it worked with the GUI. Just make sure you do a release build or it will be slow.
 
-### Jekyll Themes
+## Contributing
+The language isn't really ready for contributing at the moment. However if you have ideas for the language or suggestions for included libraries I'd like to hear them.
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/ATSOTECK/ilex-lang/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+## License
+Ilex is under the [MIT license](https://github.com/dictu-lang/Dictu/blob/master/LICENSE).

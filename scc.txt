@@ -1,36 +1,40 @@
-http://cloc.sourceforge.net v 1.62  T=0.07 s (403.3 files/s, 68842.8 lines/s)
+http://cloc.sourceforge.net v 1.62  T=0.08 s (413.0 files/s, 67774.8 lines/s)
 ------------------------------------------------------------------------------------
 File                                  blank        comment           code
 ------------------------------------------------------------------------------------
-.\c\compiler.c                          246             16           1132
-.\c\vm.c                                101              7            730
-.\c\lexer.c                              45              3            322
-.\c\libs\lib_math.c                      71             13            232
-.\c\memory.c                             34              3            213
+.\c\compiler.c                          286             20           1332
+.\c\vm.c                                106              7            752
+.\c\lexer.c                              45              3            328
+.\c\libs\lib_math.c                      71             13            233
+.\c\memory.c                             35              4            222
 .\c\object.c                             57              4            213
 .\c\table.c                              27              3            148
-.\c\libs\lib_natives.c                   37              6            147
 .\c\object.h                             23              3            129
 .\c\debug.c                              15              3            113
+.\c\libs\lib_natives.c                   20              6             85
 .\c\lexer.h                              10              7             84
-.\c\chunk.h                               6              3             75
+.\c\libs\lib_ilex.c                      24              3             80
+.\c\chunk.h                               6              3             77
+.\c\libs\lib_string.c                    19              4             62
 .\c\value.c                              14             11             60
+.\c\value.h                              20              3             57
+.\c\libs\lib_io.c                        19              4             56
+.\c\compiler.h                           12              3             56
 .\c\main.c                               12              0             55
 .\c\vm.h                                 12              3             52
-.\c\value.h                              19              3             52
-.\c\libs\lib_string.c                    14              3             46
-.\c\compiler.h                           11              3             46
 .\c\chunk.c                               9              3             36
 .\c\table.h                               9              3             25
+.\c\libs\lib_builtIn.c                    5              3             18
 .\c\common.h                              9              7             18
-.\c\libs\lib_builtIn.c                    5              3             16
 .\c\memory.h                             10              3             16
-.\c\libs\lib_builtIn.h                    7              3             12
+.\c\libs\lib_builtIn.h                    7              3             14
 .\c\debug.h                               4              3              6
-.\c\libs\lib_natives.h                    4              3              5
-.\c\libs\lib_math.h                       4              3              5
+.\c\libs\lib_io.h                         4              3              5
 .\c\libs\lib_string.h                     4              3              5
+.\c\libs\lib_natives.h                    4              3              5
+.\c\libs\lib_ilex.h                       4              3              5
+.\c\libs\lib_math.h                       4              3              5
 .\c\ilex_include.h                        3              3              4
 ------------------------------------------------------------------------------------
-SUM:                                    822            131           3997
+SUM:                                    909            150           4356
 ------------------------------------------------------------------------------------
