@@ -19,8 +19,8 @@
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION_BUILD 28
-#define ILEX_VERSION "0.0.28"
+#define ILEX_VERSION_BUILD 29
+#define ILEX_VERSION "0.0.29"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN
