@@ -14,6 +14,10 @@ nav_order: 2
 {:toc}
 
 ---
+## Quick Note
+
+One thing to note is the syntax highlighting on this site will be wrong because the tool I am using doesn't support Ilex (obviously). I do have a Visual Studio Code extension for correct syntax highlighting while editing though. I chose not to use screenshots with correct syntax highlighting because this was you can (copy and paste)[https://i.redd.it/owi4ob8qjzw61.jpg] the code if you'd like. Also my spelling is notoriously bad so if you find any spdlling mistakes just let me know.
+
 ## Hello World!
 
 Here you will learn how to do the obligitory 'Hello World!' first program. Make a file ending in .ilex and type:
@@ -37,7 +41,7 @@ Is perfectly valid as well. At the moment error messages are more acurate if you
 
 Ilex has three different ways to comment:
 
-```cs
+```ts
 // This is a single line comment
 
 /-
@@ -53,19 +57,19 @@ multiline comment
 
 Comments can be nested as well:
 
-```cs
+```ts
 /*
 This is also a
 multiline comment
     /*
-    This is a comment inside a comment
+        This is a comment inside a comment
     */
     
     /-
-    This is also a comment inside a comment
+        This is also a comment inside a comment
     -/
     
-    //Yay comments!
+    // Yay comments!
     
     /-
         Multiline comments can mix the start and stop
@@ -76,5 +80,3 @@ multiline comment
     -/
 */
 ```
-
-{: .no_toc }

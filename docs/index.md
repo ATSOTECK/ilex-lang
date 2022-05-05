@@ -13,6 +13,9 @@ Ilex is a high-level-statically(TODO) typed programming language. It has a famil
 
 The main goal of Ilex is to be easy to use. Ilex strives for adequacy and will settle for nothing less (eventually).
 
+Ilex is based on the excellent book (Crafting Interpreters)[https://craftinginterpreters.com/].
+If you're interested in making something like Ilex I highly recommend giving it a read.
+
 ## Installing Ilex
 If I haven't been too lazy there should be links to download the executables for windows and mac in the releases section of the github.
 
