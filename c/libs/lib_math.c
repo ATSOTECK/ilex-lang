@@ -290,6 +290,7 @@ Value useMathLib(VM *vm) {
     defineNative(vm, "average", mathAverage, &lib->values);
 
 #undef argCheckNum
+#undef argCheckNum2
 
     defineNativeValue(vm, "pi",        NUMBER_VAL(3.14159265358979323846264338327950288), &lib->values);
     defineNativeValue(vm, "pi_2",      NUMBER_VAL(1.57079632679489), &lib->values);

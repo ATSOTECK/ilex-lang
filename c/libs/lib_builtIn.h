@@ -10,6 +10,7 @@
 #include "lib_ilex.h"
 #include "lib_io.h"
 #include "lib_math.h"
+#include "lib_random.h"
 
 typedef Value (*BuiltInLib)(VM *vm);
 

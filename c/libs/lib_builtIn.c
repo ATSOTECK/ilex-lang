@@ -5,9 +5,10 @@
 #include "lib_builtIn.h"
 
 BuiltInLibs libs[] = {
-        {"math", &useMathLib},
-        {"ilex", &useIlexLib},
-        {"io",   &useIoLib},
+        {"math",   &useMathLib},
+        {"ilex",   &useIlexLib},
+        {"io",     &useIoLib},
+        {"random", &useRandomLib},
         {NULL, NULL},
 };
 
