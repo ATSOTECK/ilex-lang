@@ -29,7 +29,7 @@ Multiple variables can be declared at once.
 var a = 1, b = 2, c = 3
 ```
 
-Alternatively variables can be declared with the variable declaration operator.
+Alternatively variables can be declared with the variable declaration operator. This is the preferred method and is what I will use on this site, but you do you.
 ```go
 x := 12
 ```

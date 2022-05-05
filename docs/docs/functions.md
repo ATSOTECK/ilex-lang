@@ -57,7 +57,8 @@ fn someFunc(a: string, b: number = 12) {
 
 someFunc("Hi") // Prints "Hi 12"
 
-fn someFunc(a: string, b: number = 12, c: bool) { // Won't compile! Can't have a required argument after a default argument.
+// Won't compile! Can't have a required argument after a default argument.
+fn someFunc(a: string, b: number = 12, c: bool) {
     ...
 }
 
@@ -74,12 +75,13 @@ fn someFunc(a: string, b?: number) {
 
 someFunc("Hi") // Prints "Hi null"
 
-fn func2(a: string, b?: number, c: bool) { // Won't compile! Can't have required arguments after optional ones.
+// Won't compile! Can't have required arguments after optional ones.
+fn func2(a: string, b?: number, c: bool) {
     ...
 }
 
-fn func3(a: string, b?: number = 12) { // Won't compile! An argument can't be optional and have a default value.
+// Won't compile! An argument can't be optional and have a default value.
+fn func3(a: string, b?: number = 12) {
     ...
 }
-
 ```
