@@ -99,7 +99,7 @@ if (xVar == null) {
 }
 ```
 
-### Null Coalescing Operator
+### Nullish Coalescing Operator
 
 The nullish coalescing operator is an operator which returns the value of its left-hand operand if it isn't falsy; otherwise, it evaluates the right-hand operand and returns its result.
 
