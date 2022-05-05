@@ -19,7 +19,7 @@ nav_order: 5
 | Operator     | Description                                                    | Example                    |
 |:-------------|:---------------------------------------------------------------|:---------------------------|
 | and, &&      | Returns true if both operands are truthy values otherwise false | true && true |
-| or, \|\|     | Returns the first truthy operand unless all are false and the last operand is returned | true || false |
+| or, \|\|     | Returns the first truthy operand unless all are false and the last operand is returned | true \|\| false |
 | not, !       | Returns the inverse boolean value for a given operand | !true |
 | +            | Adds the values on either side of the operator together, aslo concatinates strings        | 10 + 10, "hello" + " world" |
 | -            | Subtracts the values on either side of the operator together   | 10 - 10                    |
@@ -122,4 +122,14 @@ if (!xVar) {
 
 ### Falsy
 
-The following are considered falsy: null, false, 0, empty strings, and empty arrays. Where empty is defined as having a length of 0.
+The following are considered falsy: 
+
+| Falsy                  |
+| null                   | 
+| false                  |
+| 0                      |
+| "", '' (empty strings) |
+| []     (empty arrays)  |
+
+ Where empty is defined as having a length of 0.
+ Everything else is considered truthy.
