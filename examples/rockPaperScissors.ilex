@@ -16,8 +16,7 @@ fn play() {
         
         computer := random::choose('r', 'p', 's')
         
-        print('You chose', user)
-        println(' and the computer chose', computer)
+        println('You chose', user, 'and the computer chose', computer)
         
         if (user == computer) {
             println('\nDraw!\n')
