@@ -16,7 +16,7 @@ nav_order: 2
 ---
 ## Quick Note
 
-One thing to note is the syntax highlighting on this site will be wrong because the tool I am using doesn't support Ilex (obviously). I do have a Visual Studio Code extension for correct syntax highlighting while editing though. I chose not to use screenshots with correct syntax highlighting because this was you can (copy and paste)[https://i.redd.it/owi4ob8qjzw61.jpg] the code if you'd like. Also my spelling is notoriously bad so if you find any spdlling mistakes just let me know.
+One thing to note is the syntax highlighting on this site will be wrong because the tool I am using doesn't support Ilex (obviously). I do have a Visual Studio Code extension for correct syntax highlighting while editing though. I chose not to use screenshots with correct syntax highlighting because this was you can [copy and paste](https://i.redd.it/owi4ob8qjzw61.jpg) the code if you'd like. Also my spelling is notoriously bad so if you find any spdlling mistakes just let me know.
 
 ## Hello World!
 
