@@ -1380,6 +1380,7 @@ static void whileStatement(Compiler *compiler) {
 
     compiler->loop->end = emitJump(compiler, OP_JUMP_IF_FALSE);
     emitByte(compiler, OP_POP);
+    compiler->loop->body = compiler->function->chunk.count;
 
     eat(compiler->parser, TK_LBRACE, "Expect '{' after ').");
     beginScope(compiler);

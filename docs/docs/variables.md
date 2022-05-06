@@ -52,7 +52,7 @@ x ::= 12
 | --- | --- | --- |
 | String | `'foo'`, `"bar"` | You can use single or double quotes to represent strings in Ilex. |
 | Number | `12`, `12.5` | Numbers with or without decimals. |
-| Boolean | `true`, `false` | Can be true or false. Shocking. |
+| Bool | `true`, `false` | Can be true or false. Shocking. |
 | Array | `[1, 2, 'yo', true, null]` | Arrays can contain any data type or combination of data types. |
 | Null | `null` | No value. |
 

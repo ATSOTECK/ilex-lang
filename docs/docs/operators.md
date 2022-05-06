@@ -124,7 +124,6 @@ if (!xVar) {
 
 The following are considered falsy: 
 
-| Falsy                  |
 | null                   | 
 | false                  |
 | 0                      |

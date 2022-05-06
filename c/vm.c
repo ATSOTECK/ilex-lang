@@ -251,6 +251,11 @@ static bool invokeFromClass(VM *vm, ObjClass *objClass, ObjString *name, int arg
 
 static bool invoke(VM *vm, ObjString *name, int argCount) {
     Value receiver = peek(vm, argCount);
+    
+    if (!IS_OBJ(receiver)) {
+        runtimeError(vm, "Only instances have methods.");
+        return false;
+    }
 
     switch (getObjType(receiver)) {
         case OBJ_INSTANCE: {

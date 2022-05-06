@@ -1,6 +1,6 @@
 // Both of these work.
 //use * from <io>
-use { input } from <io>
+use { input, getNumber } from <io>
 
 use <math as M>
 
@@ -13,6 +13,10 @@ fn test() {
     println(num + 1)
     
     println(M::pi)
+    
+    num = getNumber("Enter a number: ")
+    assert(typeof(num) == 'number')
+    println('You entered', num)
 }
 
 /-
@@ -25,6 +29,10 @@ fn test() {
     num := str.toNumber() ?? 0
     
     println(num + 1)
+    
+    num = io::getNumber("Enter a number: ")
+    assert(typeof(num) == 'number')
+    println('You entered', num)
 }
 -/
 
