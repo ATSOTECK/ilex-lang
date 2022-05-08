@@ -1,3 +1,6 @@
+use <random>
+use <math>
+
 arr := [1, 'two', 3]
 println(arr[1])
 println(arr[1][1])
@@ -25,12 +28,66 @@ println(text[:7])
 println(text[:text.len()])
 println(text[0:])
 println(text[5:])
-some := text[8:12]
+some ::= text[8:12]
 assert(some == 'some')
 println(some)
 
-long := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+long := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10,]
 println(long[:6])
 println(long[0:])
 println(long[0:6])
 println(long[3:6])
+println(long.len())
+
+str = long.toString()
+println(str)
+
+long.push(11)
+println(long)
+long.pop()
+println(long)
+long.erase(2, 3)
+println(long)
+long.remove(7)
+println(long)
+long.insert(2, 42)
+println(long)
+println(long.contains(42))
+println(long.contains(44))
+
+long.insert(5, 42)
+println(long)
+println(long.indexOf(42))
+println(long.indexOf(42, 3))
+println(long.indexOf(42, 6))
+println(long.indexOf(42, 30))
+
+ln()
+println('Choosing from:', long)
+for (i := 0; i < 10; i++) {
+    num ::= random::choose(long)
+    println('chose', num)
+}
+
+ln()
+println('max', math::max(long))
+println('min', math::min(long))
+
+ln()
+println(long)
+long.sort()
+println(long)
+
+long.sort(false)
+println(long)
+
+long.reverse()
+println(long)
+
+ln()
+println(long.join())
+println(long.join('-'))
+println(long.join('/'))
+println(long.join(' yeet '))
+println(long.join(' | '))
+println([].join('empty'))

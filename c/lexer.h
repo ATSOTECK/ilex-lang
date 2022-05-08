@@ -22,6 +22,7 @@ typedef enum {
     TK_DIV, // /
     TK_MUL, // *
     TK_TER, // ?
+    TK_NL, // \n
 
     // One or two character tokens.
     TK_NOT, // !

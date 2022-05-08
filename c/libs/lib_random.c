@@ -44,7 +44,7 @@ static Value randomSeed(VM *vm, int argc, Value *args) {
 
     srand((unsigned  int)AS_NUMBER(args[0]));
 
-    return NUMBER_VAL(0);
+    return ZERO_VAL;
 }
 
 static Value randomRandomSeed(VM *vm, int argc, Value *args) {
@@ -52,7 +52,7 @@ static Value randomRandomSeed(VM *vm, int argc, Value *args) {
 
     srand((unsigned  int)rand() % RAND_MAX);
 
-    return NUMBER_VAL(0);
+    return ZERO_VAL;
 }
 
 static Value randomGetSeed(VM *vm, int argc, Value *args) {
@@ -102,6 +102,25 @@ static Value randomRandomRangeI(VM *vm, int argc, Value *args) {
 }
 
 static Value randomChoose(VM *vm, int argc, Value *args) {
+    if (argc == 0) {
+        return NULL_VAL;
+    }
+    
+    if (argc == 1 && IS_ARRAY(args[0])) {
+        ObjArray *array = AS_ARRAY(args[0]);
+        int len = array->data.count;
+        
+        if (len == 0) {
+            return NULL_VAL;
+        } else if (len == 1) {
+            return array->data.values[0];
+        }
+        
+        return array->data.values[rand() % len];
+    } else if (argc == 1) {
+        return args[0];
+    }
+    
     return args[rand() % argc];
 }
 

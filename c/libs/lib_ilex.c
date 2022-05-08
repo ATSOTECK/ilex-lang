@@ -46,7 +46,7 @@ static Value ilexPrintMemUsed(VM *vm, int argc, Value *args) {
         default: printf(">= 1000tb\n"); break;
     }
 
-    return NUMBER_VAL(0);
+    return ZERO_VAL;
 }
 
 static Value ilexGetMemUsed(VM *vm, int argc, Value *args) {
@@ -80,7 +80,7 @@ static Value ilexGetMemUsed(VM *vm, int argc, Value *args) {
 
 static Value ilexCollectGarbage(VM *vm, int argc, Value *args) {
     collectGarbage(vm);
-    return NUMBER_VAL(0);
+    return ZERO_VAL;
 }
 
 Value useIlexLib(VM *vm) {

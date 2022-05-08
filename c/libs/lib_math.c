@@ -174,10 +174,29 @@ static Value mathLdexp(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(ldexp(AS_NUMBER(args[0]), AS_NUMBER(args[1])));
 }
 
-//TODO(Skyler): List of numbers.
 static Value mathMax(VM *vm, int argc, Value *args) {
     if (argc == 0) {
-        return NUMBER_VAL(0);
+        return ZERO_VAL;
+    }
+    
+    if (argc == 1 && IS_ARRAY(args[0])) {
+        ObjArray *array = AS_ARRAY(args[0]);
+        int len = array->data.count;
+        
+        if (len == 0) {
+            return NULL_VAL;
+        }
+        
+        double max = AS_NUMBER(array->data.values[0]);
+        
+        for (int i = 1; i < len; ++i) {
+            double num = AS_NUMBER(array->data.values[i]);
+            if (num > max) {
+                max = num;
+            }
+        }
+        
+        return NUMBER_VAL(max);
     }
 
     if (!IS_NUMBER(args[0])) {
@@ -206,10 +225,29 @@ static Value mathMax(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(max);
 }
 
-//TODO(Skyler): List of numbers.
 static Value mathMin(VM *vm, int argc, Value *args) {
     if (argc == 0) {
-        return NUMBER_VAL(0);
+        return ZERO_VAL;
+    }
+    
+    if (argc == 1 && IS_ARRAY(args[0])) {
+        ObjArray *array = AS_ARRAY(args[0]);
+        int len = array->data.count;
+        
+        if (len == 0) {
+            return NULL_VAL;
+        }
+        
+        double min = AS_NUMBER(array->data.values[0]);
+        
+        for (int i = 1; i < len; ++i) {
+            double num = AS_NUMBER(array->data.values[i]);
+            if (num < min) {
+                min = num;
+            }
+        }
+        
+        return NUMBER_VAL(min);
     }
 
     if (!IS_NUMBER(args[0])) {
@@ -240,7 +278,7 @@ static Value mathMin(VM *vm, int argc, Value *args) {
 
 static Value mathAverage(VM *vm, int argc, Value *args) {
     if (argc == 0) {
-        return NUMBER_VAL(0);
+        return ZERO_VAL;
     }
 
     double average = 0;

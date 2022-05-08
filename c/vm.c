@@ -305,7 +305,13 @@ static bool invoke(VM *vm, ObjString *name, int argCount) {
             return callValue(vm, value, argCount);
         }
         case OBJ_ARRAY: {
-            // TODO
+            Value value;
+            if (tableGet(&vm->arrayFunctions, name, &value)) {
+                return callNativeFunction(vm, value, argCount);
+            }
+    
+            runtimeError(vm, "Array has no method %s().", name->str);
+            return false;
         }
     }
 

@@ -10,7 +10,7 @@
 
 static Value flushConsole(VM *vm, int argc, Value *args) {
     fflush(stdout);
-    return NUMBER_VAL(0);
+    return ZERO_VAL;
 }
 
 static Value println(VM *vm, int argc, Value *args) {
@@ -23,7 +23,7 @@ static Value println(VM *vm, int argc, Value *args) {
 
     printf("\n");
 
-    return NUMBER_VAL(0);
+    return ZERO_VAL;
 }
 
 static Value ln(VM *vm, int argc, Value *args) {
@@ -42,7 +42,7 @@ static Value ln(VM *vm, int argc, Value *args) {
         printf("\n");
     }
 
-    return NUMBER_VAL(0);
+    return ZERO_VAL;
 }
 
 static Value print(VM *vm, int argc, Value *args) {
@@ -53,7 +53,7 @@ static Value print(VM *vm, int argc, Value *args) {
         }
     }
 
-    return NUMBER_VAL(0);
+    return ZERO_VAL;
 }
 
 static Value stdErr(VM *vm, int argc, Value *args) {
@@ -68,7 +68,7 @@ static Value stdErr(VM *vm, int argc, Value *args) {
     
     fprintf(stderr, "\n");
     
-    return NUMBER_VAL(0);
+    return ZERO_VAL;
 }
 
 static Value typeof_(VM *vm, int argc, Value *args) {
