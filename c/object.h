@@ -144,6 +144,7 @@ ObjEnum *newEnum(VM *vm, ObjString *name);
 ObjArray *newArray(VM *vm);
 char *objectType(Value value);
 char *objectToString(Value value);
+char *arrayToString(ObjArray *array);
 
 static inline bool isObjType(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;

@@ -24,7 +24,7 @@ typedef struct ObjString ObjString;
 
 typedef uint64_t Value;
 
-#define IS_BOOL(value)      (((value) | 1) == TRUE_VAL)
+#define IS_BOOL(value)      (((value) | 1u) == TRUE_VAL)
 #define IS_NULL(value)      ((value) == NULL_VAL)
 #define IS_NUMBER(value)    (((value) & QNAN) != QNAN)
 #define IS_EMPTY(value)     ((value) == EMPTY_VAL)
@@ -41,6 +41,7 @@ typedef uint64_t Value;
 #define NULL_VAL        ((Value)(uint64_t)(QNAN | TAG_NULL))
 #define EMPTY_VAL       ((Value)(uint64_t)(QNAN | TAG_EMPTY))
 #define NUMBER_VAL(num) numToValue(num)
+#define ZERO_VAL        numToValue(0)
 #define OBJ_VAL(obj)    (Value)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
 
 typedef union {

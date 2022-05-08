@@ -10,6 +10,7 @@
 #include "object.h"
 #include "memory.h"
 
+#include "libs/lib_array.h"
 #include "libs/lib_builtIn.h"
 #include "libs/lib_natives.h"
 #include "libs/lib_string.h"
@@ -139,6 +140,7 @@ VM *initVM(const char *path) {
 
     defineNatives(vm);
     defineStringFunctions(vm);
+    defineArrayFunctions(vm);
 
     return vm;
 }
@@ -370,7 +372,8 @@ static bool isFalsy(Value value) {
     return IS_NULL(value) ||
           (IS_BOOL(value) && !AS_BOOL(value)) ||
           (IS_NUMBER(value) && AS_NUMBER(value) == 0) ||
-          (IS_STRING(value) && AS_STRING(value)->len == 0);
+          (IS_STRING(value) && AS_STRING(value)->len == 0) ||
+          (IS_ARRAY(value) && AS_ARRAY(value)->data.count == 0);
 }
 
 static void concat(VM *vm) {

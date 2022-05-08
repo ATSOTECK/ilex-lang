@@ -242,7 +242,7 @@ static char *enumToString(ObjEnum *objEnum) {
     return enumString;
 }
 
-static char *arrayToString(ObjArray *array) {
+char *arrayToString(ObjArray *array) {
     int size = 64;
     char *arrayString = (char*)malloc(sizeof(char) * size);
     arrayString[0] = '[';
