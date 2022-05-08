@@ -131,48 +131,67 @@ static void blackenObject(VM *vm, Obj *obj) {
         case OBJ_NATIVE:
         case OBJ_STRING:
             break;
+        case OBJ_ENUM: {
+            ObjEnum *objEnum = (ObjEnum*)obj;
+            markObject(vm, (Obj*)objEnum->name);
+            markTable(vm, &objEnum->values);
+        } break;
+        case OBJ_ARRAY: {
+            ObjArray *array = (ObjArray*)obj;
+            markArray(vm, &array->data);
+        } break;
     }
 }
 
-static void freeObject(VM *vm, Obj *object) {
+static void freeObject(VM *vm, Obj *obj) {
 #ifdef DEBUG_LOG_GC
     printf("%p free type %d\n", (void*)object, object->type);
 #endif
 
-    switch (object->type) {
+    switch (obj->type) {
         case OBJ_BOUND_METHOD: {
-            FREE(vm, ObjBoundMethod, object);
+            FREE(vm, ObjBoundMethod, obj);
         } break;
         case OBJ_CLASS: {
-            ObjClass *objClass = (ObjClass*)object;
+            ObjClass *objClass = (ObjClass*)obj;
             freeTable(vm, &objClass->methods);
-            FREE(vm, ObjClass, object);
+            FREE(vm, ObjClass, obj);
         } break;
         case OBJ_CLOSURE: {
-            ObjClosure *closure = (ObjClosure*)object;
+            ObjClosure *closure = (ObjClosure*)obj;
             FREE_ARRAY(vm, ObjUpvalue*, closure->upvalues, closure->upvalueCount);
-            FREE(vm, ObjClosure, object);
+            FREE(vm, ObjClosure, obj);
         } break;
         case OBJ_FUNCTION: {
-            ObjFunction *function = (ObjFunction*)object;
+            ObjFunction *function = (ObjFunction*)obj;
             freeChunk(vm, &function->chunk);
-            FREE(vm, ObjFunction, object);
+            FREE(vm, ObjFunction, obj);
         } break;
         case OBJ_INSTANCE: {
-            ObjInstance *instance = (ObjInstance*)object;
+            ObjInstance *instance = (ObjInstance*)obj;
             freeTable(vm, &instance->fields);
-            FREE(vm, ObjInstance, object);
+            FREE(vm, ObjInstance, obj);
         } break;
         case OBJ_NATIVE: {
-            FREE(vm, ObjNative, object);
+            FREE(vm, ObjNative, obj);
         } break;
         case OBJ_STRING: {
-            ObjString *string = (ObjString*)object;
+            ObjString *string = (ObjString*)obj;
             FREE_ARRAY(vm, char, string->str, string->len + 1);
-            FREE(vm, ObjString, object);
+            FREE(vm, ObjString, obj);
         } break;
         case OBJ_UPVALUE: {
-            FREE(vm, ObjUpvalue, object);
+            FREE(vm, ObjUpvalue, obj);
+        } break;
+        case OBJ_ENUM: {
+            ObjEnum *objEnum = (ObjEnum*)obj;
+            freeTable(vm, &objEnum->values);
+            FREE(vm, ObjEnum, obj);
+        } break;
+        case OBJ_ARRAY: {
+            ObjArray *array = (ObjArray*)obj;
+            freeValueArray(vm, &array->data);
+            FREE(vm, ObjArray, obj);
         } break;
     }
 }
@@ -194,6 +213,7 @@ static void markRoots(VM *vm) {
     markTable(vm, &vm->globals);
     markTable(vm, &vm->consts);
     markTable(vm, &vm->stringFunctions);
+    markTable(vm, &vm->arrayFunctions);
     markCompilerRoots(vm);
     markObject(vm, (Obj*)vm->initString);
     markObject(vm, (Obj*)vm->scriptName);

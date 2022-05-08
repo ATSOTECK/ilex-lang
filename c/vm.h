@@ -35,6 +35,7 @@ struct VM_ {
     Table scripts;
     ObjScript *lastScript; // Used for 'from'.
     Table stringFunctions;
+    Table arrayFunctions;
 
     size_t bytesAllocated;
     size_t nextGC;

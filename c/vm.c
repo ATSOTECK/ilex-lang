@@ -130,6 +130,7 @@ VM *initVM(const char *path) {
 
     initTable(&vm->scripts);
     initTable(&vm->stringFunctions);
+    initTable(&vm->arrayFunctions);
 
     vm->initString = NULL;
     vm->scriptName = NULL;
@@ -147,6 +148,7 @@ void freeVM(VM *vm) {
     freeTable(vm, &vm->consts);
     freeTable(vm, &vm->strings);
     freeTable(vm, &vm->stringFunctions);
+    freeTable(vm, &vm->arrayFunctions);
     vm->initString = NULL;
     vm->scriptName = NULL;
     freeObjects(vm);
