@@ -507,7 +507,7 @@ static void array(Compiler *compiler, bool canAssign) {
     } while (match(compiler, TK_COMMA));
     
     emitBytes(compiler, OP_NEW_ARRAY, count);
-    eat(compiler->parser, TK_RBRACKET, "Expected ']' after array elements.");
+    eat(compiler->parser, TK_RBRACKET, "Expect ']' after array elements.");
 }
 
 static void index(Compiler *compiler, bool canAssign) {
@@ -515,7 +515,7 @@ static void index(Compiler *compiler, bool canAssign) {
         emitByte(compiler, OP_EMPTY);
         expression(compiler);
         emitByte(compiler, OP_SLICE);
-        eat(compiler->parser, TK_RBRACKET, "Expected closing ']'.");
+        eat(compiler->parser, TK_RBRACKET, "Expect closing ']'.");
         
         return;
     }
@@ -529,12 +529,12 @@ static void index(Compiler *compiler, bool canAssign) {
             expression(compiler);
         }
         emitByte(compiler, OP_SLICE);
-        eat(compiler->parser, TK_RBRACKET, "Expected closing ']'.");
+        eat(compiler->parser, TK_RBRACKET, "Expect closing ']'.");
         
         return;
     }
     
-    eat(compiler->parser, TK_RBRACKET, "Expected closing ']'.");
+    eat(compiler->parser, TK_RBRACKET, "Expect closing ']'.");
     
     if (canAssign && match(compiler, TK_ASSIGN)) {
         expression(compiler);
@@ -902,6 +902,7 @@ ParseRule rules[] = {
         [TK_AS]               = {NULL,     NULL,    PREC_NONE},
         [TK_BREAK]            = {NULL,     NULL,    PREC_NONE},
         [TK_CONTINUE]         = {NULL,     NULL,    PREC_NONE},
+        [TK_NL]               = {NULL,     NULL,    PREC_NONE},
         [TK_ERROR]            = {NULL,     NULL,    PREC_NONE},
         [TK_EOF]              = {NULL,     NULL,    PREC_NONE},
 };
@@ -945,7 +946,7 @@ static void synchronize(Parser *parser) {
     parser->panicMode = false;
 
     while (parser->current.type != TK_EOF) {
-        if (parser->previous.type == TK_SEMICOLON) {
+        if (parser->previous.type == TK_SEMICOLON || parser->previous.type == TK_NL) {
             return;
         }
 
@@ -1081,7 +1082,7 @@ static void classDeclaration(Compiler *compiler) {
 }
 
 static void fnDeclaration(Compiler *compiler) {
-    uint8_t global = parseVariable(compiler, "Expect function name.");
+    uint8_t global = parseVariable(compiler, "Expect function name after 'fn'.");
     function(compiler, TYPE_FUNCTION);
     defineVariable(compiler, global, false);
 }
@@ -1490,7 +1491,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
     }
 
     if (match(compiler, TK_LT)) {
-        eat(compiler->parser, TK_IDENT, "Expected library name after '<'.");
+        eat(compiler->parser, TK_IDENT, "Expect library name after '<'.");
 
         int idx = findBuiltInLib((char*)compiler->parser->previous.start, compiler->parser->previous.len);
         if (idx == -1) {
@@ -1507,7 +1508,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
                 return;
             }
 
-            eat(compiler->parser, TK_IDENT, "Expected name after 'as'.");
+            eat(compiler->parser, TK_IDENT, "Expect name after 'as'.");
             compiler->currentLibName = identifierConstant(compiler, &compiler->parser->previous);
             isAs = true;
         }
@@ -1523,14 +1524,14 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         if (!isFrom) {
             defineVariable(compiler, compiler->currentLibName, false);
         }
-        eat(compiler->parser, TK_GR, "Expected '>' after library name.");
+        eat(compiler->parser, TK_GR, "Expect '>' after library name.");
     } else if (match(compiler, TK_LBRACE)) {
         uint8_t variables[255];
         Token tokens[255];
         int varCount = 0;
 
         do {
-            eat(compiler->parser, TK_IDENT, "Expected variable name.");
+            eat(compiler->parser, TK_IDENT, "Expect variable name.");
             tokens[varCount] = compiler->parser->previous;
             variables[varCount] = identifierConstant(compiler, &compiler->parser->previous);
 
@@ -1539,8 +1540,8 @@ static void useStatement(Compiler *compiler, bool isFrom) {
             }
         } while(match(compiler, TK_COMMA));
 
-        eat(compiler->parser, TK_RBRACE, "Expected '}' after variable list.");
-        eat(compiler->parser, TK_FROM, "Expected 'from' after '}'");
+        eat(compiler->parser, TK_RBRACE, "Expect '}' after variable list.");
+        eat(compiler->parser, TK_FROM, "Expect 'from' after '}'");
 
         bool builtin = false;
         if (check(compiler, TK_LT)) {
@@ -1563,7 +1564,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
             }
         }
     } else if (match(compiler, TK_MUL)) {
-        eat(compiler->parser, TK_FROM, "Expected 'from' after '*'.");
+        eat(compiler->parser, TK_FROM, "Expect 'from' after '*'.");
 
         bool builtin = false;
         if (check(compiler, TK_LT)) {
@@ -1698,6 +1699,8 @@ static void statement(Compiler *compiler) {
         beginScope(compiler);
         block(compiler);
         endScope(compiler);
+    } else if (match(compiler, TK_NL)) {
+        // Do nothing.
     } else {
         expressionStatement(compiler);
     }
