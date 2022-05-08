@@ -7,7 +7,11 @@ assert(xx == 10)
 const y = 12
 assert(y == 12)
 
+z ::= 42
+assert(z == 42)
+
 //y = 13 // Should error.
+//z = 12 // Should error.
 
 fn tst() {
     x := 10
@@ -16,10 +20,14 @@ fn tst() {
     var xx = 10
     assert(xx == 10)
 
-    const y = 12
-    assert(y == 12)
+    const y = 16
+    assert(y == 16)
     
-    // y = 13 // should error
+    z ::= 55
+    assert(z == 55)
+    
+    //y = 13 // should error
+    //z = 12 // Should error.
 }
 
 tst()

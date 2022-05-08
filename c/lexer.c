@@ -345,7 +345,7 @@ Token nextToken() {
             if (match('=')) {
                 return makeToken(TK_VAR_DECL);
             } else if (match(':')) {
-                return makeToken(TK_SCOPE);
+                return makeToken(match('=') ? TK_CONST_DECL : TK_SCOPE);
             } else {
                 return makeToken(TK_COLON);
             }

@@ -584,6 +584,7 @@ static void checkIfConst(Compiler *compiler, uint8_t setOp, int arg) {
             // TODO(Skyler): Find a better way to do this.
             char *name = (char*)malloc(compiler->locals[arg].name.len + 1);
             memcpy(name, compiler->locals[arg].name.start, compiler->locals[arg].name.len);
+            name[compiler->locals[arg].name.len] = '\0';
             error(compiler->parser, "Cannot assign to const variable '%s'.", name);
             free(name);
         }
@@ -885,6 +886,7 @@ ParseRule rules[] = {
         [TK_VAR]              = {NULL,     NULL,    PREC_NONE},
         [TK_CONST]            = {NULL,     NULL,    PREC_NONE},
         [TK_VAR_DECL]         = {NULL,     NULL,    PREC_NONE},
+        [TK_CONST_DECL]       = {NULL,     NULL,    PREC_NONE},
         [TK_ENUM]             = {NULL,     NULL,    PREC_NONE},
         [TK_WHILE]            = {NULL,     NULL,    PREC_NONE},
         [TK_SWITCH]           = {NULL,     NULL,    PREC_NONE},
@@ -1100,7 +1102,7 @@ static void varDeclaration(Compiler *compiler, bool isConst) {
     match(compiler, TK_SEMICOLON);
 }
 
-static void varDeclaration2(Compiler *compiler) {
+static void varDeclaration2(Compiler *compiler, bool isConst) {
     eat(compiler->parser, TK_IDENT, "Expect variable name.");
     declareVariable(compiler);
     uint8_t global;
@@ -1111,9 +1113,13 @@ static void varDeclaration2(Compiler *compiler) {
         global = identifierConstant(compiler, &compiler->parser->previous);
     }
 
-    eat(compiler->parser, TK_VAR_DECL, "Expected := after variable name.");
+    if (!isConst) {
+        eat(compiler->parser, TK_VAR_DECL, "Expect := after variable name.");
+    } else {
+        eat(compiler->parser, TK_CONST_DECL, "Expect ::= after variable name.");
+    }
     expression(compiler);
-    defineVariable(compiler, global, false);
+    defineVariable(compiler, global, isConst);
 
     match(compiler, TK_SEMICOLON);
 }
@@ -1250,7 +1256,7 @@ static void forStatement(Compiler *compiler) {
     } else if (match(compiler, TK_VAR)) {
         varDeclaration(compiler, false);
     } else if (check(compiler, TK_IDENT) && lookahead(compiler, TK_VAR_DECL)) {
-        varDeclaration2(compiler);
+        varDeclaration2(compiler, false);
     } else {
         expressionStatement(compiler);
     }
@@ -1651,7 +1657,9 @@ static void declaration(Compiler *compiler) {
     } else if (match(compiler, TK_VAR)) {
         varDeclaration(compiler, false);
     } else if (check(compiler, TK_IDENT) && lookahead(compiler, TK_VAR_DECL)) {
-        varDeclaration2(compiler);
+        varDeclaration2(compiler, false);
+    } else if (check(compiler, TK_IDENT) && lookahead(compiler, TK_CONST_DECL)) {
+        varDeclaration2(compiler, true);
     } else if (match(compiler, TK_CONST)) {
         varDeclaration(compiler, true);
     } else if (match(compiler, TK_ENUM)) {
