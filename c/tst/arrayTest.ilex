@@ -1,0 +1,36 @@
+arr := [1, 'two', 3]
+println(arr[1])
+println(arr[1][1])
+
+str := 'hello'
+println(str[-4])
+
+arr[1] = [12, 'yeet', false, null]
+println(arr[1])
+println(arr)
+
+str[-4] = 'yeet'[3]
+str[str.len() - 1] = 'yeet' // Grabs the first character.
+println(str[-4])
+println(str)
+
+arr[0] += 14
+println(arr[0])
+arr[1][3] ??= 42
+println(arr)
+
+text := "This is some text."
+println(text[:1])
+println(text[:7])
+println(text[:text.len()])
+println(text[0:])
+println(text[5:])
+some := text[8:12]
+assert(some == 'some')
+println(some)
+
+long := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+println(long[:6])
+println(long[0:])
+println(long[0:6])
+println(long[3:6])

@@ -300,6 +300,9 @@ static bool invoke(VM *vm, ObjString *name, int argCount) {
 
             return callValue(vm, value, argCount);
         }
+        case OBJ_ARRAY: {
+            // TODO
+        }
     }
 
     runtimeError(vm, "Only instances have methods.");
@@ -420,6 +423,7 @@ static InterpretResult run(VM *vm) {
                 push(vm, constant);
             } break;
             case OP_NULL:  push(vm, NULL_VAL); break;
+            case OP_EMPTY: push(vm, EMPTY_VAL); break;
             case OP_TRUE:  push(vm, BOOL_VAL(true)); break;
             case OP_FALSE: push(vm, BOOL_VAL(false)); break;
             case OP_POP: pop(vm); break;
@@ -844,6 +848,305 @@ static InterpretResult run(VM *vm) {
                 }
             } break;
             case OP_BREAK: break; // lol
+            case OP_NEW_ARRAY: {
+                int count = READ_BYTE();
+                ObjArray *array = newArray(vm);
+                push(vm, OBJ_VAL(array));
+                
+                for (int i = count; i > 0; --i) {
+                    writeValueArray(vm, &array->data, peek(vm, i));
+                }
+                
+                vm->stackTop -= count + 1;
+                push(vm, OBJ_VAL(array));
+            } break;
+            case OP_INDEX: {
+                Value indexValue = peek(vm, 0);
+                Value receiver = peek(vm, 1);
+    
+                if (!IS_OBJ(receiver)) {
+                    char *type = valueType(receiver);
+                    runtimeError(vm, "Type '%s' is not indexable.", type);
+                    free(type);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                switch (getObjType(receiver)) {
+                    case OBJ_ARRAY: {
+                        if (!IS_NUMBER(indexValue)) {
+                            runtimeError(vm, "Array index must be a number.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+        
+                        ObjArray *array = AS_ARRAY(receiver);
+                        int idx = AS_NUMBER(indexValue);
+                        int oIdx = idx;
+        
+                        if (idx < 0) {
+                            idx = array->data.count + idx;
+                        }
+        
+                        if (idx >= 0 && idx < array->data.count) {
+                            pop(vm);
+                            pop(vm);
+                            push(vm, array->data.values[idx]);
+                            break;
+                        }
+        
+                        runtimeError(vm, "Array index '%d' out of bounds.", oIdx);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    case OBJ_STRING: {
+                        if (!IS_NUMBER(indexValue)) {
+                            runtimeError(vm, "Array index must be a number.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+        
+                        ObjString *str = AS_STRING(receiver);
+                        int idx = AS_NUMBER(indexValue);
+                        int oIdx = idx;
+        
+                        if (idx < 0) {
+                            idx = str->len + idx;
+                        }
+        
+                        if (idx >= 0 && idx < str->len) {
+                            pop(vm);
+                            pop(vm);
+                            push(vm, OBJ_VAL(copyString(vm, &str->str[idx], 1)));
+                            break;
+                        }
+        
+                        runtimeError(vm, "String index '%d' out of bounds.", oIdx);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    default: {
+                        char *type = valueType(receiver);
+                        runtimeError(vm, "Type '%s' is not indexable.", type);
+                        free(type);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                }
+            } break;
+            case OP_INDEX_ASSIGN: {
+                Value assignValue = peek(vm, 0);
+                Value indexValue = peek(vm, 1);
+                Value receiver = peek(vm, 2);
+    
+                if (!IS_OBJ(receiver)) {
+                    char *type = valueType(receiver);
+                    runtimeError(vm, "Type '%s' is not indexable.", type);
+                    free(type);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                switch (getObjType(receiver)) {
+                    case OBJ_ARRAY: {
+                        if (!IS_NUMBER(indexValue)) {
+                            runtimeError(vm, "Array index must be a number.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+    
+                        ObjArray *array = AS_ARRAY(receiver);
+                        int idx = AS_NUMBER(indexValue);
+                        int oIdx = idx;
+    
+                        if (idx < 0) {
+                            idx = array->data.count + idx;
+                        }
+    
+                        if (idx >= 0 && idx < array->data.count) {
+                            array->data.values[idx] = assignValue;
+                            pop(vm);
+                            pop(vm);
+                            pop(vm);
+                            push(vm, NULL_VAL);
+                            break;
+                        }
+    
+                        runtimeError(vm, "Array index '%d' out of bounds.", oIdx);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    case OBJ_STRING: {
+                        if (!IS_NUMBER(indexValue)) {
+                            runtimeError(vm, "Array index must be a number.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                        
+                        if (!IS_STRING(assignValue)) {
+                            runtimeError(vm, "Assign value must be a string.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+        
+                        ObjString *str = AS_STRING(receiver);
+                        ObjString *assignStr = AS_STRING(assignValue);
+                        int idx = AS_NUMBER(indexValue);
+                        int oIdx = idx;
+        
+                        if (idx < 0) {
+                            idx = str->len + idx;
+                        }
+        
+                        if (idx >= 0 && idx < str->len) {
+                            str->str[idx] = assignStr->str[0];
+                            pop(vm);
+                            pop(vm);
+                            pop(vm);
+                            push(vm, NULL_VAL);
+                            break;
+                        }
+        
+                        runtimeError(vm, "String index '%d' out of bounds.", oIdx);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    default: {
+                        char *type = valueType(receiver);
+                        runtimeError(vm, "Type '%s' is not indexable.", type);
+                        free(type);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                }
+            } break;
+            case OP_INDEX_PUSH: {
+                Value pushValue = peek(vm, 0);
+                Value indexValue = peek(vm, 1);
+                Value receiver = peek(vm, 2);
+    
+                if (!IS_OBJ(receiver)) {
+                    char *type = valueType(receiver);
+                    runtimeError(vm, "Type '%s' is not indexable.", type);
+                    free(type);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+    
+                switch (getObjType(receiver)) {
+                    case OBJ_ARRAY: {
+                        if (!IS_NUMBER(indexValue)) {
+                            runtimeError(vm, "Array index must be a number.");
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+            
+                        ObjArray *array = AS_ARRAY(receiver);
+                        int idx = AS_NUMBER(indexValue);
+                        int oIdx = idx;
+            
+                        if (idx < 0) {
+                            idx = array->data.count + idx;
+                        }
+            
+                        if (idx >= 0 && idx < array->data.count) {
+                            vm->stackTop[-1] = array->data.values[idx];
+                            push(vm, pushValue);
+                            break;
+                        }
+            
+                        runtimeError(vm, "Array index '%d' out of bounds.", oIdx);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    default: {
+                        char *type = valueType(receiver);
+                        runtimeError(vm, "Type '%s' is not indexable.", type);
+                        free(type);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                }
+            } break;
+            case OP_SLICE: {
+                Value sliceEndIndex = peek(vm, 0);
+                Value sliceStartIndex = peek(vm, 1);
+                Value receiver = peek(vm, 2);
+    
+                if (!IS_OBJ(receiver)) {
+                    char *type = valueType(receiver);
+                    runtimeError(vm, "Type '%s' is not sliceable.", type);
+                    free(type);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                if (!IS_NUMBER(sliceStartIndex) && !IS_EMPTY(sliceStartIndex)) {
+                    runtimeError(vm, "Slice start index must be a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                if (!IS_NUMBER(sliceEndIndex) && !IS_EMPTY(sliceEndIndex)) {
+                    runtimeError(vm, "Slice end index must be a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+    
+                int indexStart;
+                int indexEnd;
+                Value returnVal;
+                
+                if (IS_EMPTY(sliceStartIndex)) {
+                    indexStart = 0;
+                } else {
+                    indexStart = AS_NUMBER(sliceStartIndex);
+    
+                    if (indexStart < 0) {
+                        indexStart = 0;
+                    }
+                }
+                
+                switch (getObjType(receiver)) {
+                    case OBJ_ARRAY: {
+                        ObjArray *retArray = newArray(vm);
+                        push(vm, OBJ_VAL(retArray));
+                        ObjArray *array = AS_ARRAY(receiver);
+                        
+                        if (IS_EMPTY(sliceEndIndex)) {
+                            indexEnd = array->data.count;
+                        } else {
+                            indexEnd = AS_NUMBER(sliceEndIndex);
+                            
+                            if (indexEnd > array->data.count) {
+                                indexEnd = array->data.count;
+                            } else if (indexEnd < 0) {
+                                indexEnd = array->data.count + indexEnd; // TODO(Skyler): Fix potential crash here.
+                            }
+                        }
+                        
+                        for (int i = indexStart; i < indexEnd; ++i) {
+                            writeValueArray(vm, &retArray->data, array->data.values[i]);
+                        }
+                        
+                        pop(vm);
+                        returnVal = OBJ_VAL(retArray);
+                    } break;
+                    case OBJ_STRING: {
+                        ObjString *str = AS_STRING(receiver);
+    
+                        if (IS_EMPTY(sliceEndIndex)) {
+                            indexEnd = str->len;
+                        } else {
+                            indexEnd = AS_NUMBER(sliceEndIndex);
+        
+                            if (indexEnd > str->len) {
+                                indexEnd = str->len;
+                            } else if (indexEnd < 0) {
+                                indexEnd = str->len + indexEnd; // TODO(Skyler): Fix potential crash here.
+                            }
+                        }
+                        
+                        if (indexStart > indexEnd) {
+                            returnVal = OBJ_VAL(copyString(vm, "", 0));
+                        } else {
+                            returnVal = OBJ_VAL(copyString(vm, str->str + indexStart, indexEnd - indexStart));
+                        }
+                    } break;
+                    default: {
+                        char *type = valueType(receiver);
+                        runtimeError(vm, "Type '%s' is not sliceable.", type);
+                        free(type);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                }
+    
+                pop(vm);
+                pop(vm);
+                pop(vm);
+    
+                push(vm, returnVal);
+            } break;
         }
     }
 

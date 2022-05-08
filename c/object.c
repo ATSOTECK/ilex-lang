@@ -187,6 +187,12 @@ ObjEnum *newEnum(VM *vm, ObjString *name) {
     return enumObj;
 }
 
+ObjArray *newArray(VM *vm) {
+    ObjArray *array = ALLOCATE_OBJ(vm, ObjArray, OBJ_ARRAY);
+    initValueArray(&array->data);
+    return array;
+}
+
 static void printFunction(ObjFunction *function) {
     if (function->name == NULL) {
         printf("<script>");
@@ -236,6 +242,60 @@ static char *enumToString(ObjEnum *objEnum) {
     return enumString;
 }
 
+static char *arrayToString(ObjArray *array) {
+    int size = 64;
+    char *arrayString = (char*)malloc(sizeof(char) * size);
+    arrayString[0] = '[';
+    int len = 1;
+    
+    for (int i = 0; i < array->data.count; ++i) {
+        Value value = array->data.values[i];
+        
+        char *elementStr;
+        int elementSize;
+        
+        if (IS_STRING(value)) {
+            ObjString *str = AS_STRING(value);
+            elementStr = str->str;
+            elementSize = str->len;
+        } else {
+            elementStr = valueToString(value);
+            elementSize = (int)strlen(elementStr);
+        }
+        
+        if (elementSize > (size - len - 6)) {
+            if (elementSize > size) {
+                size = elementSize * 2 + 6;
+            } else {
+                size = size * 2 + 6;
+            }
+            
+            arrayString = (char*)realloc(arrayString, sizeof(char) * size);
+        }
+        
+        if (IS_STRING(value)) {
+            memcpy(arrayString + len, "\"", 1);
+            memcpy(arrayString + len + 1, elementStr, elementSize);
+            memcpy(arrayString + len + 1 + elementSize, "\"", 1);
+            len += elementSize + 2;
+        } else {
+            memcpy(arrayString + len, elementStr, elementSize);
+            len += elementSize;
+            free(elementStr);
+        }
+    
+        if (i != array->data.count - 1) {
+            memcpy(arrayString + len, ", ", 2);
+            len += 2;
+        }
+    }
+    
+    arrayString[len] = ']';
+    arrayString[len + 1] = '\0';
+    
+    return arrayString;
+}
+
 char *objectType(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD:
@@ -251,9 +311,10 @@ char *objectType(Value value) {
         case OBJ_STRING: return newCString("string");
         case OBJ_UPVALUE: return newCString("upvalue");
         case OBJ_ENUM: return newCString("enum");
+        case OBJ_ARRAY: return newCString("array");
     }
 
-    return newCString("unknown");
+    return newCString("unknown type");
 }
 
 char *objectToString(Value value) {
@@ -268,6 +329,7 @@ char *objectToString(Value value) {
         case OBJ_STRING: return newCString(AS_STRING(value)->str);
         case OBJ_UPVALUE: return newCString("Should never happen.");
         case OBJ_ENUM: return enumToString(AS_ENUM(value));
+        case OBJ_ARRAY: return arrayToString(AS_ARRAY(value));
     }
     
     return newCString("unknown object");

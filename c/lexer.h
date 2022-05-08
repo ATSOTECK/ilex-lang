@@ -11,6 +11,8 @@ typedef enum {
     TK_RPAREN, // )
     TK_LBRACE, // {
     TK_RBRACE, // }
+    TK_LBRACKET, // [
+    TK_RBRACKET, // ]
     TK_COMMA, // ,
     TK_DOT, // .
     TK_MINUS, // -
@@ -46,6 +48,7 @@ typedef enum {
     TK_FALLTHROUGH, // ->
 
     TK_VAR_DECL, // :=
+    TK_CONST_DECL, // ::=
     TK_SCOPE, // ::
 
     // Literals.

@@ -301,6 +301,8 @@ Token nextToken() {
         case ')': return makeToken(TK_RPAREN);
         case '{': return makeToken(TK_LBRACE);
         case '}': return makeToken(TK_RBRACE);
+        case '[': return makeToken(TK_LBRACKET);
+        case ']': return makeToken(TK_RBRACKET);
         case ';': return makeToken(TK_SEMICOLON);
         case ',': return makeToken(TK_COMMA);
         case '.': return makeToken(TK_DOT);

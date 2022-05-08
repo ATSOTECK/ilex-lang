@@ -494,6 +494,90 @@ static void string(Compiler *compiler, bool canAssign) {
     emitConstant(compiler, parseString(compiler));
 }
 
+static void array(Compiler *compiler, bool canAssign) {
+    int count = 0;
+    
+    do {
+        if (check(compiler, TK_RBRACKET)) {
+            break;
+        }
+        
+        expression(compiler);
+        ++count;
+    } while (match(compiler, TK_COMMA));
+    
+    emitBytes(compiler, OP_NEW_ARRAY, count);
+    eat(compiler->parser, TK_RBRACKET, "Expected ']' after array elements.");
+}
+
+static void index(Compiler *compiler, bool canAssign) {
+    if (match(compiler, TK_COLON)) {
+        emitByte(compiler, OP_EMPTY);
+        expression(compiler);
+        emitByte(compiler, OP_SLICE);
+        eat(compiler->parser, TK_RBRACKET, "Expected closing ']'.");
+        
+        return;
+    }
+    
+    expression(compiler);
+    
+    if (match(compiler, TK_COLON)) {
+        if (check(compiler, TK_RBRACKET)) {
+            emitByte(compiler, OP_EMPTY);
+        } else {
+            expression(compiler);
+        }
+        emitByte(compiler, OP_SLICE);
+        eat(compiler->parser, TK_RBRACKET, "Expected closing ']'.");
+        
+        return;
+    }
+    
+    eat(compiler->parser, TK_RBRACKET, "Expected closing ']'.");
+    
+    if (canAssign && match(compiler, TK_ASSIGN)) {
+        expression(compiler);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else if (canAssign && match(compiler, TK_PLUSEQ)) {
+        expression(compiler);
+        emitBytes(compiler, OP_INDEX_PUSH, OP_ADD);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else if (canAssign && match(compiler, TK_MINUSEQ)) {
+        expression(compiler);
+        emitBytes(compiler, OP_INDEX_PUSH, OP_SUB);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else if (canAssign && match(compiler, TK_MULEQ)) {
+        expression(compiler);
+        emitBytes(compiler, OP_INDEX_PUSH, OP_MUL);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else if (canAssign && match(compiler, TK_DIVEQ)) {
+        expression(compiler);
+        emitBytes(compiler, OP_INDEX_PUSH, OP_DIV);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else if (canAssign && match(compiler, TK_POWEQ)) {
+        expression(compiler);
+        emitBytes(compiler, OP_INDEX_PUSH, OP_POW);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else if (canAssign && match(compiler, TK_MODEQ)) {
+        expression(compiler);
+        emitBytes(compiler, OP_INDEX_PUSH, OP_MOD);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
+        expression(compiler);
+        emitBytes(compiler, OP_INDEX_PUSH, OP_NULL_COALESCE);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else if (canAssign && match(compiler, TK_INC)) {
+        emitBytes(compiler, OP_INDEX_PUSH, OP_INC);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else if (canAssign && match(compiler, TK_DEC)) {
+        emitBytes(compiler, OP_INDEX_PUSH, OP_DEC);
+        emitByte(compiler, OP_INDEX_ASSIGN);
+    } else {
+        emitByte(compiler, OP_INDEX);
+    }
+}
+
 static void checkIfConst(Compiler *compiler, uint8_t setOp, int arg) {
     if (setOp == OP_SET_LOCAL) {
         if (compiler->locals[arg].isConst) {
@@ -754,6 +838,8 @@ ParseRule rules[] = {
         [TK_RPAREN]           = {NULL,     NULL,    PREC_NONE},
         [TK_LBRACE]           = {NULL,     NULL,    PREC_NONE},
         [TK_RBRACE]           = {NULL,     NULL,    PREC_NONE},
+        [TK_LBRACKET]         = {array,    index,   PREC_CALL},
+        [TK_RBRACKET]         = {NULL,     NULL,    PREC_NONE},
         [TK_COMMA]            = {NULL,     NULL,    PREC_NONE},
         [TK_DOT]              = {NULL,     dot,     PREC_CALL},
         [TK_SCOPE]            = {NULL,     scope,   PREC_CALL},

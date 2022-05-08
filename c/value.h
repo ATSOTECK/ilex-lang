@@ -17,10 +17,10 @@ typedef struct ObjString ObjString;
 #define SIGN_BIT ((uint64_t)0x8000000000000000)
 #define QNAN     ((uint64_t)0x7ffc000000000000)
 
-#define TAG_NULL  1 // 01.
-#define TAG_FALSE 2 // 10.
-#define TAG_TRUE  3 // 11.
-#define TAG_EMPTY 4 // 10.
+#define TAG_NULL  1u // 01.
+#define TAG_FALSE 2u // 10.
+#define TAG_TRUE  3u // 11.
+#define TAG_EMPTY 4u // 10.
 
 typedef uint64_t Value;
 

@@ -22,6 +22,7 @@
 #define IS_NATIVE(value)       isObjType(value, OBJ_NATIVE)
 #define IS_STRING(value)       isObjType(value, OBJ_STRING)
 #define IS_ENUM(value)         isObjType(value, OBJ_ENUM)
+#define IS_ARRAY(value)        isObjType(value, OBJ_ARRAY)
 
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
 #define AS_CLASS(value)        ((ObjClass*)AS_OBJ(value))
@@ -33,6 +34,7 @@
 #define AS_STRING(value)       ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value)      (((ObjString*)AS_OBJ(value))->str)
 #define AS_ENUM(value)         ((ObjEnum*)AS_OBJ(value))
+#define AS_ARRAY(value)        ((ObjArray*)AS_OBJ(value))
 
 typedef enum {
     OBJ_BOUND_METHOD,
@@ -45,6 +47,7 @@ typedef enum {
     OBJ_STRING,
     OBJ_UPVALUE,
     OBJ_ENUM,
+    OBJ_ARRAY,
 } ObjType;
 
 struct Obj {
@@ -116,16 +119,14 @@ typedef struct {
 
 typedef struct {
     Obj obj;
-    int len;
-    int capacity;
-    Value *data;
-} ObjList;
-
-typedef struct {
-    Obj obj;
     ObjString *name;
     Table values;
 } ObjEnum;
+
+typedef struct {
+    Obj obj;
+    ValueArray data;
+} ObjArray;
 
 ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
 ObjClass *newClass(VM *vm, ObjString *name);
@@ -139,8 +140,8 @@ char *newCStringLen(const char *str, int len);
 ObjString *takeString(VM *vm, char *str, int len);
 ObjString *copyString(VM *vm, const char* chars, int length);
 ObjUpvalue *newUpvalue(VM *vm, Value *slot);
-ObjList *newList();
 ObjEnum *newEnum(VM *vm, ObjString *name);
+ObjArray *newArray(VM *vm);
 char *objectType(Value value);
 char *objectToString(Value value);
 
