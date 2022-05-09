@@ -24,11 +24,15 @@ typedef enum {
     PREC_AND,         // and
     PREC_EQUALITY,    // == !=
     PREC_COMPARISON,  // < > <= >=
+    PREC_BIT_OR,      // |
+    PREC_BIT_XOR,     // ^
+    PREC_BIT_AND,     // &
+    PREC_BIT_SHIFT,   //<< >>
     PREC_TERM,        // + -
     PREC_FACTOR,      // * /
     PREC_UNARY,       // ! -
     PREC_EXPONENT,    // **
-    PREC_CALL,        // . ()
+    PREC_CALL,        // . () []
     PREC_PRIMARY
 } Precedence;
 
@@ -637,6 +641,12 @@ static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
         EMIT_OP_EQ(OP_POW);
     } else if (canAssign && match(compiler, TK_MODEQ)) {
         EMIT_OP_EQ(OP_MOD);
+    } else if (canAssign && match(compiler, TK_BIT_ANDEQ)) {
+        EMIT_OP_EQ(OP_BIT_AND);
+    } else if (canAssign && match(compiler, TK_BIT_OREQ)) {
+        EMIT_OP_EQ(OP_BIT_OR);
+    } else if (canAssign && match(compiler, TK_BIT_XOREQ)) {
+        EMIT_OP_EQ(OP_BIT_XOR);
     } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
         EMIT_OP_EQ(OP_NULL_COALESCE);
     } else if (canAssign && match(compiler, TK_INC)) {
@@ -718,6 +728,11 @@ static void binary(Compiler *compiler, bool canAssign) {
         case TK_DIV:           emitByte(compiler, OP_DIV); break;
         case TK_POW:           emitByte(compiler, OP_POW); break;
         case TK_MOD:           emitByte(compiler, OP_MOD); break;
+        case TK_BIT_AND:       emitByte(compiler, OP_BIT_AND); break;
+        case TK_BIT_OR:        emitByte(compiler, OP_BIT_OR); break;
+        case TK_BIT_XOR:       emitByte(compiler, OP_BIT_XOR); break;
+        case TK_BIT_LS:        emitByte(compiler, OP_BIT_LS); break;
+        case TK_BIT_RS:        emitByte(compiler, OP_BIT_RS); break;
         case TK_NULL_COALESCE: emitByte(compiler, OP_NULL_COALESCE); break;
         default: return; // Unreachable.
     }
@@ -771,6 +786,12 @@ static void dot(Compiler *compiler, bool canAssign) {
         EMIT_OP_EQ(OP_POW);
     } else if (canAssign && match(compiler, TK_MODEQ)) {
         EMIT_OP_EQ(OP_MOD);
+    } else if (canAssign && match(compiler, TK_BIT_ANDEQ)) {
+        EMIT_OP_EQ(OP_BIT_AND);
+    } else if (canAssign && match(compiler, TK_BIT_OREQ)) {
+        EMIT_OP_EQ(OP_BIT_OR);
+    } else if (canAssign && match(compiler, TK_BIT_XOREQ)) {
+        EMIT_OP_EQ(OP_BIT_XOR);
     } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
         EMIT_OP_EQ(OP_NULL_COALESCE);
     } else if (canAssign && match(compiler, TK_INC)) {
@@ -808,8 +829,8 @@ static void scope(Compiler *compiler, bool canAssign) {
 static void literal(Compiler *compiler, bool canAssign) {
     switch (compiler->parser->previous.type) {
         case TK_FALSE: emitByte(compiler, OP_FALSE); break;
-        case TK_NULL:  emitByte(compiler, OP_NULL); break;
-        case TK_TRUE:  emitByte(compiler, OP_TRUE); break;
+        case TK_NULL:  emitByte(compiler, OP_NULL);  break;
+        case TK_TRUE:  emitByte(compiler, OP_TRUE);  break;
         default: return; // Unreachable.
     }
 }
@@ -820,8 +841,9 @@ static void unary(Compiler *compiler, bool canAssign) {
     parsePrecedence(compiler, PREC_UNARY);
 
     switch (op) {
-        case TK_NOT: emitByte(compiler, OP_NOT); break;
-        case TK_MINUS: emitByte(compiler, OP_NEG); break;
+        case TK_NOT:     emitByte(compiler, OP_NOT);     break;
+        case TK_BIT_NOT: emitByte(compiler, OP_BIT_NOT); break;
+        case TK_MINUS:   emitByte(compiler, OP_NEG);     break;
         default: return;
     }
 }
@@ -860,6 +882,7 @@ ParseRule rules[] = {
         [TK_DIV]              = {NULL,     binary,  PREC_FACTOR},
         [TK_MUL]              = {NULL,     binary,  PREC_FACTOR},
         [TK_NOT]              = {unary,    NULL,    PREC_NONE},
+        [TK_BIT_NOT]          = {unary,    NULL,    PREC_NONE},
         [TK_NOTEQ]            = {NULL,     binary,  PREC_EQUALITY},
         [TK_ASSIGN]           = {NULL,     NULL,    PREC_NONE},
         [TK_EQ]               = {NULL,     binary,  PREC_EQUALITY},
@@ -867,6 +890,11 @@ ParseRule rules[] = {
         [TK_GREQ]             = {NULL,     binary,  PREC_COMPARISON},
         [TK_LT]               = {NULL,     binary,  PREC_COMPARISON},
         [TK_LTEQ]             = {NULL,     binary,  PREC_COMPARISON},
+        [TK_BIT_AND]          = {NULL,     binary,  PREC_BIT_AND},
+        [TK_BIT_OR]           = {NULL,     binary,  PREC_BIT_OR},
+        [TK_BIT_XOR]          = {NULL,     binary,  PREC_BIT_XOR},
+        [TK_BIT_LS]           = {NULL,     binary,  PREC_BIT_SHIFT},
+        [TK_BIT_RS]           = {NULL,     binary,  PREC_BIT_SHIFT},
         [TK_IDENT]            = {variable, NULL,    PREC_NONE},
         [TK_STRING]           = {string,   NULL,    PREC_NONE},
         [TK_NUMBER]           = {number,   NULL,    PREC_NONE},

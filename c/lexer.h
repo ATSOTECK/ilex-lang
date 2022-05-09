@@ -7,50 +7,59 @@
 
 typedef enum {
     // Single-character tokens.
-    TK_LPAREN, // (
-    TK_RPAREN, // )
-    TK_LBRACE, // {
-    TK_RBRACE, // }
-    TK_LBRACKET, // [
-    TK_RBRACKET, // ]
-    TK_COMMA, // ,
-    TK_DOT, // .
-    TK_MINUS, // -
-    TK_PLUS, // +
-    TK_SEMICOLON, // ;
-    TK_COLON, // :
-    TK_DIV, // /
-    TK_MUL, // *
-    TK_TER, // ?
-    TK_NL, // \n
+    TK_LPAREN,           // (
+    TK_RPAREN,           // )
+    TK_LBRACE,           // {
+    TK_RBRACE,           // }
+    TK_LBRACKET,         // [
+    TK_RBRACKET,         // ]
+    TK_COMMA,            // ,
+    TK_DOT,              // .
+    TK_MINUS,            // -
+    TK_PLUS,             // +
+    TK_SEMICOLON,        // ;
+    TK_COLON,            // :
+    TK_DIV,              // /
+    TK_MUL,              // *
+    TK_TER,              // ?
+    TK_NL,               // \n
 
     // One or two character tokens.
-    TK_NOT, // !
-    TK_NOTEQ, // !=
-    TK_ASSIGN, // =
-    TK_EQ, // ==
-    TK_GR, // >
-    TK_GREQ, // >=
-    TK_LT, // <
-    TK_LTEQ, // <=
-    TK_INC, // ++
-    TK_DEC, // --
-    TK_PLUSEQ, // +=
-    TK_MINUSEQ, // -=
-    TK_MULEQ, // *=
-    TK_DIVEQ, // /=
-    TK_POW, // **
-    TK_POWEQ, // **=
-    TK_MOD, // %
-    TK_MODEQ, // %=
-    TK_OPT, // ?.
-    TK_NULL_COALESCE, // ??
+    TK_NOT,              // !
+    TK_NOTEQ,            // !=
+    TK_ASSIGN,           // =
+    TK_EQ,               // ==
+    TK_GR,               // >
+    TK_GREQ,             // >=
+    TK_LT,               // <
+    TK_LTEQ,             // <=
+    TK_INC,              // ++
+    TK_DEC,              // --
+    TK_PLUSEQ,           // +=
+    TK_MINUSEQ,          // -=
+    TK_MULEQ,            // *=
+    TK_DIVEQ,            // /=
+    TK_POW,              // **
+    TK_POWEQ,            // **=
+    TK_MOD,              // %
+    TK_MODEQ,            // %=
+    TK_BIT_AND,          // &
+    TK_BIT_ANDEQ,        // &=
+    TK_BIT_OR,           // |
+    TK_BIT_OREQ,         // |=
+    TK_BIT_XOR,          // ^
+    TK_BIT_XOREQ,        // ^=
+    TK_BIT_NOT,          // ~
+    TK_BIT_LS,           // <<
+    TK_BIT_RS,           // >>
+    TK_OPT,              // ?.
+    TK_NULL_COALESCE,    // ??
     TK_NULL_COALESCE_EQ, // ??=
-    TK_FALLTHROUGH, // ->
+    TK_FALLTHROUGH,      // ->
 
-    TK_VAR_DECL, // :=
-    TK_CONST_DECL, // ::=
-    TK_SCOPE, // ::
+    TK_VAR_DECL,         // :=
+    TK_CONST_DECL,       // ::=
+    TK_SCOPE,            // ::
 
     // Literals.
     TK_IDENT,
@@ -61,11 +70,11 @@ typedef enum {
     TK_AND,
     TK_AS,
     TK_ASSERT,
-    TK_BREAK, // TODO
+    TK_BREAK,
     TK_CASE,
     TK_CLASS,
-    TK_CONST, // TODO
-    TK_CONTINUE, // TODO
+    TK_CONST,
+    TK_CONTINUE,
     TK_DEFAULT,
     TK_ELIF,
     TK_ELSE,

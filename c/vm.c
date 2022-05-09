@@ -402,17 +402,17 @@ static InterpretResult run(VM *vm) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
-#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8u) | frame->ip[-1]))
 #define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
-#define BINARY_OP(valueType, op) \
+#define BINARY_OP(valueType, op, type) \
     do { \
       if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
         runtimeError(vm, "Operands must be numbers."); \
         return INTERPRET_RUNTIME_ERROR; \
       } \
-      double b = AS_NUMBER(pop(vm)); \
-      double a = AS_NUMBER(pop(vm)); \
+      type b = AS_NUMBER(pop(vm)); \
+      type a = AS_NUMBER(pop(vm)); \
       push(vm, valueType(a op b)); \
     } while (false)
 
@@ -586,10 +586,10 @@ static InterpretResult run(VM *vm) {
                 Value b = pop(vm);
                 push(vm, BOOL_VAL(!valuesEqual(a, b)));
             } break;
-            case OP_GR: BINARY_OP(BOOL_VAL, >); break;
-            case OP_GREQ: BINARY_OP(BOOL_VAL, >=); break;
-            case OP_LT: BINARY_OP(BOOL_VAL, <); break;
-            case OP_LTEQ: BINARY_OP(BOOL_VAL, <=); break;
+            case OP_GR: BINARY_OP(BOOL_VAL, >, double); break;
+            case OP_GREQ: BINARY_OP(BOOL_VAL, >=, double); break;
+            case OP_LT: BINARY_OP(BOOL_VAL, <, double); break;
+            case OP_LTEQ: BINARY_OP(BOOL_VAL, <=, double); break;
             case OP_ADD: {
                 if (IS_NUMBER(peek(vm, 0)) && IS_NUMBER(peek(vm, 1))) {
                     double b = AS_NUMBER(pop(vm));
@@ -610,7 +610,7 @@ static InterpretResult run(VM *vm) {
                 
                 push(vm, NUMBER_VAL(AS_NUMBER(pop(vm)) + 1));
             } break;
-            case OP_SUB: BINARY_OP(NUMBER_VAL, -); break;
+            case OP_SUB: BINARY_OP(NUMBER_VAL, -, double); break;
             case OP_DEC: {
                 if (!IS_NUMBER(peek(vm, 0))) {
                     runtimeError(vm, "Operand must be a number.");
@@ -619,8 +619,8 @@ static InterpretResult run(VM *vm) {
         
                 push(vm, NUMBER_VAL(AS_NUMBER(pop(vm)) - 1));
             } break;
-            case OP_MUL: BINARY_OP(NUMBER_VAL, *); break;
-            case OP_DIV: BINARY_OP(NUMBER_VAL, /); break;
+            case OP_MUL: BINARY_OP(NUMBER_VAL, *, double); break;
+            case OP_DIV: BINARY_OP(NUMBER_VAL, /, double); break;
             case OP_POW: {
                 if (!IS_NUMBER(peek(vm, 0) || !IS_NUMBER(peek(vm, 1)))) {
                     runtimeError(vm, "Operands must be two numbers.");
@@ -639,6 +639,11 @@ static InterpretResult run(VM *vm) {
                 double a = AS_NUMBER(pop(vm));
                 push(vm, NUMBER_VAL(fmod(a, b)));
             } break;
+            case OP_BIT_AND: BINARY_OP(NUMBER_VAL, &,  int); break;
+            case OP_BIT_OR:  BINARY_OP(NUMBER_VAL, |,  int); break;
+            case OP_BIT_XOR: BINARY_OP(NUMBER_VAL, ^,  int); break;
+            case OP_BIT_LS:  BINARY_OP(NUMBER_VAL, <<, int); break;
+            case OP_BIT_RS:  BINARY_OP(NUMBER_VAL, >>, int); break;
             case OP_NULL_COALESCE: {
                 if (IS_NULL(peek(vm, 1))) {
                     Value rhs = pop(vm); // rhs
@@ -660,6 +665,13 @@ static InterpretResult run(VM *vm) {
                 }
             } break;
             case OP_NOT: push(vm, BOOL_VAL(isFalsy(pop(vm)))); break;
+            case OP_BIT_NOT: {
+                if (!IS_NUMBER(peek(vm, 0))) {
+                    runtimeError(vm, "Operand must be a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                push(vm, NUMBER_VAL(~(int)AS_NUMBER(pop(vm))));
+            } break;
             case OP_NEG: {
                 if (!IS_NUMBER(peek(vm, 0))) {
                     runtimeError(vm, "Operand must be a number.");

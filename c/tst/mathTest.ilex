@@ -80,6 +80,34 @@ assert(num == 10);
 num = num % 3;
 assert(num == 1);
 
-println("Math test passed in", milliseconds(), "ms!")
+num = 5
+assert(~num == -6)
+
+num = -3
+assert(~num == 2)
+
+a ::= 5
+b ::= 3
+assert(a & b == 1)
+assert(a | b == 7)
+assert(a ^ b == 6)
+
+z := 5
+z &= 3
+assert(z == 1)
+
+z = 5
+z |= 3
+assert(z == 7)
+
+z = 5
+z ^= 3
+assert(z == 6)
+
+assert(5 << 2 == 20)
+assert(5 >> 2 == 1)
+assert(-5 >> 2 == -2)
+
+println("\nMath test passed in", milliseconds(), "ms!\n")
 
 assert(num == 2, "This should fail.");

@@ -336,8 +336,20 @@ Token nextToken() {
         case '%': return makeToken(match('=') ? TK_MODEQ : TK_MOD);
         case '!': return makeToken(match('=') ? TK_NOTEQ : TK_NOT);
         case '=': return makeToken(match('=') ? TK_EQ    : TK_ASSIGN);
-        case '<': return makeToken(match('=') ? TK_LTEQ  : TK_LT);
-        case '>': return makeToken(match('=') ? TK_GREQ  : TK_GR);
+        case '<': {
+            if (match('<')) {
+                return makeToken(TK_BIT_LS);
+            } else {
+                return makeToken(match('=') ? TK_LTEQ : TK_LT);
+            }
+        }
+        case '>': {
+            if (match('>')) {
+                return makeToken(TK_BIT_RS);
+            } else {
+                return makeToken(match('=') ? TK_GREQ : TK_GR);
+            }
+        }
         case ':': {
             if (match('=')) {
                 return makeToken(TK_VAR_DECL);
@@ -359,13 +371,25 @@ Token nextToken() {
         case '&': {
             if (match('&')) {
                 return makeToken(TK_AND);
+            } else if (match('=')) {
+                return makeToken(TK_BIT_ANDEQ);
+            } else {
+                return makeToken(TK_BIT_AND);
             }
         }
         case '|': {
             if (match('|')) {
                 return makeToken(TK_OR);
+            } else if (match('=')) {
+                return makeToken(TK_BIT_OREQ);
+            } else {
+                return makeToken(TK_BIT_OR);
             }
         }
+        case '^': {
+            return makeToken(match('=') ? TK_BIT_XOREQ : TK_BIT_XOR);
+        }
+        case '~': return makeToken(TK_BIT_NOT);
         case '"': return string('"');
         case '\'': return string('\'');
         case '\n': {
