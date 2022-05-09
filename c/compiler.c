@@ -413,9 +413,36 @@ static void grouping(Compiler *compiler, bool canAssign) {
     eat(compiler->parser, TK_RPAREN, "Expect ')' after expression.");
 }
 
+static bool isOct(Token tk) {
+    return tk.start[0] == '0' && (tk.start[1] == 'o' || tk.start[1] == 'O' || tk.start[1] == 'q' || tk.start[1] == 'Q');
+}
+
+static Value parseNumber(Compiler *compiler) {
+    char *buf = ALLOCATE(compiler->parser->vm, char, compiler->parser->previous.len + 1);
+    char *ptr = buf;
+    
+    for (int i = 0; i < compiler->parser->previous.len; ++i) {
+        char c = compiler->parser->previous.start[i];
+        
+        if (c != '_') {
+            *(ptr++) = c;
+        }
+    }
+    
+    *ptr = '\0';
+    double num;
+    if (isOct(compiler->parser->previous)) {
+        num = strtol(buf + 2, NULL, 8); // + 2 to skip the octal indicator.
+    } else {
+        num = strtod(buf, NULL);
+    }
+    FREE_ARRAY(compiler->parser->vm, char, buf, compiler->parser->previous.len + 1);
+    
+    return NUMBER_VAL(num);
+}
+
 static void number(Compiler *compiler, bool canAssign) {
-    double val = strtod(compiler->parser->previous.start, NULL);
-    emitConstant(compiler, NUMBER_VAL(val));
+    emitConstant(compiler, parseNumber(compiler));
 }
 
 static void and_(Compiler *compiler, bool canAssign) {

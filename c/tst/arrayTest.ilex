@@ -91,3 +91,6 @@ println(long.join('/'))
 println(long.join(' yeet '))
 println(long.join(' | '))
 println([].join('empty'))
+
+long.clear()
+println(long)

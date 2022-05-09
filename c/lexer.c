@@ -32,6 +32,14 @@ static bool isDigit(char c) {
     return c >= '0' && c <= '9';
 }
 
+static bool isOctDigit(char c) {
+    return ((c >= '0' && c <= '7') || (c == '_'));
+}
+
+static bool isHexDigit(char c) {
+    return ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') || (c == '_'));
+}
+
 static bool isAlphaNumeric(char c) {
     return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') || (c >= '0' && c <= '9');
 }
@@ -259,20 +267,100 @@ static Token ident() {
     return makeToken(identType());
 }
 
-static Token number() {
-    while (isDigit(peek())) {
+static Token exponent() {
+    advance();
+    
+    while (peek() == '_') {
         advance();
+    }
+    
+    if (peek() == '-' || peek() == '+') {
+        advance();
+    }
+    
+    if (!isDigit(peek()) && peek() != '_') {
+        return errorToken("Invalid exponent literal.");
+    }
+    
+    while (isDigit(peek()) || peek() == '_') {
+        advance();
+    }
+    
+    return makeToken(TK_NUMBER);
+}
+
+static Token number() {
+    while (isDigit(peek()) || peek() == '_') {
+        advance();
+    }
+    
+    if (peek() == 'e' || peek() == 'E') {
+        return exponent();
     }
 
     if (peek() == '.' && isDigit(peekNext())) {
         advance();
 
-        while (isDigit(peek())) {
+        while (isDigit(peek()) || peek() == '_') {
             advance();
+        }
+    
+        if (peek() == 'e' || peek() == 'E') {
+            return exponent();
         }
     }
 
     return makeToken(TK_NUMBER);
+}
+
+static Token octalNumber() {
+    while (peek() == '_') {
+        advance();
+    }
+    
+    if (peek() == '0') {
+        advance();
+    }
+    
+    if (peek() == 'o' || peek() == 'O' || peek() == 'q' || peek() == 'Q') {
+        advance();
+        if (!isOctDigit(peek())) {
+            return errorToken("Invalid octal literal.");
+        }
+        
+        while (isOctDigit(peek())) {
+            advance();
+        }
+        
+        return makeToken(TK_NUMBER);
+    } else {
+        return number();
+    }
+}
+
+static Token hexNumber() {
+    while (peek() == '_') {
+        advance();
+    }
+    
+    if (peek() == '0') {
+        advance();
+    }
+    
+    if (peek() == 'x' || peek() == 'X') {
+        advance();
+        if (!isHexDigit(peek())) {
+            return errorToken("Invalid hex literal.");
+        }
+        
+        while (isHexDigit(peek())) {
+            advance();
+        }
+        
+        return makeToken(TK_NUMBER);
+    } else {
+        return octalNumber();
+    }
 }
 
 Token nextToken() {
@@ -289,7 +377,7 @@ Token nextToken() {
     }
 
     if (isDigit(c)) {
-        return number();
+        return hexNumber();
     }
 
     switch (c) {

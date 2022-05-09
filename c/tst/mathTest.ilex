@@ -108,6 +108,15 @@ assert(5 << 2 == 20)
 assert(5 >> 2 == 1)
 assert(-5 >> 2 == -2)
 
+assert(0xF == 15)
+assert(0XF == 15)
+assert(1_5 == 15)
+assert(1e2 == 100)
+assert(0o10 == 8)
+assert(0O10 == 8)
+assert(0q10 == 8)
+assert(0Q10 == 8)
+
 println("\nMath test passed in", milliseconds(), "ms!\n")
 
 assert(num == 2, "This should fail.");

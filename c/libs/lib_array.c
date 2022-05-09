@@ -397,6 +397,14 @@ static Value arrayJoin(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, fullString, strLen));
 }
 
+static Value arrayClear(VM *vm, int argc, Value *args) {
+    ObjArray *array = AS_ARRAY(args[0]);
+    freeValueArray(vm, &array->data); // Should the array be freed or should the count be set to 0?
+    initValueArray(&array->data);
+    
+    return ZERO_VAL;
+}
+
 static Value arrayCopy(VM *vm, int argc, Value *args) {
     // TODO
     return NULL_VAL;
@@ -415,4 +423,5 @@ void defineArrayFunctions(VM *vm) {
     defineNative(vm, "reverse", arrayReverse, &vm->arrayFunctions);
     defineNative(vm, "sort", arraySort, &vm->arrayFunctions);
     defineNative(vm, "join", arrayJoin, &vm->arrayFunctions);
+    defineNative(vm, "clear", arrayClear, &vm->arrayFunctions);
 }
