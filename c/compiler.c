@@ -1301,9 +1301,15 @@ static int getArgCount(const uint8_t *code, const ValueArray constants, int ip) 
     return 0;
 }
 
-static void endLoop(Compiler *compiler) {
-    if (compiler->loop->end != -1) {
+static void endLoop(Compiler *compiler, bool isDo) {
+    if (!isDo && compiler->loop->end != -1) {
         patchJump(compiler, compiler->loop->end);
+        emitByte(compiler, OP_POP); // Condition.
+    } else if (isDo && compiler->loop->body != -1) {
+        int offset = compiler->loop->end;
+        int jump = compiler->loop->end - compiler->loop->start + 2;
+        currentChunk(compiler)->code[offset] = (jump >> 8) & 0xff;
+        currentChunk(compiler)->code[offset + 1] = jump & 0xff;
         emitByte(compiler, OP_POP); // Condition.
     }
 
@@ -1377,7 +1383,7 @@ static void forStatement(Compiler *compiler) {
     endScope(compiler);
 
     emitLoop(compiler, compiler->loop->start);
-    endLoop(compiler);
+    endLoop(compiler, false);
     endScope(compiler);
 }
 
@@ -1556,7 +1562,7 @@ static void whileStatement(Compiler *compiler) {
     endScope(compiler);
 
     emitLoop(compiler, compiler->loop->start);
-    endLoop(compiler);
+    endLoop(compiler, false);
 }
 
 static void doWhileStatement(Compiler *compiler) {
@@ -1566,8 +1572,6 @@ static void doWhileStatement(Compiler *compiler) {
     loop.enclosing = compiler->loop;
     compiler->loop = &loop;
 
-    compiler->loop->end = emitJump(compiler, OP_JUMP_IF_FALSE_NOT_FIRST);
-    emitByte(compiler, OP_POP);
     compiler->loop->body = compiler->function->chunk.count;
 
     eat(compiler->parser, TK_LBRACE, "Expect '{' after 'do'.");
@@ -1580,8 +1584,8 @@ static void doWhileStatement(Compiler *compiler) {
     expression(compiler);
     eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
 
-    emitLoop(compiler, compiler->loop->start);
-    endLoop(compiler);
+    compiler->loop->end = emitJump(compiler, OP_JUMP_DO_WHILE);
+    endLoop(compiler, true);
 }
 
 static void useStatement(Compiler *compiler, bool isFrom) {

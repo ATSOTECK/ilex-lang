@@ -121,9 +121,21 @@ tVar := false
 idx := 0
 do {
     idx++
-    println(idx)
+    println('do while', idx)
     
     if (idx == 10) {
+        tVar = false
+    }
+} while (tVar)
+
+ln()
+
+tVar = true
+do {
+    idx++
+    println('2nd do while', idx)
+    
+    if (idx == 15) {
         tVar = false
     }
 } while (tVar)
