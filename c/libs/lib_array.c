@@ -7,6 +7,7 @@
 #include "../memory.h"
 
 #include <math.h>
+#include <stdlib.h>
 
 static Value arrayLen(VM *vm, int argc, Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);

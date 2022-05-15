@@ -16,11 +16,12 @@
 //#define DEBUG_LOG_GC
 
 #define UINT8_COUNT (UINT8_MAX + 1)
+#define UINT16_COUNT (UINT16_MAX + 1)
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION_BUILD 38
-#define ILEX_VERSION "0.0.38"
+#define ILEX_VERSION_BUILD 39
+#define ILEX_VERSION "0.0.39"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN

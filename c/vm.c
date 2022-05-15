@@ -403,7 +403,7 @@ static InterpretResult run(VM *vm) {
 
 #define READ_BYTE() (*frame->ip++)
 #define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8u) | frame->ip[-1]))
-#define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_BYTE()])
+#define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_SHORT()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op, type) \
     do { \
@@ -439,7 +439,7 @@ static InterpretResult run(VM *vm) {
             case OP_FALSE: push(vm, BOOL_VAL(false)); break;
             case OP_POP: pop(vm); break;
             case OP_GET_LOCAL: {
-                uint8_t slot = READ_BYTE();
+                uint16_t slot = READ_SHORT();
                 push(vm, frame->slots[slot]);
             } break;
             case OP_GET_GLOBAL: {
@@ -453,7 +453,7 @@ static InterpretResult run(VM *vm) {
                 push(vm, value);
             } break;
             case OP_GET_UPVALUE: {
-                uint8_t slot = READ_BYTE();
+                uint16_t slot = READ_SHORT();
                 push(vm, *frame->closure->upvalues[slot]->location);
             } break;
             case OP_GET_PROPERTY: {
@@ -549,7 +549,7 @@ static InterpretResult run(VM *vm) {
                 pop(vm);
             } break;
             case OP_SET_LOCAL: {
-                uint8_t slot = READ_BYTE();
+                uint16_t slot = READ_SHORT();
                 frame->slots[slot] = peek(vm, 0);
             } break;
             case OP_SET_GLOBAL: {
@@ -561,7 +561,7 @@ static InterpretResult run(VM *vm) {
                 }
             } break;
             case OP_SET_UPVALUE: {
-                uint8_t slot = READ_BYTE();
+                uint16_t slot = READ_SHORT();
                 *frame->closure->upvalues[slot]->location = peek(vm, 0);
             } break;
             case OP_SET_PROPERTY: {
@@ -694,16 +694,16 @@ static InterpretResult run(VM *vm) {
                 frame->ip -= offset;
             } break;
             case OP_CALL: {
-                int argCount = READ_BYTE();
-                if (!callValue(vm, peek(vm, argCount), argCount)) {
+                int argc = READ_BYTE();
+                if (!callValue(vm, peek(vm, argc), argc)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 frame = &vm->frames[vm->frameCount - 1];
             } break;
             case OP_INVOKE: {
                 ObjString *method = READ_STRING();
-                int argCount = READ_BYTE();
-                if (!invoke(vm, method, argCount)) {
+                int argc = READ_BYTE();
+                if (!invoke(vm, method, argc)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
@@ -726,7 +726,7 @@ static InterpretResult run(VM *vm) {
 
                 for (int i = 0; i < closure->upvalueCount; ++i) {
                     uint8_t isLocal = READ_BYTE();
-                    uint8_t index = READ_BYTE();
+                    uint16_t index = READ_SHORT();
                     if (isLocal) {
                         closure->upvalues[i] = captureUpvalue(vm, frame->slots + index);
                     } else {

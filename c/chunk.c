@@ -12,15 +12,13 @@ void initChunk(Chunk *chunk) {
     chunk->count = 0;
     chunk->capacity = 0;
     chunk->code = NULL;
-    chunk->lineCount = 0;
-    chunk->lineCapacity = 0;
     chunk->lines = NULL;
     initValueArray(&chunk->constants);
 }
 
 void freeChunk(VM *vm, Chunk *chunk) {
     FREE_ARRAY(vm, uint8_t, chunk->code, chunk->capacity);
-    FREE_ARRAY(vm, int, chunk->lines, chunk->lineCount);
+    FREE_ARRAY(vm, int, chunk->lines, chunk->capacity);
     freeValueArray(vm, &chunk->constants);
     initChunk(chunk);
 }

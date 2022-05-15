@@ -25,7 +25,7 @@ typedef struct {
 } Local;
 
 typedef struct {
-    uint8_t index;
+    uint16_t index;
     bool isLocal;
 } Upvalue;
 
@@ -56,11 +56,11 @@ typedef struct Compiler {
     ObjFunction *function;
     FunctionType type;
 
-    Local locals[UINT8_COUNT];
+    Local locals[UINT16_COUNT]; //TODO
     int localCount;
-    Upvalue upvalues[UINT8_COUNT];
+    Upvalue upvalues[UINT16_COUNT]; //TODO
     int scopeDepth;
-    uint8_t currentLibName;
+    uint16_t currentLibName;
     ObjScript *currentScript;
     Loop *loop;
 } Compiler;

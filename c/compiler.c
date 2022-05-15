@@ -142,8 +142,23 @@ static void emitByte(Compiler *compiler, uint8_t byte) {
     writeChunk(compiler->parser->vm, currentChunk(compiler), byte, compiler->parser->previous.line);
 }
 
+static void emitShort(Compiler *compiler, uint16_t byte) {
+    emitByte(compiler, (uint8_t)(byte >> 8));
+    emitByte(compiler, (uint8_t)byte);
+}
+
 static void emitBytes(Compiler *compiler, uint8_t byte1, uint8_t byte2) {
     emitByte(compiler, byte1);
+    emitByte(compiler, byte2);
+}
+
+static void emitByteShort(Compiler *compiler, uint8_t byte1, uint16_t byte2) {
+    emitByte(compiler, byte1);
+    emitShort(compiler, byte2);
+}
+
+static void emitShortByte(Compiler *compiler, uint16_t byte1, uint8_t byte2) {
+    emitShort(compiler, byte1);
     emitByte(compiler, byte2);
 }
 
@@ -169,7 +184,7 @@ static int emitJump(Compiler *compiler, uint8_t instruction) {
 
 static void emitReturn(Compiler *compiler) {
     if (compiler->type == TYPE_INITIALIZER) {
-        emitBytes(compiler, OP_GET_LOCAL, 0);  // this
+        emitByteShort(compiler, OP_GET_LOCAL, 0);  // this
     } else {
         emitByte(compiler, OP_NULL);
     }
@@ -177,18 +192,18 @@ static void emitReturn(Compiler *compiler) {
     emitByte(compiler, OP_RETURN);
 }
 
-static uint8_t makeConstant(Compiler *compiler, Value value) {
+static uint16_t makeConstant(Compiler *compiler, Value value) {
     int constant = addConstant(compiler->parser->vm, currentChunk(compiler), value);
-    if (constant > UINT8_MAX) {
+    if (constant > UINT16_MAX) {
         error(compiler->parser, "Too many constants in one chunk.");
         return 0;
     }
 
-    return (uint8_t)constant;
+    return (uint16_t)constant;
 }
 
 static void emitConstant(Compiler *compiler, Value value) {
-    emitBytes(compiler, OP_CONSTANT, makeConstant(compiler, value));
+    emitByteShort(compiler, OP_CONSTANT, makeConstant(compiler, value));
 }
 
 static void patchJump(Compiler *compiler, int offset) {
@@ -237,7 +252,7 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     }
 }
 
-static uint8_t identifierConstant(Compiler *compiler, Token *name) {
+static uint16_t identifierConstant(Compiler *compiler, Token *name) {
     return makeConstant(compiler, OBJ_VAL(copyString(compiler->parser->vm, name->start, name->len)));
 }
 
@@ -263,7 +278,7 @@ static int resolveLocal(Compiler *compiler, Token *name) {
     return -1;
 }
 
-static int addUpvalue(Compiler *compiler, uint8_t index, bool isLocal) {
+static int addUpvalue(Compiler *compiler, uint16_t index, bool isLocal) {
     int upvalueCount = compiler->function->upvalueCount;
 
     for (int  i = 0; i < upvalueCount; ++i) {
@@ -273,7 +288,7 @@ static int addUpvalue(Compiler *compiler, uint8_t index, bool isLocal) {
         }
     }
 
-    if (upvalueCount == UINT8_COUNT) {
+    if (upvalueCount == UINT16_COUNT) {
         error(compiler->parser, "Too many closure variables in function.");
         return 0;
     }
@@ -292,19 +307,19 @@ static int resolveUpvalue(Compiler *compiler, Token *name) {
     int local = resolveLocal(compiler->enclosing, name);
     if (local != -1) {
         compiler->enclosing->locals[local].isCaptured = true;
-        return addUpvalue(compiler, (uint8_t)local, true);
+        return addUpvalue(compiler, (uint16_t)local, true);
     }
 
     int upvalue = resolveUpvalue(compiler->enclosing, name);
     if (upvalue != -1) {
-        return addUpvalue(compiler, (uint8_t)upvalue, false);
+        return addUpvalue(compiler, (uint16_t)upvalue, false);
     }
 
     return -1;
 }
 
 static void addLocal(Compiler *compiler, Token name) {
-    if (compiler->localCount == UINT8_COUNT) {
+    if (compiler->localCount == UINT16_COUNT) {
         error(compiler->parser, "To many local variables in function.");
         return;
     }
@@ -335,7 +350,7 @@ static void declareVariable(Compiler *compiler) {
     addLocal(compiler, *name);
 }
 
-static uint8_t parseVariable(Compiler *compiler, const char *errorMessage) {
+static uint16_t parseVariable(Compiler *compiler, const char *errorMessage) {
     eat(compiler->parser, TK_IDENT, errorMessage);
     declareVariable(compiler);
 
@@ -346,7 +361,7 @@ static uint8_t parseVariable(Compiler *compiler, const char *errorMessage) {
     return identifierConstant(compiler, &compiler->parser->previous);
 }
 
-static void defineVariable(Compiler *compiler, uint8_t global, bool isConst) {
+static void defineVariable(Compiler *compiler, uint16_t global, bool isConst) {
     if (compiler->scopeDepth > 0) {
         compiler->locals[compiler->localCount - 1].depth = compiler->scopeDepth;
         compiler->locals[compiler->localCount - 1].isConst = isConst;
@@ -357,7 +372,7 @@ static void defineVariable(Compiler *compiler, uint8_t global, bool isConst) {
     if (isConst) {
         tableSet(compiler->parser->vm, &compiler->parser->vm->consts, AS_STRING(currentChunk(compiler)->constants.values[global]), NULL_VAL);
     }
-    emitBytes(compiler, OP_DEFINE_GLOBAL, global);
+    emitByteShort(compiler, OP_DEFINE_GLOBAL, global);
 }
 
 static uint8_t argumentList(Compiler *compiler) {
@@ -365,7 +380,7 @@ static uint8_t argumentList(Compiler *compiler) {
     if (!check(compiler, TK_RPAREN)) {
         do {
             expression(compiler);
-            if (argCount == 255) {
+            if (argCount > 255) {
                 error(compiler->parser, "Can't have more than 255 arguments.");
             }
             argCount++;
@@ -534,14 +549,16 @@ static void array(Compiler *compiler, bool canAssign) {
         }
         
         expression(compiler);
-        ++count;
+        if (++count > 255) {
+            error(compiler->parser, "Can't have more than 255 items in an array initializer.");
+        }
     } while (match(compiler, TK_COMMA));
     
     emitBytes(compiler, OP_NEW_ARRAY, count);
     eat(compiler->parser, TK_RBRACKET, "Expect ']' after array elements.");
 }
 
-static void index(Compiler *compiler, bool canAssign) {
+static void index_(Compiler *compiler, bool canAssign) {
     if (match(compiler, TK_COLON)) {
         emitByte(compiler, OP_EMPTY);
         expression(compiler);
@@ -639,7 +656,7 @@ static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
         getOp = OP_GET_UPVALUE;
         setOp = OP_SET_UPVALUE;
     } else {
-        arg = identifierConstant(compiler, &name);
+        arg = (int)identifierConstant(compiler, &name);
         getOp = OP_GET_GLOBAL;
         setOp = OP_SET_GLOBAL;
     }
@@ -649,13 +666,13 @@ static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
                               namedVariable(compiler, name, false); \
                               expression(compiler); \
                               emitByte(compiler, token); \
-                              emitBytes(compiler, setOp, (uint8_t)arg); \
+                              emitByteShort(compiler, setOp, (uint16_t)arg); \
                           } while (false) \
     
     if (canAssign && match(compiler, TK_ASSIGN)) {
         checkIfConst(compiler, setOp, arg);
         expression(compiler);
-        emitBytes(compiler, setOp, (uint8_t)arg);
+        emitByteShort(compiler, setOp, (uint16_t)arg);
     } else if (canAssign && match(compiler, TK_PLUSEQ)) {
         EMIT_OP_EQ(OP_ADD);
     } else if (canAssign && match(compiler, TK_MINUSEQ)) {
@@ -680,14 +697,14 @@ static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
         checkIfConst(compiler, setOp, arg);
         namedVariable(compiler, name, false);
         emitByte(compiler, OP_INC);
-        emitBytes(compiler, setOp, (uint8_t)arg);
+        emitByteShort(compiler, setOp, (uint16_t)arg);
     } else if (canAssign && match(compiler, TK_DEC)) {
         checkIfConst(compiler, setOp, arg);
         namedVariable(compiler, name, false);
         emitByte(compiler, OP_DEC);
-        emitBytes(compiler, setOp, (uint8_t)arg);
+        emitByteShort(compiler, setOp, (uint16_t)arg);
     } else {
-        emitBytes(compiler, getOp, (uint8_t)arg);
+        emitByteShort(compiler, getOp, (uint16_t)arg);
     }
 
 #undef EMIT_OP_EQ
@@ -714,17 +731,17 @@ static void super_(Compiler *compiler, bool canAssign) {
 
     eat(compiler->parser, TK_DOT, "Expect '.' after 'super'.");
     eat(compiler->parser, TK_IDENT, "Expect superclass method name.");
-    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+    uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
 
     namedVariable(compiler, syntheticToken("this"), false);
     if (match(compiler, TK_LPAREN)) {
         uint8_t argc = argumentList(compiler);
         namedVariable(compiler, syntheticToken("super"), false);
-        emitBytes(compiler, OP_SUPER_INVOKE, name);
+        emitByteShort(compiler, OP_SUPER_INVOKE, name);
         emitByte(compiler, argc);
     } else {
         namedVariable(compiler, syntheticToken("super"), false);
-        emitBytes(compiler, OP_GET_SUPER, name);
+        emitByteShort(compiler, OP_GET_SUPER, name);
     }
 }
 
@@ -789,18 +806,18 @@ static void call(Compiler *compiler, bool canAssign) {
 
 static void dot(Compiler *compiler, bool canAssign) {
     eat(compiler->parser, TK_IDENT, "Expect property name after '.'.");
-    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+    uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
 
 #define EMIT_OP_EQ(token) do { \
-                              emitBytes(compiler, OP_GET_PROPERTY_NO_POP, name); \
+                              emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name); \
                               expression(compiler); \
                               emitByte(compiler, token); \
-                              emitBytes(compiler, OP_SET_PROPERTY, name); \
+                              emitByteShort(compiler, OP_SET_PROPERTY, name); \
                           } while (false) \
     
     if (canAssign && match(compiler, TK_ASSIGN)) {
         expression(compiler);
-        emitBytes(compiler, OP_SET_PROPERTY, name);
+        emitByteShort(compiler, OP_SET_PROPERTY, name);
     } else if (canAssign && match(compiler, TK_PLUSEQ)) {
         EMIT_OP_EQ(OP_ADD);
     }  else if (canAssign && match(compiler, TK_MINUSEQ)) {
@@ -822,19 +839,19 @@ static void dot(Compiler *compiler, bool canAssign) {
     } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
         EMIT_OP_EQ(OP_NULL_COALESCE);
     } else if (canAssign && match(compiler, TK_INC)) {
-        emitBytes(compiler, OP_GET_PROPERTY_NO_POP, name);
+        emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name);
         emitByte(compiler, OP_INC);
-        emitBytes(compiler, OP_SET_PROPERTY, name);
+        emitByteShort(compiler, OP_SET_PROPERTY, name);
     } else if (canAssign && match(compiler, TK_DEC)) {
-        emitBytes(compiler, OP_GET_PROPERTY_NO_POP, name);
+        emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name);
         emitByte(compiler, OP_DEC);
-        emitBytes(compiler, OP_SET_PROPERTY, name);
+        emitByteShort(compiler, OP_SET_PROPERTY, name);
     } else if (match(compiler, TK_LPAREN)) {
             uint8_t argCount = argumentList(compiler);
-            emitBytes(compiler, OP_INVOKE, name);
+            emitByteShort(compiler, OP_INVOKE, name);
             emitByte(compiler, argCount);
     } else {
-        emitBytes(compiler, OP_GET_PROPERTY, name);
+        emitByteShort(compiler, OP_GET_PROPERTY, name);
     }
 
 #undef EMIT_OP_EQ
@@ -842,14 +859,14 @@ static void dot(Compiler *compiler, bool canAssign) {
 
 static void scope(Compiler *compiler, bool canAssign) {
     eat(compiler->parser, TK_IDENT, "Expect property name after '::'.");
-    uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+    uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
 
     if (match(compiler, TK_LPAREN)) {
         int argc = argumentList(compiler);
-        emitBytes(compiler, OP_INVOKE, name);
+        emitByteShort(compiler, OP_INVOKE, name);
         emitByte(compiler, argc);
     } else {
-        emitBytes(compiler, OP_GET_PROPERTY, name);
+        emitByteShort(compiler, OP_GET_PROPERTY, name);
     }
 }
 
@@ -888,7 +905,7 @@ ParseRule rules[] = {
         [TK_RPAREN]           = {NULL,     NULL,    PREC_NONE},
         [TK_LBRACE]           = {NULL,     NULL,    PREC_NONE},
         [TK_RBRACE]           = {NULL,     NULL,    PREC_NONE},
-        [TK_LBRACKET]         = {array,    index,   PREC_CALL},
+        [TK_LBRACKET]         = {array,    index_,  PREC_CALL},
         [TK_RBRACKET]         = {NULL,     NULL,    PREC_NONE},
         [TK_COMMA]            = {NULL,     NULL,    PREC_NONE},
         [TK_DOT]              = {NULL,     dot,     PREC_CALL},
@@ -957,7 +974,6 @@ ParseRule rules[] = {
         [TK_AS]               = {NULL,     NULL,    PREC_NONE},
         [TK_BREAK]            = {NULL,     NULL,    PREC_NONE},
         [TK_CONTINUE]         = {NULL,     NULL,    PREC_NONE},
-        [TK_NL]               = {NULL,     NULL,    PREC_NONE},
         [TK_ERROR]            = {NULL,     NULL,    PREC_NONE},
         [TK_EOF]              = {NULL,     NULL,    PREC_NONE},
 };
@@ -1001,7 +1017,7 @@ static void synchronize(Parser *parser) {
     parser->panicMode = false;
 
     while (parser->current.type != TK_EOF) {
-        if (parser->previous.type == TK_SEMICOLON || parser->previous.type == TK_NL) {
+        if (parser->previous.type == TK_SEMICOLON) {
             return;
         }
 
@@ -1060,7 +1076,7 @@ static void function(Compiler *compiler, FunctionType type) {
                 errorAtCurrent(functionCompiler.parser, "Can't have more than 255 parameters.");
             }
 
-            uint8_t constant = parseVariable(&functionCompiler, "Expect parameter name.");
+            uint16_t constant = parseVariable(&functionCompiler, "Expect parameter name.");
             defineVariable(&functionCompiler, constant, false); // TODO: Should this be true?
         } while (match(&functionCompiler, TK_COMMA));
     }
@@ -1069,17 +1085,17 @@ static void function(Compiler *compiler, FunctionType type) {
     block(&functionCompiler);
 
     ObjFunction *function = endCompiler(&functionCompiler);
-    emitBytes(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
+    emitByteShort(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
 
     for (int i = 0; i < function->upvalueCount; ++i) {
         emitByte(compiler, functionCompiler.upvalues[i].isLocal ? 1 : 0);
-        emitByte(compiler, functionCompiler.upvalues[i].index);
+        emitShort(compiler, functionCompiler.upvalues[i].index);
     }
 }
 
 static void method(Compiler *compiler) {
     eat(compiler->parser, TK_IDENT, "Expect method name.");
-    uint8_t constant = identifierConstant(compiler, &compiler->parser->previous);
+    uint16_t constant = identifierConstant(compiler, &compiler->parser->previous);
 
     FunctionType type = TYPE_METHOD;
     if (compiler->parser->previous.len == 4 &&
@@ -1087,16 +1103,16 @@ static void method(Compiler *compiler) {
         type = TYPE_INITIALIZER;
     }
     function(compiler, type);
-    emitBytes(compiler, OP_METHOD, constant);
+    emitByteShort(compiler, OP_METHOD, constant);
 }
 
 static void classDeclaration(Compiler *compiler) {
     eat(compiler->parser, TK_IDENT, "Expect class name.");
     Token className = compiler->parser->previous;
-    uint8_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
+    uint16_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
     declareVariable(compiler);
 
-    emitBytes(compiler, OP_CLASS, nameConstant);
+    emitByteShort(compiler, OP_CLASS, nameConstant);
     defineVariable(compiler, nameConstant, false);
 
     ClassCompiler classCompiler;
@@ -1137,14 +1153,14 @@ static void classDeclaration(Compiler *compiler) {
 }
 
 static void fnDeclaration(Compiler *compiler) {
-    uint8_t global = parseVariable(compiler, "Expect function name after 'fn'.");
+    uint16_t global = parseVariable(compiler, "Expect function name after 'fn'.");
     function(compiler, TYPE_FUNCTION);
     defineVariable(compiler, global, false);
 }
 
 static void varDeclaration(Compiler *compiler, bool isConst) {
     do {
-        uint8_t global = parseVariable(compiler, "Expect variable name.");
+        uint16_t global = parseVariable(compiler, "Expect variable name.");
 
         if (match(compiler, TK_ASSIGN) || isConst) {
             expression(compiler);
@@ -1161,7 +1177,7 @@ static void varDeclaration(Compiler *compiler, bool isConst) {
 static void varDeclaration2(Compiler *compiler, bool isConst) {
     eat(compiler->parser, TK_IDENT, "Expect variable name.");
     declareVariable(compiler);
-    uint8_t global;
+    uint16_t global;
 
     if (compiler->scopeDepth > 0) {
         global = 0;
@@ -1183,9 +1199,9 @@ static void varDeclaration2(Compiler *compiler, bool isConst) {
 static void enumDeclaration(Compiler *compiler) {
     eat(compiler->parser, TK_IDENT, "Expect enum name.");
 
-    uint8_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
+    uint16_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
     declareVariable(compiler);
-    emitBytes(compiler, OP_ENUM, nameConstant);
+    emitByteShort(compiler, OP_ENUM, nameConstant);
     eat(compiler->parser, TK_LBRACE, "Expect '{' before enum body.");
     int index = 0;
 
@@ -1195,7 +1211,7 @@ static void enumDeclaration(Compiler *compiler) {
         }
 
         eat(compiler->parser, TK_IDENT, "Expect enum value identifier.");
-        uint8_t name = identifierConstant(compiler, &compiler->parser->previous);
+        uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
 
         if (match(compiler, TK_ASSIGN)) {
             expression(compiler);
@@ -1203,7 +1219,7 @@ static void enumDeclaration(Compiler *compiler) {
             emitConstant(compiler, NUMBER_VAL(index));
         }
 
-        emitBytes(compiler, OP_ENUM_SET_VALUE, name);
+        emitByteShort(compiler, OP_ENUM_SET_VALUE, name);
         index++;
     } while (match(compiler, TK_COMMA));
 
@@ -1351,6 +1367,7 @@ static void forStatement(Compiler *compiler) {
         patchJump(compiler, bodyJump);
     }
 
+    compiler->loop->body = compiler->function->chunk.count;
     eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
     beginScope(compiler);
     block(compiler);
@@ -1375,7 +1392,7 @@ static void assertStatement(Compiler *compiler) {
     eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
     match(compiler, TK_SEMICOLON);
 
-    emitBytes(compiler, OP_ASSERT, (uint8_t)constant);
+    emitByteShort(compiler, OP_ASSERT, (uint16_t)constant);
 }
 
 static void panicStatement(Compiler *compiler) {
@@ -1385,7 +1402,7 @@ static void panicStatement(Compiler *compiler) {
     eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
     match(compiler, TK_SEMICOLON);
 
-    emitBytes(compiler, OP_PANIC, (uint8_t)constant);
+    emitByteShort(compiler, OP_PANIC, (uint16_t)constant);
 }
 
 static void switchStatement(Compiler *compiler) {
@@ -1574,14 +1591,14 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         declareVariable(compiler);
 
         emitBytes(compiler, OP_USE_BUILTIN, idx);
-        emitByte(compiler, compiler->currentLibName);
+        emitShort(compiler, compiler->currentLibName);
 
         if (!isFrom) {
             defineVariable(compiler, compiler->currentLibName, false);
         }
         eat(compiler->parser, TK_GR, "Expect '>' after library name.");
     } else if (match(compiler, TK_LBRACE)) {
-        uint8_t variables[255];
+        uint16_t variables[255];
         Token tokens[255];
         int varCount = 0;
 
@@ -1591,7 +1608,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
             variables[varCount] = identifierConstant(compiler, &compiler->parser->previous);
 
             if (++varCount > 255) {
-                error(compiler->parser, "Cannot have more than 255 variables.");
+                error(compiler->parser, "Cannot 'use' more than 255 variables.");
             }
         } while(match(compiler, TK_COMMA));
 
@@ -1608,10 +1625,10 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         if (builtin) {
             emitByte(compiler, OP_POP);
             emitByte(compiler, OP_USE_BUILTIN_VAR);
-            emitBytes(compiler, compiler->currentLibName, varCount);
+            emitShortByte(compiler, compiler->currentLibName, varCount);
 
             for (int i = 0; i < varCount; ++i) {
-                emitByte(compiler, variables[i]);
+                emitShort(compiler, variables[i]);
             }
 
             for (int i = varCount - 1; i >= 0; --i) {
@@ -1638,7 +1655,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         // Don't use values->count because we don't want vars starting with '$' or '_' and the number of those is not known.
         int varCount = 0;
         Token tokens[255];
-        uint8_t variables[255];
+        uint16_t variables[255];
         for (int i = 0; i < values->capacity; ++i) {
             e = &values->entries[i];
 
@@ -1658,10 +1675,10 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         if (builtin) {
             emitByte(compiler, OP_POP);
             emitByte(compiler, OP_USE_BUILTIN_VAR);
-            emitBytes(compiler, compiler->currentLibName, varCount);
+            emitShortByte(compiler, compiler->currentLibName, varCount);
 
             for (int i = 0; i < varCount; ++i) {
-                emitByte(compiler, variables[i]);
+                emitShort(compiler, variables[i]);
             }
 
             for (int i = varCount - 1; i >= 0; --i) {
@@ -1754,8 +1771,6 @@ static void statement(Compiler *compiler) {
         beginScope(compiler);
         block(compiler);
         endScope(compiler);
-    } else if (match(compiler, TK_NL)) {
-        // Do nothing.
     } else {
         expressionStatement(compiler);
     }

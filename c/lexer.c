@@ -95,7 +95,10 @@ static void skipWhitespace() {
             case '\t':
                 advance();
                 break;
-            // Newlines are handled in nextToken().
+            case '\n':
+                ++lexer.line;
+                advance();
+                break;
             case '/':
                 if (peekNext() == '/') {
                     while (peek() != '\n' && !atEnd()) {
@@ -480,10 +483,14 @@ Token nextToken() {
         case '~': return makeToken(TK_BIT_NOT);
         case '"': return string('"');
         case '\'': return string('\'');
+        /*
         case '\n': {
+            Token token = makeToken(TK_NL);
             ++lexer.line;
-            return makeToken(TK_NL);
+
+            return token;
         }
+        */
         default: break;
     }
 
