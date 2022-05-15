@@ -470,15 +470,12 @@ static void and_(Compiler *compiler, bool canAssign) {
 }
 
 static void or_(Compiler *compiler, bool canAssign) {
-    // TODO: Jump if true.
-    int elseJump = emitJump(compiler, OP_JUMP_IF_FALSE);
-    int endJump = emitJump(compiler, OP_JUMP);
+    int endJump = emitJump(compiler, OP_JUMP_IF_TRUE);
 
-    patchJump(compiler, elseJump);
     emitByte(compiler, OP_POP);
 
     parsePrecedence(compiler, PREC_OR);
-    patchJump(compiler, endJump);
+    patchJump(compiler, endJump); 
 }
 
 static void orr(Compiler *compiler, bool canAssgin) {
