@@ -962,6 +962,7 @@ ParseRule rules[] = {
         [TK_CONST_DECL]       = {NULL,     NULL,    PREC_NONE},
         [TK_ENUM]             = {NULL,     NULL,    PREC_NONE},
         [TK_WHILE]            = {NULL,     NULL,    PREC_NONE},
+        [TK_DO]               = {NULL,     NULL,    PREC_NONE},
         [TK_SWITCH]           = {NULL,     NULL,    PREC_NONE},
         [TK_CASE]             = {NULL,     NULL,    PREC_NONE},
         [TK_DEFAULT]          = {NULL,     NULL,    PREC_NONE},
@@ -1030,6 +1031,7 @@ static void synchronize(Parser *parser) {
             case TK_FOR:
             case TK_IF:
             case TK_WHILE:
+            case TK_DO:
             case TK_RETURN:
             case TK_ASSERT:
             case TK_SWITCH:
@@ -1548,10 +1550,35 @@ static void whileStatement(Compiler *compiler) {
     emitByte(compiler, OP_POP);
     compiler->loop->body = compiler->function->chunk.count;
 
-    eat(compiler->parser, TK_LBRACE, "Expect '{' after ').");
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
     beginScope(compiler);
     block(compiler);
     endScope(compiler);
+
+    emitLoop(compiler, compiler->loop->start);
+    endLoop(compiler);
+}
+
+static void doWhileStatement(Compiler *compiler) {
+    Loop loop;
+    loop.start = currentChunk(compiler)->count;
+    loop.scopeDepth = compiler->scopeDepth;
+    loop.enclosing = compiler->loop;
+    compiler->loop = &loop;
+
+    compiler->loop->end = emitJump(compiler, OP_JUMP_IF_FALSE_NOT_FIRST);
+    emitByte(compiler, OP_POP);
+    compiler->loop->body = compiler->function->chunk.count;
+
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after 'do'.");
+    beginScope(compiler);
+    block(compiler);
+    endScope(compiler);
+
+    eat(compiler->parser, TK_WHILE, "Expect 'while' after '}'.");
+    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'while'.");
+    expression(compiler);
+    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
 
     emitLoop(compiler, compiler->loop->start);
     endLoop(compiler);
@@ -1756,6 +1783,8 @@ static void statement(Compiler *compiler) {
         returnStatement(compiler);
     } else if (match(compiler, TK_WHILE)) {
         whileStatement(compiler);
+    } else if (match(compiler, TK_DO)) {
+        doWhileStatement(compiler);
     } else if (match(compiler, TK_ASSERT)) {
         assertStatement(compiler);
     } else if (match(compiler, TK_PANIC)) {

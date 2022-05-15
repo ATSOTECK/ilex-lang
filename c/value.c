@@ -38,6 +38,20 @@ void writeValueArray(VM *vm, ValueArray *array, Value value) {
     array->count++;
 }
 
+void fillValueArray(VM *vm, int count, ValueArray *array, Value value) {
+    if (array->capacity < count) {
+        int oldCapacity = array->capacity;
+        array->capacity = count;
+        array->values = GROW_ARRAY(vm, Value, array->values, oldCapacity, array->capacity);
+    }
+
+    for (int i = 0; i < count; ++i) {
+        array->values[i] = value;
+    }
+
+    array->count = count;
+}
+
 void freeValueArray(VM *vm, ValueArray *array) {
     FREE_ARRAY(vm, Value, array->values, array->capacity);
     initValueArray(array);

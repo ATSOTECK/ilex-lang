@@ -184,8 +184,8 @@ static IlexTokenType identType() {
         case 'd':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'e': checkKeyword(2, 5, "fault", TK_DEFAULT);
-                    case 'o': checkKeyword(2, 0, "", TK_DO);
+                    case 'e': return checkKeyword(2, 5, "fault", TK_DEFAULT);
+                    case 'o': return checkKeyword(2, 0, "", TK_DO);
                 }
             }
         case 'e':

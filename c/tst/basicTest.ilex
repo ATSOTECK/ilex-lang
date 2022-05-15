@@ -115,4 +115,17 @@ aVar = 10
 aVar ??= 12
 println("aVar:", aVar)
 
+ln()
+
+tVar := false
+idx := 0
+do {
+    idx++
+    println(idx)
+    
+    if (idx == 10) {
+        tVar = false
+    }
+} while (tVar)
+
 println(milliseconds(), "ms");

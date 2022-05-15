@@ -22,6 +22,30 @@ static Value arrayToStringLib(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
+static Value arrayMake(VM *vm, int argc, Value *args) {
+    if (argc == 0 || argc > 2) {
+        runtimeError(vm, "Function make() expected 1 or 2 arguments but got '%d'.", argc);
+        return NULL_VAL;
+    }
+
+    ObjArray *array = AS_ARRAY(args[0]);
+    freeValueArray(vm, &array->data); // Should the array be freed or should the count be set to 0?
+    initValueArray(&array->data);
+
+    if (!IS_NUMBER(args[1])) {
+        char *str = valueType(args[1]);
+        runtimeError(vm, "Function make() expected type 'number' for first argument but got '%s'.", str);
+        free(str);
+        return NULL_VAL;
+    }
+
+    int count = (int)AS_NUMBER(args[1]);
+    Value value = argc == 2 ? args[2] : NULL_VAL;
+    fillValueArray(vm, count, &array->data, value);
+
+    return ZERO_VAL;
+}
+
 static Value arrayPush(VM *vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function push() expected 1 argument but got '%d'.", argc);
@@ -415,6 +439,7 @@ void defineArrayFunctions(VM *vm) {
     defineNative(vm, "len", arrayLen, &vm->arrayFunctions);
     defineNative(vm, "toString", arrayToStringLib, &vm->arrayFunctions);
     defineNative(vm, "push", arrayPush, &vm->arrayFunctions);
+    defineNative(vm, "make", arrayMake, &vm->arrayFunctions);
     defineNative(vm, "pop", arrayPop, &vm->arrayFunctions);
     defineNative(vm, "insert", arrayInsert, &vm->arrayFunctions);
     defineNative(vm, "erase", arrayErase, &vm->arrayFunctions);

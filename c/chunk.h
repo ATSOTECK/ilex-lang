@@ -50,6 +50,7 @@ typedef enum {
     OP_NEG,
     OP_JUMP,
     OP_JUMP_IF_FALSE,
+    OP_JUMP_IF_FALSE_NOT_FIRST,
     OP_LOOP,
     OP_CALL,
     OP_INVOKE,

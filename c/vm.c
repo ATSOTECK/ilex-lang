@@ -689,6 +689,12 @@ static InterpretResult run(VM *vm) {
                     frame->ip += offset;
                 }
             } break;
+            case OP_JUMP_IF_FALSE_NOT_FIRST: {
+                uint16_t offset = READ_SHORT();
+                if (isFalsy(peek(vm, 0))) {
+                    frame->ip += offset;
+                }
+            } break;
             case OP_LOOP: {
                 uint16_t offset = READ_SHORT();
                 frame->ip -= offset;
