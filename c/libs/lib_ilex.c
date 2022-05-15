@@ -78,6 +78,39 @@ static Value ilexGetMemUsed(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
+static Value ilexNextGcAt(VM *vm, int argc, Value *args) {
+    double bytes = (double)vm->nextGC;
+
+    int times = 0;
+    while (bytes > 1000) {
+        bytes /= 1000;
+        ++times;
+    }
+
+    int len = snprintf(NULL, 0, "%.15g", bytes) + 4;
+    if (times == 0) {
+        len += 3;
+    }
+
+    char *str = (char*)malloc(sizeof(char) * len);
+
+    switch (times) {
+        case 0: snprintf(str, len, "%d bytes", (int)bytes); break;
+        case 1: snprintf(str, len, "%.15g kb", bytes); break;
+        case 2: snprintf(str, len, "%.15g mb", bytes); break;
+        case 3: snprintf(str, len, "%.15g gb", bytes); break;
+        case 4: snprintf(str, len, "%.15g tb", bytes); break;
+        default: snprintf(str, len, "???"); break;
+    }
+
+    ObjString *ret = takeString(vm, str, len);
+    return OBJ_VAL(ret);
+}
+
+static Value ilexGcRuns(VM *vm, int argc, Value *args) {
+    return NUMBER_VAL((double)vm->gcRuns);
+}
+
 static Value ilexCollectGarbage(VM *vm, int argc, Value *args) {
     collectGarbage(vm);
     return ZERO_VAL;
@@ -97,6 +130,9 @@ Value useIlexLib(VM *vm) {
     defineNative(vm, "memAllocated", ilexMemUsed, &lib->values);
     defineNative(vm, "printMemUsage", ilexPrintMemUsed, &lib->values);
     defineNative(vm, "getMemUsage", ilexGetMemUsed, &lib->values);
+    defineNative(vm, "nextGC", ilexNextGcAt, &lib->values);
+    defineNative(vm, "gcRuns", ilexGcRuns, &lib->values);
+
 
     defineNative(vm, "collectGarbage", ilexCollectGarbage, &lib->values);
 

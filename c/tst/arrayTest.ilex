@@ -94,3 +94,18 @@ println([].join('empty'))
 
 long.clear()
 println(long)
+ln()
+
+vLong := []
+
+vLong.make(15)
+println(vLong)
+
+vLong.make(15, true)
+println(vLong)
+
+vLong.fill(false)
+println(vLong)
+
+vLong.fill()
+println(vLong)

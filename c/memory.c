@@ -145,7 +145,7 @@ static void blackenObject(VM *vm, Obj *obj) {
 
 static void freeObject(VM *vm, Obj *obj) {
 #ifdef DEBUG_LOG_GC
-    printf("%p free type %d\n", (void*)object, object->type);
+    printf("%p free type %d\n", (void*)obj, obj->type);
 #endif
 
     switch (obj->type) {
@@ -254,6 +254,7 @@ void collectGarbage(VM *vm) {
     size_t before = vm->bytesAllocated;
 #endif
 
+    ++vm->gcRuns;
     markRoots(vm);
     traceRefs(vm);
     tableRemoveWhite(&vm->strings);

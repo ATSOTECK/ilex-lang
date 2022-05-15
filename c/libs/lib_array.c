@@ -40,8 +40,21 @@ static Value arrayMake(VM *vm, int argc, Value *args) {
     }
 
     int count = (int)AS_NUMBER(args[1]);
-    Value value = argc == 2 ? args[2] : NULL_VAL;
+    Value value = argc == 2 ? args[2] : ZERO_VAL;
     fillValueArray(vm, count, &array->data, value);
+
+    return ZERO_VAL;
+}
+
+static Value arrayFill(VM *vm, int argc, Value *args) {
+    if (argc > 1) {
+        runtimeError(vm, "Function fill() expected 0 or 1 arguments but got '%d'.", argc);
+        return NULL_VAL;
+    }
+
+    ObjArray *array = AS_ARRAY(args[0]);
+    Value value = argc == 1 ? args[1] : ZERO_VAL;
+    fillValueArray(vm, array->data.count, &array->data, value);
 
     return ZERO_VAL;
 }
@@ -440,6 +453,7 @@ void defineArrayFunctions(VM *vm) {
     defineNative(vm, "toString", arrayToStringLib, &vm->arrayFunctions);
     defineNative(vm, "push", arrayPush, &vm->arrayFunctions);
     defineNative(vm, "make", arrayMake, &vm->arrayFunctions);
+    defineNative(vm, "fill", arrayFill, &vm->arrayFunctions);
     defineNative(vm, "pop", arrayPop, &vm->arrayFunctions);
     defineNative(vm, "insert", arrayInsert, &vm->arrayFunctions);
     defineNative(vm, "erase", arrayErase, &vm->arrayFunctions);

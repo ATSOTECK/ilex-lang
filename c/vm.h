@@ -39,6 +39,7 @@ struct VM_ {
 
     size_t bytesAllocated;
     size_t nextGC;
+    size_t gcRuns;
     Obj *objects;
     int grayCount;
     int grayCapacity;

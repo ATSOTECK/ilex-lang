@@ -86,7 +86,9 @@ fn main() {
     println('The 100,000th Ramanujan prime is', ramanujanPrime(100_000))
     println('The 1,000,000th Ramanujan prime is', ramanujanPrime(1e6))
     println('Took ', seconds(), 'seconds.')
-    ilex::printMemUsage()
+    print('Using ') ilex::printMemUsage()
+    println('Next gc at:', ilex::nextGC())
+    println('GC was run', ilex::gcRuns(), 'times.')
 }
 
 main()
