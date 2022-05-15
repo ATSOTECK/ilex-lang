@@ -30,6 +30,9 @@ nav_order: 5
 | &            | Bitwise AND of the values                                      | 10 & 2                     |
 | ^            | Bitwise XOR of the values                                      | 10 ^ 2                     |
 | \|           | Bitwise OR of the values                                       | 10 \| 2                    |
+| ~            | Bitwise NOT of the value                                       | ~10                        |
+| <<           | Left shift operator, shifts bits left                          | 10 << 2                    |
+| <<           | Right shift operator, shifts bits right                        | 10 >> 2                    |
 | +=           | Same as +, however its shorthand to assign too                 | x += 10 Same as x = x + 10 |
 | ++           | Same as +, however its shorthand to assign too                 | x++ Same as x = x + 1 (postfix only for now)|
 | -=           | Same as -, however its shorthand to assign too                 | x -= 10 Same as x = x - 10 |
@@ -53,10 +56,11 @@ Precedence table from highest to lowest, with all operators having a left-to-rig
 | Operators |
 | . () []   |
 | ?.        |
-| ! -       |
+| ! - ~     |
 | \*\*      |
 | * /       |
 | \+ \-     |
+| << >>     |
 | &         |
 | ^         |
 | \|        |

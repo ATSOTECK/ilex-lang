@@ -41,7 +41,7 @@ const someNumber = 12
 const a = 1, b = 2, c = 3
 ```
 
-Alternatively constants can be declared with the constant declaration operator. (Not yet implemented)
+Alternatively constants can be declared with the constant declaration operator.
 ```go
 x ::= 12
 ```
