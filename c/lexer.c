@@ -162,7 +162,7 @@ static IlexTokenType identType() {
                         if (lexer.start[2] == 's') {
                             return checkKeyword(2, 4, "sert", TK_ASSERT);
                         } else {
-                            return TK_AS;
+                            return checkKeyword(2, 0, "", TK_AS);
                         }
                 }
             }
@@ -181,7 +181,13 @@ static IlexTokenType identType() {
                     }
                 }
             }
-        case 'd': return checkKeyword(1, 6, "efault", TK_DEFAULT);
+        case 'd':
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'e': checkKeyword(2, 5, "fault", TK_DEFAULT);
+                    case 'o': checkKeyword(2, 0, "", TK_DO);
+                }
+            }
         case 'e':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {

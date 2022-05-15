@@ -76,6 +76,7 @@ typedef enum {
     TK_CONST,
     TK_CONTINUE,
     TK_DEFAULT,
+    TK_DO,
     TK_ELIF,
     TK_ELSE,
     TK_ENUM,

@@ -900,6 +900,7 @@ static void dec(Compiler *compiler, bool canAssign) {
     emitByte(compiler, OP_DEC);
 }
 
+//                              prefix, infix, precedence
 ParseRule rules[] = {
         [TK_LPAREN]           = {grouping, call,    PREC_CALL},
         [TK_RPAREN]           = {NULL,     NULL,    PREC_NONE},
