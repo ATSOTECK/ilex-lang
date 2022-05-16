@@ -1,33 +1,33 @@
-http://cloc.sourceforge.net v 1.62  T=0.11 s (342.5 files/s, 63259.1 lines/s)
+http://cloc.sourceforge.net v 1.62  T=0.13 s (277.0 files/s, 52633.5 lines/s)
 ------------------------------------------------------------------------------------
 File                                  blank        comment           code
 ------------------------------------------------------------------------------------
-.\c\compiler.c                          303             21           1467
-.\c\vm.c                                153              7           1036
-.\c\lexer.c                              65              4            422
-.\c\libs\lib_array.c                     93              4            330
+.\c\compiler.c                          311             20           1506
+.\c\vm.c                                153              7           1049
+.\c\lexer.c                              66             10            428
+.\c\libs\lib_array.c                    101              4            362
 .\c\object.c                             68              4            264
 .\c\libs\lib_math.c                      81             11            264
-.\c\memory.c                             35              4            242
+.\c\memory.c                             35              4            243
 .\c\table.c                              27              3            148
+.\c\debug.c                              19              3            140
 .\c\object.h                             23              3            131
 .\c\libs\lib_random.c                    35              3            116
-.\c\debug.c                              15              3            113
-.\c\libs\lib_io.c                        33              5            103
-.\c\lexer.h                              10              7             97
+.\c\libs\lib_ilex.c                      32              3            108
+.\c\libs\lib_io.c                        33              5            104
+.\c\lexer.h                              10              8             97
 .\c\chunk.h                               6              3             89
 .\c\libs\lib_natives.c                   20              6             85
-.\c\libs\lib_ilex.c                      24              3             80
+.\c\value.c                              17             11             71
 .\c\libs\lib_string.c                    19              4             62
-.\c\value.c                              14             11             60
-.\c\value.h                              20              3             58
+.\c\value.h                              20              3             59
 .\c\compiler.h                           12              3             56
 .\c\main.c                               12              0             55
-.\c\vm.h                                 12              3             53
-.\c\chunk.c                               9              3             36
+.\c\vm.h                                 12              3             54
+.\c\chunk.c                               9              3             34
 .\c\table.h                               9              3             25
 .\c\libs\lib_builtIn.c                    5              3             19
-.\c\common.h                              9              7             18
+.\c\common.h                              9              7             19
 .\c\memory.h                             10              3             16
 .\c\libs\lib_builtIn.h                    7              3             15
 .\c\debug.h                               4              3              6
@@ -40,5 +40,5 @@ File                                  blank        comment           code
 .\c\libs\lib_math.h                       4              3              5
 .\c\ilex_include.h                        3              3              4
 ------------------------------------------------------------------------------------
-SUM:                                   1164            164           5505
+SUM:                                   1196            170           5664
 ------------------------------------------------------------------------------------
