@@ -6,7 +6,7 @@ permalink: /
 ---
 
 
-# Ilex v0.0.41
+# Ilex v0.0.43
 Ilex is a simple easy to use, statically (not yet) typed programming language.
 
 ![Ilex Rock, Paper, Scissors example](/img/RPS.png)
@@ -25,7 +25,7 @@ If I haven't been too lazy there should be links to download the executables for
 
 ```bash
 $ git clone https://github.com/ATSOTECK/ilex-lang.git
-$ cd ilex-lang
+$ cd ilex-lang/c
 $ cmake -DCMAKE_BUILD_TYPE=Release -B ./bin 
 $ cmake --build ./bin
 ```
