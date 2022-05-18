@@ -448,6 +448,54 @@ static Value arrayCopy(VM *vm, int argc, Value *args) {
     return NULL_VAL;
 }
 
+static Value arrayForEach(VM *vm, int argc, Value *args) {
+    if (argc > 1) {
+        runtimeError(vm, "Function forEach() expected 1 argument but got '%d'.", argc);
+        return NULL_VAL;
+    }
+
+    if (!IS_CLOSURE(args[1])) {
+        char *str = valueType(args[1]);
+        runtimeError(vm, "Function forEach() expected type 'closure' for first argument but got '%s'.", str);
+        free(str);
+        return NULL_VAL;
+    }
+
+    ObjArray *array = AS_ARRAY(args[0]);
+    ObjClosure *closure = AS_CLOSURE(args[1]);
+
+    for (int i = 0; i < array->data.count; ++i) {
+        callFromScript(vm, closure, 1, &array->data.values[i]);
+    }
+
+    return ZERO_VAL;
+}
+
+static Value arrayMap(VM *vm, int argc, Value *args) {
+    if (argc > 1) {
+        runtimeError(vm, "Function map() expected 1 argument but got '%d'.", argc);
+        return NULL_VAL;
+    }
+
+    if (!IS_CLOSURE(args[1])) {
+        char *str = valueType(args[1]);
+        runtimeError(vm, "Function map() expected type 'closure' for first argument but got '%s'.", str);
+        free(str);
+        return NULL_VAL;
+    }
+
+    ObjArray *array = AS_ARRAY(args[0]);
+    ObjClosure *closure = AS_CLOSURE(args[1]);
+    ObjArray *ret = newArray(vm);
+
+    for (int i = 0; i < array->data.count; ++i) {
+        Value value = callFromScript(vm, closure, 1, &array->data.values[i]);
+        writeValueArray(vm, &ret->data, value);
+    }
+
+    return OBJ_VAL(ret);
+}
+
 void defineArrayFunctions(VM *vm) {
     defineNative(vm, "len", arrayLen, &vm->arrayFunctions);
     defineNative(vm, "toString", arrayToStringLib, &vm->arrayFunctions);
@@ -464,4 +512,7 @@ void defineArrayFunctions(VM *vm) {
     defineNative(vm, "sort", arraySort, &vm->arrayFunctions);
     defineNative(vm, "join", arrayJoin, &vm->arrayFunctions);
     defineNative(vm, "clear", arrayClear, &vm->arrayFunctions);
+
+    defineNative(vm, "forEach", arrayForEach, &vm->arrayFunctions);
+    defineNative(vm, "map", arrayMap, &vm->arrayFunctions);
 }

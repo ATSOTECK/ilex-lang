@@ -66,4 +66,8 @@ void defineNativeValue(VM *vm, const char *name, Value value, Table *table);
 void push(VM *vm, Value v);
 Value pop(VM *vm);
 
+Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args);
+
+InterpretResult run(VM *vm, int frameIndex, Value *value);
+
 #endif //C_VM_H

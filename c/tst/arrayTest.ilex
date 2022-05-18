@@ -109,3 +109,21 @@ println(vLong)
 
 vLong.fill()
 println(vLong)
+
+fn double(num) {
+    println('In double.', num * 2)
+}
+
+println(typeof(double))
+
+small ::= [1, 2, 3]
+small.forEach(double)
+
+fn square(num) {
+    return num ** 2
+}
+
+newSmall ::= small.map(square)
+println(small, newSmall)
+
+println('Done!')

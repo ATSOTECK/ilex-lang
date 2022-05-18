@@ -300,7 +300,7 @@ char *objectType(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD:
         case OBJ_FUNCTION:
-        case OBJ_CLOSURE: return newCString("function");
+        case OBJ_CLOSURE: return newCString("closure");
         case OBJ_CLASS: return newCString("class");
         case OBJ_INSTANCE: {
             ObjInstance *instance = AS_INSTANCE(value);

@@ -172,9 +172,36 @@ Value peek(VM *vm, int amount) {
     return vm->stackTop[-1 - amount];
 }
 
-static bool call(VM *vm, ObjClosure *closure, int argCount) {
-    if (argCount != closure->function->arity) {
-        runtimeError(vm ,"Expected %d arguments but got %d.", closure->function->arity, argCount);
+Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
+    if (argc != closure->function->arity) {
+        runtimeError(vm ,"Expected %d arguments but got %d.", closure->function->arity, argc);
+        return false;
+    }
+
+    if (vm->frameCount == FRAMES_MAX) {
+        runtimeError(vm, "Stack overflow.");
+        return false;
+    }
+
+    int currentFrameIndex = vm->frameCount - 1;
+    CallFrame *frame = &vm->frames[vm->frameCount++];
+    frame->closure = closure;
+    frame->ip = closure->function->chunk.code;
+
+    for (int i = 0; i < argc; ++i) {
+        push(vm, args[i]);
+    }
+
+    frame->slots = vm->stackTop - argc - 1;
+    Value value;
+    run(vm, currentFrameIndex, &value);
+
+    return value;
+}
+
+static bool call(VM *vm, ObjClosure *closure, int argc) {
+    if (argc != closure->function->arity) {
+        runtimeError(vm ,"Expected %d arguments but got %d.", closure->function->arity, argc);
         return false;
     }
 
@@ -186,39 +213,39 @@ static bool call(VM *vm, ObjClosure *closure, int argCount) {
     CallFrame *frame = &vm->frames[vm->frameCount++];
     frame->closure = closure;
     frame->ip = closure->function->chunk.code;
-    frame->slots = vm->stackTop - argCount - 1;
+    frame->slots = vm->stackTop - argc - 1;
 
     return true;
 }
 
-static bool callValue(VM *vm, Value callee, int argCount) {
+static bool callValue(VM *vm, Value callee, int argc) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
             case OBJ_BOUND_METHOD: {
                 ObjBoundMethod *bound = AS_BOUND_METHOD(callee);
-                vm->stackTop[-argCount - 1] = bound->receiver;
-                return call(vm, bound->method, argCount);
+                vm->stackTop[-argc - 1] = bound->receiver;
+                return call(vm, bound->method, argc);
             }
             case OBJ_CLASS: {
                 ObjClass *objClass = AS_CLASS(callee);
-                vm->stackTop[-argCount - 1] = OBJ_VAL(newInstance(vm, objClass));
+                vm->stackTop[-argc - 1] = OBJ_VAL(newInstance(vm, objClass));
 
                 Value initializer;
                 if (tableGet(&objClass->methods, vm->initString, &initializer)) {
-                    return call(vm, AS_CLOSURE(initializer), argCount);
-                } else if (argCount != 0) {
-                    runtimeError(vm, "Expected 0 arguments but got %d.", argCount);
+                    return call(vm, AS_CLOSURE(initializer), argc);
+                } else if (argc != 0) {
+                    runtimeError(vm, "Expected 0 arguments but got %d.", argc);
                     return false;
                 }
 
                 return true;
             }
             // TODO: OBJ_FUNCTION
-            case OBJ_CLOSURE: return call(vm, AS_CLOSURE(callee), argCount);
+            case OBJ_CLOSURE: return call(vm, AS_CLOSURE(callee), argc);
             case OBJ_NATIVE: {
                 NativeFn native = AS_NATIVE(callee);
-                Value result = native(vm, argCount, vm->stackTop - argCount);
-                vm->stackTop -= argCount + 1;
+                Value result = native(vm, argc, vm->stackTop - argc);
+                vm->stackTop -= argc + 1;
                 push(vm, result);
 
                 return true;
@@ -399,7 +426,7 @@ static void concat(VM *vm) {
     push(vm, OBJ_VAL(res));
 }
 
-static InterpretResult run(VM *vm) {
+InterpretResult run(VM *vm, int frameIndex, Value *value) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
@@ -461,7 +488,7 @@ static InterpretResult run(VM *vm) {
                 Value receiver = peek(vm, 0);
                 if (!IS_OBJ(receiver)) {
                     char *type = valueType(receiver);
-                    runtimeError(vm, "%s has no properties.", type);
+                    runtimeError(vm, "Type '%s' has no properties.", type);
                     free(type);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -506,12 +533,12 @@ static InterpretResult run(VM *vm) {
                             break;
                         }
 
-                        runtimeError(vm, "%s does not have property: '%s'.", script->name->str, name->str);
+                        runtimeError(vm, "'%s' does not have property: '%s'.", script->name->str, name->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     default: {
                         char *type = valueType(receiver);
-                        runtimeError(vm, "%s has no properties.", type);
+                        runtimeError(vm, "Type '%s' has no properties.", type);
                         free(type);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -756,7 +783,13 @@ static InterpretResult run(VM *vm) {
                 vm->frameCount--;
                 closeUpvalues(vm, frame->slots);
 
-                if (vm->frameCount == 0) {
+                // If we are at the frameIndex frame that means we are returning from Ilex code called from c.
+                // A frameIndex of -1 indicates that this is running in a normal state.
+                if (vm->frameCount == 0 || (frameIndex != -1 && &vm->frames[vm->frameCount - 1] == &vm->frames[frameIndex])) {
+                    if (frameIndex != -1) {
+                        *value = result;
+                    }
+
                     pop(vm);
                     return INTERPRET_GOOD;
                 }
@@ -1205,5 +1238,5 @@ InterpretResult interpret(VM *vm, const char *source) {
     push(vm, OBJ_VAL(closure));
     call(vm, closure, 0);
 
-    return run(vm);
+    return run(vm, -1, NULL);
 }

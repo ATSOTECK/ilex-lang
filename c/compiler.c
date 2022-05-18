@@ -475,7 +475,7 @@ static void or_(Compiler *compiler, bool canAssign) {
     emitByte(compiler, OP_POP);
 
     parsePrecedence(compiler, PREC_OR);
-    patchJump(compiler, endJump); 
+    patchJump(compiler, endJump);
 }
 
 static void orr(Compiler *compiler, bool canAssgin) {
