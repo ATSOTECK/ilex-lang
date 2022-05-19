@@ -56,9 +56,9 @@ typedef struct Compiler {
     ObjFunction *function;
     FunctionType type;
 
-    Local locals[UINT16_COUNT]; //TODO
+    Local *locals; //TODO(Skyler): Gow this.
     int localCount;
-    Upvalue upvalues[UINT16_COUNT]; //TODO
+    Upvalue *upvalues; //TODO(Skyler): Gow this.
     int scopeDepth;
     uint16_t currentLibName;
     ObjScript *currentScript;

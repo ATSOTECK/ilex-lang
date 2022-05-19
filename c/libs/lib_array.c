@@ -496,6 +496,33 @@ static Value arrayMap(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
+static Value arrayFilter(VM *vm, int argc, Value *args) {
+    if (argc > 1) {
+        runtimeError(vm, "Function filter() expected 1 argument but got '%d'.", argc);
+        return NULL_VAL;
+    }
+    
+    if (!IS_CLOSURE(args[1])) {
+        char *str = valueType(args[1]);
+        runtimeError(vm, "Function filter() expected type 'closure' for first argument but got '%s'.", str);
+        free(str);
+        return NULL_VAL;
+    }
+    
+    ObjArray *array = AS_ARRAY(args[0]);
+    ObjClosure *closure = AS_CLOSURE(args[1]);
+    ObjArray *ret = newArray(vm);
+    
+    for (int i = 0; i < array->data.count; ++i) {
+        bool res = AS_BOOL(callFromScript(vm, closure, 1, &array->data.values[i]));
+        if (res) {
+            writeValueArray(vm, &ret->data, array->data.values[i]);
+        }
+    }
+    
+    return OBJ_VAL(ret);
+}
+
 void defineArrayFunctions(VM *vm) {
     defineNative(vm, "len", arrayLen, &vm->arrayFunctions);
     defineNative(vm, "toString", arrayToStringLib, &vm->arrayFunctions);
@@ -515,4 +542,5 @@ void defineArrayFunctions(VM *vm) {
 
     defineNative(vm, "forEach", arrayForEach, &vm->arrayFunctions);
     defineNative(vm, "map", arrayMap, &vm->arrayFunctions);
+    defineNative(vm, "filter", arrayFilter, &vm->arrayFunctions);
 }

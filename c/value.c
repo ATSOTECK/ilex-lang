@@ -10,6 +10,20 @@
 #include "memory.h"
 #include "value.h"
 
+static bool arraysEqual(ObjArray *a, ObjArray *b) {
+    if (a->data.count != b->data.count) {
+        return false;
+    }
+    
+    for (int i = 0; i < a->data.count; ++i) {
+        if (!valuesEqual(a->data.values[i], b->data.values[i])) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 bool valuesEqual(Value a, Value b) {
     // IEEE 754 compliance is for NERDS.
     /*
@@ -17,6 +31,18 @@ bool valuesEqual(Value a, Value b) {
         return AS_NUMBER(a) == AS_NUMBER(b);
     }
     */
+    
+    if (IS_OBJ(a) && IS_OBJ(b)) {
+        Obj *aObj = AS_OBJ(a);
+        if (aObj->type != AS_OBJ(b)->type) {
+            return false;
+        }
+        
+        switch (aObj->type) {
+            case OBJ_ARRAY: return arraysEqual(AS_ARRAY(a), AS_ARRAY(b));
+            default: break;
+        }
+    }
 
     return a == b;
 }

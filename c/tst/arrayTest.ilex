@@ -124,6 +124,18 @@ fn square(num) {
 }
 
 newSmall ::= small.map(square)
-println(small, newSmall)
+
+fn even(num) {
+    return num % 2 == 0
+}
+
+onlyEven ::= newSmall.filter(even)
+println(small, newSmall, onlyEven)
+
+assert(small != newSmall)
+assert(small == small)
+
+tmp ::= [1, 2, 3]
+assert(small == tmp)
 
 println('Done!')

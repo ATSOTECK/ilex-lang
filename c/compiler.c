@@ -17,6 +17,8 @@
 #   include "debug.h"
 #endif
 
+#define LOCAL_COUNT 10000
+
 typedef enum {
     PREC_NONE,
     PREC_ASSIGN,      // =
@@ -228,6 +230,11 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     compiler->currentLibName = 0;
     compiler->currentScript = NULL;
     compiler->loop = NULL;
+    compiler->locals = NULL;
+    compiler->upvalues = NULL;
+    
+    compiler->locals   = (Local*)  malloc(sizeof(Local)   * LOCAL_COUNT);
+    compiler->upvalues = (Upvalue*)malloc(sizeof(Upvalue) * LOCAL_COUNT);
 
     if (parent != NULL) {
         compiler->class = parent->class;
@@ -288,7 +295,7 @@ static int addUpvalue(Compiler *compiler, uint16_t index, bool isLocal) {
         }
     }
 
-    if (upvalueCount == UINT16_COUNT) {
+    if (upvalueCount == LOCAL_COUNT) {
         error(compiler->parser, "Too many closure variables in function.");
         return 0;
     }
@@ -319,7 +326,7 @@ static int resolveUpvalue(Compiler *compiler, Token *name) {
 }
 
 static void addLocal(Compiler *compiler, Token name) {
-    if (compiler->localCount == UINT16_COUNT) {
+    if (compiler->localCount == LOCAL_COUNT) {
         error(compiler->parser, "To many local variables in function.");
         return;
     }
