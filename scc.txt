@@ -1,4 +1,4 @@
-http://cloc.sourceforge.net v 1.62  T=0.14 s (259.4 files/s, 50329.2 lines/s)
+http://cloc.sourceforge.net v 1.62  T=0.10 s (379.5 files/s, 73796.4 lines/s)
 ------------------------------------------------------------------------------------
 File                                  blank        comment           code
 ------------------------------------------------------------------------------------
@@ -13,21 +13,21 @@ File                                  blank        comment           code
 .\c\debug.c                              19              3            140
 .\c\object.h                             23              3            131
 .\c\libs\lib_random.c                    35              3            116
-.\c\libs\lib_ilex.c                      32              3            108
+.\c\libs\lib_ilex.c                      33              3            112
 .\c\libs\lib_io.c                        33              5            104
 .\c\lexer.h                              10              8             97
 .\c\value.c                              22             11             92
 .\c\chunk.h                               6              3             89
 .\c\libs\lib_natives.c                   20              6             85
 .\c\libs\lib_string.c                    19              4             62
+.\c\main.c                               15              0             62
 .\c\value.h                              20              3             59
 .\c\compiler.h                           12              3             56
 .\c\vm.h                                 14              3             56
-.\c\main.c                               12              0             55
 .\c\chunk.c                               9              3             34
 .\c\table.h                               9              3             25
+.\c\common.h                              9              7             20
 .\c\libs\lib_builtIn.c                    5              3             19
-.\c\common.h                              9              7             19
 .\c\memory.h                             10              3             16
 .\c\libs\lib_builtIn.h                    7              3             15
 .\c\debug.h                               4              3              6
@@ -40,5 +40,5 @@ File                                  blank        comment           code
 .\c\libs\lib_math.h                       4              3              5
 .\c\ilex_include.h                        3              3              4
 ------------------------------------------------------------------------------------
-SUM:                                   1228            172           5779
+SUM:                                   1232            172           5791
 ------------------------------------------------------------------------------------

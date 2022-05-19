@@ -54,6 +54,16 @@ static void runFile(VM *vm, const char *path) {
 int main(int argc, char **argv) {
     VM *vm;
     if (argc == 2) {
+        if (strcmp("-v", argv[1]) == 0) {
+            printf("%s\n", ILEX_VERSION);
+            
+            return 0;
+        } else if (strcmp("-V", argv[1]) == 0) {
+            printf("Ilex version %s built on %s.\n", ILEX_VERSION, ILEX_DATE);
+    
+            return 0;
+        }
+        
         vm = initVM(argv[1]);
         runFile(vm, argv[1]);
     } else {

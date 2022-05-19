@@ -24,6 +24,10 @@ static Value ilexVersionBuild(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(ILEX_VERSION_BUILD);
 }
 
+static Value ilexDateString(VM *vm, int argc, Value *args) {
+    return OBJ_VAL(takeString(vm, newCString(ILEX_DATE), strlen(ILEX_DATE)));
+}
+
 static Value ilexMemUsed(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(vm->bytesAllocated);
 }
@@ -126,6 +130,7 @@ Value useIlexLib(VM *vm) {
     defineNative(vm, "versionMajor", ilexVersionMajor, &lib->values);
     defineNative(vm, "versionMinor", ilexVersionMinor, &lib->values);
     defineNative(vm, "versionBuild", ilexVersionBuild, &lib->values);
+    defineNative(vm, "buildDate", ilexDateString, &lib->values);
 
     defineNative(vm, "memAllocated", ilexMemUsed, &lib->values);
     defineNative(vm, "printMemUsage", ilexPrintMemUsed, &lib->values);
