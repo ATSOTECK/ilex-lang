@@ -14,7 +14,7 @@
 static Value ioInput(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function input() expected 1 or 0 arguments but got %d", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     if (argc != 0) {
@@ -24,7 +24,7 @@ static Value ioInput(VM *vm, int argc, Value *args) {
             runtimeError(vm, "Function input() expected type 'string' but got '%s'.", str);
             free(str);
 
-            return NULL_VAL;
+            return ERROR_VAL;
         }
 
         printf("%s", AS_CSTRING(prompt));
@@ -35,7 +35,7 @@ static Value ioInput(VM *vm, int argc, Value *args) {
 
     if (line == NULL) {
         runtimeError(vm, "Memory error on input()!");
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     int c = EOF;
@@ -68,7 +68,7 @@ static Value ioInput(VM *vm, int argc, Value *args) {
 static Value ioGetNumber(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function getNumber() expected 1 or 0 arguments but got %d", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     if (argc != 0) {
@@ -78,7 +78,7 @@ static Value ioGetNumber(VM *vm, int argc, Value *args) {
             runtimeError(vm, "Function getNumber() expected type 'string' but got '%s'.", str);
             free(str);
             
-            return NULL_VAL;
+            return ERROR_VAL;
         }
         
         printf("%s", AS_CSTRING(prompt));
@@ -89,7 +89,7 @@ static Value ioGetNumber(VM *vm, int argc, Value *args) {
     
     if (line == NULL) {
         runtimeError(vm, "Memory error on input()!");
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     int c = EOF;

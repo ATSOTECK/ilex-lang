@@ -7,6 +7,7 @@
 
 #include "../value.h"
 
+#include "lib_env.h"
 #include "lib_ilex.h"
 #include "lib_io.h"
 #include "lib_math.h"

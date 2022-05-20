@@ -2,6 +2,8 @@
 // Created by Skyler on 5/1/22.
 //
 
+#include "lib_ilex.h"
+
 #include "../vm.h"
 #include "../memory.h"
 

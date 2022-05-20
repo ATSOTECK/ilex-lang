@@ -9,6 +9,7 @@ BuiltInLibs libs[] = {
         {"ilex",   &useIlexLib},
         {"io",     &useIoLib},
         {"random", &useRandomLib},
+        {"env",    &useEnvLib},
         {NULL, NULL},
 };
 

@@ -1,0 +1,18 @@
+use <env>
+
+key ::= env.get('KEY')
+assert(key == 'ThisIsAPrivateKey')
+
+connection ::= env.get('DSN')
+assert(connection == 'mysql:host=localhost;dbname=test_db')
+
+none ::= env.get('none')
+notNull ::= env.get('yeet', 'sad')
+
+assert(none == null)
+assert(notNull == 'sad')
+
+env.load('.env2')
+assert(env.get('SOME_KEY') == 'yeet')
+
+println('Passed!')

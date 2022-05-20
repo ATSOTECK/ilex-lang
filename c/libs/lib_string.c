@@ -41,7 +41,7 @@ static Value stringLen(VM *vm, int argc, Value *args) {
 static Value stringContains(VM *vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function contains() expected 1 argument but got %d", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     if (!IS_STRING(args[1])) {
@@ -59,7 +59,7 @@ static Value stringContains(VM *vm, int argc, Value *args) {
 static Value stringToNumber(VM *vm, int argc, Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function toNumber() expected 0 arguments but got %d.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     char *numberString = AS_CSTRING(args[0]);

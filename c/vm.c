@@ -138,6 +138,7 @@ VM *initVM(const char *path) {
     vm->scriptName = NULL;
     vm->initString = copyString(vm, "init", 4);
     vm->scriptName = copyString(vm, path, (int)strlen(path));
+    vm->envLoaded = false;
 
     defineNatives(vm);
     defineStringFunctions(vm);
@@ -245,6 +246,11 @@ static bool callValue(VM *vm, Value callee, int argc) {
             case OBJ_NATIVE: {
                 NativeFn native = AS_NATIVE(callee);
                 Value result = native(vm, argc, vm->stackTop - argc);
+
+                if (IS_ERROR(result)) {
+                    return false;
+                }
+
                 vm->stackTop -= argc + 1;
                 push(vm, result);
 
@@ -262,7 +268,7 @@ static bool callNativeFunction(VM *vm, Value function, int argc) {
     NativeFn native = AS_NATIVE(function);
 
     Value res = native(vm, argc, vm->stackTop - argc - 1);
-    if (IS_EMPTY(res)) {
+    if (IS_ERROR(res)) {
         return false;
     }
 
@@ -430,7 +436,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
-#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8u) | frame->ip[-1]))
+#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_SHORT()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op, type) \
@@ -462,7 +468,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 push(vm, constant);
             } break;
             case OP_NULL:  push(vm, NULL_VAL); break;
-            case OP_EMPTY: push(vm, EMPTY_VAL); break;
+            case OP_EMPTY: push(vm, ERROR_VAL); break; // Does nothing.
             case OP_TRUE:  push(vm, BOOL_VAL(true)); break;
             case OP_FALSE: push(vm, BOOL_VAL(false)); break;
             case OP_POP: pop(vm); break;
@@ -884,7 +890,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
 
                 Value lib = useBuiltInLib(vm, idx);
 
-                if (IS_EMPTY(lib)) {
+                if (IS_ERROR(lib)) {
                     return INTERPRET_COMPILE_ERROR;
                 }
 
@@ -1132,12 +1138,12 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                if (!IS_NUMBER(sliceStartIndex) && !IS_EMPTY(sliceStartIndex)) {
+                if (!IS_NUMBER(sliceStartIndex) && !IS_ERROR(sliceStartIndex)) {
                     runtimeError(vm, "Slice start index must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                if (!IS_NUMBER(sliceEndIndex) && !IS_EMPTY(sliceEndIndex)) {
+                if (!IS_NUMBER(sliceEndIndex) && !IS_ERROR(sliceEndIndex)) {
                     runtimeError(vm, "Slice end index must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1146,7 +1152,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 int indexEnd;
                 Value returnVal;
                 
-                if (IS_EMPTY(sliceStartIndex)) {
+                if (IS_ERROR(sliceStartIndex)) {
                     indexStart = 0;
                 } else {
                     indexStart = AS_NUMBER(sliceStartIndex);
@@ -1162,7 +1168,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                         push(vm, OBJ_VAL(retArray));
                         ObjArray *array = AS_ARRAY(receiver);
                         
-                        if (IS_EMPTY(sliceEndIndex)) {
+                        if (IS_ERROR(sliceEndIndex)) {
                             indexEnd = array->data.count;
                         } else {
                             indexEnd = AS_NUMBER(sliceEndIndex);
@@ -1184,7 +1190,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                     case OBJ_STRING: {
                         ObjString *str = AS_STRING(receiver);
     
-                        if (IS_EMPTY(sliceEndIndex)) {
+                        if (IS_ERROR(sliceEndIndex)) {
                             indexEnd = str->len;
                         } else {
                             indexEnd = AS_NUMBER(sliceEndIndex);

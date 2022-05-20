@@ -12,27 +12,27 @@
 #define argCheckNum(name) do {\
                             if (argc != 1) { \
                                 runtimeError(vm, "Function %s() expected 1 argument but got %d.", name, argc); \
-                                return NULL_VAL; \
+                                return ERROR_VAL; \
                             } \
                             if (!IS_NUMBER(args[0])) { \
                                 char *str = valueType(args[0]); \
                                 runtimeError(vm, "Function %s() expected type 'number' but got '%s'.", name, str); \
                                 free(str); \
-                                return NULL_VAL; \
+                                return ERROR_VAL; \
                             } \
                         } while (false)
 
 #define argCheckNum2(name) do {\
                             if (argc != 2) { \
                                 runtimeError(vm, "Function %s() expected 2 arguments but got %d.", name, argc); \
-                                return NULL_VAL; \
+                                return ERROR_VAL; \
                             }  \
                             for (int i = 0; i < argc; ++i) {   \
                                 if (!IS_NUMBER(args[i])) { \
                                     char *str = valueType(args[i]); \
                                     runtimeError(vm, "Function %s() expected type 'number' but got '%s'.", name, str); \
                                     free(str); \
-                                    return NULL_VAL; \
+                                    return ERROR_VAL; \
                                 } \
                             } \
                         } while (false)
@@ -68,7 +68,7 @@ static Value randomRandom(VM *vm, int argc, Value *args) {
         char *str = valueType(args[0]);
         runtimeError(vm, "Function number() expected type 'number' but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     return AS_NUMBER((double)rand() / (double)(RAND_MAX / AS_NUMBER(args[0])));
@@ -89,7 +89,7 @@ static Value randomRandomI(VM *vm, int argc, Value *args) {
         char *str = valueType(args[0]);
         runtimeError(vm, "Function int() expected type 'number' but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     return AS_NUMBER(rand() % (unsigned int)AS_NUMBER(args[0]));

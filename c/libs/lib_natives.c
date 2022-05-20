@@ -74,7 +74,7 @@ static Value stdErr(VM *vm, int argc, Value *args) {
 static Value typeof_(VM *vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function typeof() expected 1 argument but got %d.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     char* type = valueType(args[0]);

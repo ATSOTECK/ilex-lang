@@ -25,7 +25,7 @@ static Value arrayToStringLib(VM *vm, int argc, Value *args) {
 static Value arrayMake(VM *vm, int argc, Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function make() expected 1 or 2 arguments but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     ObjArray *array = AS_ARRAY(args[0]);
@@ -36,7 +36,7 @@ static Value arrayMake(VM *vm, int argc, Value *args) {
         char *str = valueType(args[1]);
         runtimeError(vm, "Function make() expected type 'number' for first argument but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     int count = (int)AS_NUMBER(args[1]);
@@ -49,7 +49,7 @@ static Value arrayMake(VM *vm, int argc, Value *args) {
 static Value arrayFill(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function fill() expected 0 or 1 arguments but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     ObjArray *array = AS_ARRAY(args[0]);
@@ -62,7 +62,7 @@ static Value arrayFill(VM *vm, int argc, Value *args) {
 static Value arrayPush(VM *vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function push() expected 1 argument but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
@@ -87,14 +87,14 @@ static Value arrayPop(VM *vm, int argc, Value *args) {
 static Value arrayInsert(VM *vm, int argc, Value *args) {
     if (argc != 2) {
         runtimeError(vm, "Function insert() expected 2 arguments but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     if (!IS_NUMBER(args[1])) {
         char *str = valueType(args[1]);
         runtimeError(vm, "Function insert() expected type 'number' for first argument but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
@@ -103,7 +103,7 @@ static Value arrayInsert(VM *vm, int argc, Value *args) {
     
     if (idx < 0 || idx > array->data.count) {
         runtimeError(vm, "Array index '%d' passed to insert() is out of bounds, array length is '%d'.", idx, array->data.count);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     
@@ -127,21 +127,21 @@ static Value arrayInsert(VM *vm, int argc, Value *args) {
 static Value arrayErase(VM *vm, int argc, Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function erase() expected 1 or 2 arguments but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     if (!IS_NUMBER(args[1])) {
         char *str = valueType(args[1]);
         runtimeError(vm, "Function erase() expected type 'number' for first argument but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     if (argc == 2 && !IS_NUMBER(args[2])) {
         char *str = valueType(args[2]);
         runtimeError(vm, "Function erase() expected type 'number' for second argument but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
@@ -154,7 +154,7 @@ static Value arrayErase(VM *vm, int argc, Value *args) {
     
     if (idx < 0 || idx > array->data.count) {
         runtimeError(vm, "Array index '%d' passed to erase() is out of bounds, array length is '%d'.", idx, array->data.count);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     if (count < 0) {
@@ -176,7 +176,7 @@ static Value arrayErase(VM *vm, int argc, Value *args) {
 static Value arrayRemove(VM *vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function remove() expected 1 argument but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
@@ -218,7 +218,7 @@ static Value arrayRemove(VM *vm, int argc, Value *args) {
 static Value arrayContains(VM *vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function contains() expected 1 argument but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
@@ -236,7 +236,7 @@ static Value arrayContains(VM *vm, int argc, Value *args) {
 static Value arrayIndexOf(VM *vm, int argc, Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function indexOf() expected 1 or 2 arguments but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
@@ -248,7 +248,7 @@ static Value arrayIndexOf(VM *vm, int argc, Value *args) {
             char *str = valueType(args[2]);
             runtimeError(vm, "Function indexOf() expected type 'number' for second argument but got '%s'.", str);
             free(str);
-            return NULL_VAL;
+            return ERROR_VAL;
         }
         
         startIdx = AS_NUMBER(args[2]);
@@ -339,7 +339,7 @@ static void quickSort(ObjArray *array, int start, int end, bool asc) {
 static Value arraySort(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function sort() expected 0 or 1 arguments but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
@@ -351,7 +351,7 @@ static Value arraySort(VM *vm, int argc, Value *args) {
             char *str = valueType(args[1]);
             runtimeError(vm, "Function sort() expected type 'bool' for first argument but got '%s'.", str);
             free(str);
-            return NULL_VAL;
+            return ERROR_VAL;
         }
         
         asc = AS_BOOL(args[1]);
@@ -367,7 +367,7 @@ static Value arraySort(VM *vm, int argc, Value *args) {
             runtimeError(vm, "Function sort() expected array of numbers but found type '%s' at index '%d'.", str, i);
             free(str);
             
-            return NULL_VAL;
+            return ERROR_VAL;
         }
     }
     
@@ -379,7 +379,7 @@ static Value arraySort(VM *vm, int argc, Value *args) {
 static Value arrayJoin(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function join() expected 0 or 1 arguments but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
@@ -396,7 +396,7 @@ static Value arrayJoin(VM *vm, int argc, Value *args) {
             char *str = valueType(args[1]);
             runtimeError(vm, "Function join() expected type 'string' for first argument but got '%s'.", str);
             free(str);
-            return NULL_VAL;
+            return ERROR_VAL;
         }
         
         delim = AS_CSTRING(args[1]);
@@ -451,14 +451,14 @@ static Value arrayCopy(VM *vm, int argc, Value *args) {
 static Value arrayForEach(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function forEach() expected 1 argument but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     if (!IS_CLOSURE(args[1])) {
         char *str = valueType(args[1]);
         runtimeError(vm, "Function forEach() expected type 'closure' for first argument but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     ObjArray *array = AS_ARRAY(args[0]);
@@ -474,14 +474,14 @@ static Value arrayForEach(VM *vm, int argc, Value *args) {
 static Value arrayMap(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function map() expected 1 argument but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     if (!IS_CLOSURE(args[1])) {
         char *str = valueType(args[1]);
         runtimeError(vm, "Function map() expected type 'closure' for first argument but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     ObjArray *array = AS_ARRAY(args[0]);
@@ -499,14 +499,14 @@ static Value arrayMap(VM *vm, int argc, Value *args) {
 static Value arrayFilter(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function filter() expected 1 argument but got '%d'.", argc);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     if (!IS_CLOSURE(args[1])) {
         char *str = valueType(args[1]);
         runtimeError(vm, "Function filter() expected type 'closure' for first argument but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);

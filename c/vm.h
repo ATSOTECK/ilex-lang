@@ -45,6 +45,8 @@ struct VM_ {
     int grayCapacity;
     Obj** grayStack;
     ObjString *scriptName;
+
+    bool envLoaded;
 };
 
 typedef enum {

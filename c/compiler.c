@@ -232,7 +232,7 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     compiler->loop = NULL;
     compiler->locals = NULL;
     compiler->upvalues = NULL;
-    
+
     compiler->locals   = (Local*)  malloc(sizeof(Local)   * LOCAL_COUNT);
     compiler->upvalues = (Upvalue*)malloc(sizeof(Upvalue) * LOCAL_COUNT);
 

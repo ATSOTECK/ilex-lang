@@ -13,27 +13,27 @@
 #define argCheckNum(name) do {\
                             if (argc != 1) { \
                                 runtimeError(vm, "Function %s() expected 1 argument but got %d.", name, argc); \
-                                return NULL_VAL; \
+                                return ERROR_VAL; \
                             } \
                             if (!IS_NUMBER(args[0])) { \
                                 char *str = valueType(args[0]); \
                                 runtimeError(vm, "Function %s() expected type 'number' but got '%s'.", name, str); \
                                 free(str); \
-                                return NULL_VAL; \
+                                return ERROR_VAL; \
                             } \
                         } while (false)
 
 #define argCheckNum2(name) do {\
                             if (argc != 2) { \
                                 runtimeError(vm, "Function %s() expected 2 arguments but got %d.", name, argc); \
-                                return NULL_VAL; \
+                                return ERROR_VAL; \
                             }  \
                             for (int i = 0; i < argc; ++i) {   \
                                 if (!IS_NUMBER(args[i])) { \
                                     char *str = valueType(args[i]); \
                                     runtimeError(vm, "Function %s() expected type 'number' but got '%s'.", name, str); \
                                     free(str); \
-                                    return NULL_VAL; \
+                                    return ERROR_VAL; \
                                 } \
                             } \
                         } while (false)
@@ -203,7 +203,7 @@ static Value mathMax(VM *vm, int argc, Value *args) {
         char *str = valueType(args[0]);
         runtimeError(vm, "Function max() expected type 'number' but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     double max = AS_NUMBER(args[0]);
@@ -213,7 +213,7 @@ static Value mathMax(VM *vm, int argc, Value *args) {
             char *str = valueType(args[i]);
             runtimeError(vm, "Function max() expected type 'number' but got '%s'.", str);
             free(str);
-            return NULL_VAL;
+            return ERROR_VAL;
         }
 
         double num = AS_NUMBER(args[i]);
@@ -254,7 +254,7 @@ static Value mathMin(VM *vm, int argc, Value *args) {
         char *str = valueType(args[0]);
         runtimeError(vm, "Function max() expected type 'number' but got '%s'.", str);
         free(str);
-        return NULL_VAL;
+        return ERROR_VAL;
     }
 
     double min = AS_NUMBER(args[0]);
@@ -264,7 +264,7 @@ static Value mathMin(VM *vm, int argc, Value *args) {
             char *str = valueType(args[i]);
             runtimeError(vm, "Function max() expected type 'number' but got '%s'.", str);
             free(str);
-            return NULL_VAL;
+            return ERROR_VAL;
         }
 
         double num = AS_NUMBER(args[i]);
@@ -287,7 +287,7 @@ static Value mathAverage(VM *vm, int argc, Value *args) {
             char *str = valueType(args[i]);
             runtimeError(vm, "Function max() expected type 'number' but got '%s'.", str);
             free(str);
-            return NULL_VAL;
+            return ERROR_VAL;
         }
 
         average += AS_NUMBER(args[i]);

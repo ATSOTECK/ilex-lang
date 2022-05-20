@@ -7,10 +7,9 @@ fn fib(n) {
 }
 
 fn main() {
-    start := seconds()
     println(fib(40))
-    println(seconds() - start, "seconds")
-    println(milliseconds() - start, "ms")
+    println(seconds(), "seconds")
+    println(milliseconds(), "ms")
 }
 
 main()
