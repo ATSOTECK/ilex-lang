@@ -25,6 +25,11 @@ static Value fileWrite(VM *vm, int argc, Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     ObjString *str = AS_STRING(args[1]);
     
+    if (file->file == NULL) {
+        runtimeError(vm, "File is not open.");
+        return ERROR_VAL;
+    }
+    
     if (strcmp(file->flags, "r") == 0) {
         runtimeError(vm, "File is not writeable.");
         return ERROR_VAL;
@@ -52,6 +57,11 @@ static Value fileWriteLine(VM *vm, int argc, Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     ObjString *str = AS_STRING(args[1]);
     
+    if (file->file == NULL) {
+        runtimeError(vm, "File is not open.");
+        return ERROR_VAL;
+    }
+    
     if (strcmp(file->flags, "r") == 0) {
         runtimeError(vm, "File is not writeable.");
         return ERROR_VAL;
@@ -65,6 +75,11 @@ static Value fileWriteLine(VM *vm, int argc, Value *args) {
 
 static Value fileRead(VM *vm, int argc, Value *args) {
     ObjFile *file = AS_FILE(args[0]);
+    
+    if (file->file == NULL) {
+        runtimeError(vm, "File is not open.");
+        return ERROR_VAL;
+    }
     
     long int pos = ftell(file->file);
     fseek(file->file, 0, SEEK_END);
@@ -94,6 +109,12 @@ static Value fileRead(VM *vm, int argc, Value *args) {
 
 static Value fileReadln(VM *vm, int argc, Value *args) {
     ObjFile *file = AS_FILE(args[0]);
+    
+    if (file->file == NULL) {
+        runtimeError(vm, "File is not open.");
+        return ERROR_VAL;
+    }
+    
     char *line = NULL;
     size_t len = 0;
     if (getline(&line, &len, file->file) != -1) {
@@ -145,6 +166,11 @@ static Value fileSeek(VM *vm, int argc, Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     int offset = AS_NUMBER(args[1]);
     
+    if (file->file == NULL) {
+        runtimeError(vm, "File is not open.");
+        return ERROR_VAL;
+    }
+    
     //TODO(Skyler): Better check for binary mode.
     if (offset != 0 && (file->flags[0] != 'b' && file->flags[1] != 'b')) {
         runtimeError(vm, "Function seek() may not have non-zero offset if file is opened in text mode.");
@@ -157,6 +183,12 @@ static Value fileSeek(VM *vm, int argc, Value *args) {
 
 static Value fileTell(VM *vm, int argc, Value *args) {
     ObjFile *file = AS_FILE(args[0]);
+    
+    if (file->file == NULL) {
+        runtimeError(vm, "File is not open.");
+        return ERROR_VAL;
+    }
+    
     long int ret = ftell(file->file);
     
     return NUMBER_VAL(ret);
@@ -164,8 +196,13 @@ static Value fileTell(VM *vm, int argc, Value *args) {
 
 static Value fileSize(VM *vm, int argc, Value *args) {
     ObjFile *file = AS_FILE(args[0]);
-    long int pos = ftell(file->file);
     
+    if (file->file == NULL) {
+        runtimeError(vm, "File is not open.");
+        return ERROR_VAL;
+    }
+    
+    long int pos = ftell(file->file);
     fseek(file->file, 0, SEEK_END);
     long int size = ftell(file->file);
     fseek(file->file, pos, SEEK_SET);
@@ -175,8 +212,13 @@ static Value fileSize(VM *vm, int argc, Value *args) {
 
 static Value fileEmpty(VM *vm, int argc, Value *args) {
     ObjFile *file = AS_FILE(args[0]);
-    long int pos = ftell(file->file);
     
+    if (file->file == NULL) {
+        runtimeError(vm, "File is not open.");
+        return ERROR_VAL;
+    }
+    
+    long int pos = ftell(file->file);
     fseek(file->file, 0, SEEK_END);
     long int size = ftell(file->file);
     fseek(file->file, pos, SEEK_SET);
@@ -234,6 +276,11 @@ static Value fileOpen(VM *vm, int argc, Value *args) {
 
 static Value fileClose(VM *vm, int argc, Value *args) {
     ObjFile *file = AS_FILE(args[0]);
+    
+    if (file->file == NULL) {
+        return ZERO_VAL;
+    }
+    
     int ret = fclose(file->file);
     file->file = NULL;
     
