@@ -4,6 +4,8 @@
 
 #include "lib_file.h"
 
+#include <stdlib.h>
+
 static Value fileWrite(VM *vm, int argc, Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function write() expected 1 argument but got '%d'.", argc);

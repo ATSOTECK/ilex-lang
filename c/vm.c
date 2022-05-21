@@ -1257,7 +1257,12 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 ObjString *nameStr = AS_STRING(name);
                 
                 ObjFile *file = newFile(vm);
+#ifdef I_WIN
                 errno_t err = fopen_s(&file->file, nameStr->str, flagStr->str);
+#else
+                file->file = fopen(nameStr->str, flagStr->str);
+                errno_t err = file->file == NULL ? -1 : 0;
+#endif
                 file->path = nameStr->str;
                 file->flags = flagStr->str;
                 
