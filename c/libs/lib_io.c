@@ -74,7 +74,7 @@ static Value ioGetNumber(VM *vm, int argc, Value *args) {
     if (argc != 0) {
         Value prompt = args[0];
         if (!IS_STRING(prompt)) {
-            char *str = valueType(args[1]);
+            char *str = valueType(prompt);
             runtimeError(vm, "Function getNumber() expected type 'string' but got '%s'.", str);
             free(str);
             
@@ -126,6 +126,49 @@ static Value ioGetNumber(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(number);
 }
 
+static Value ioOpenFile(VM *vm, int argc, Value *args) {
+    if (argc != 2) {
+        runtimeError(vm, "Function openFile() expected 2 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+    
+    if (!IS_STRING(args[0])) {
+        char *type = valueType(args[0]);
+        runtimeError(vm, "Function openFile() expected type 'string' for first argument but got '%s'.", type);
+        free(type);
+        
+        return ERROR_VAL;
+    }
+    
+    if (!IS_STRING(args[1])) {
+        char *type = valueType(args[1]);
+        runtimeError(vm, "Function openFile() expected type 'string' for second argument but got '%s'.", type);
+        free(type);
+        
+        return ERROR_VAL;
+    }
+    
+    ObjString *nameStr = AS_STRING(args[0]);
+    ObjString *flagStr = AS_STRING(args[1]);
+    
+    ObjFile *file = newFile(vm);
+#ifdef I_WIN
+    errno_t err = fopen_s(&file->file, nameStr->str, flagStr->str);
+#else
+    file->file = fopen(nameStr->str, flagStr->str);
+    errno_t err = file->file == NULL ? -1 : 0;
+#endif
+    file->path = nameStr->str;
+    file->flags = flagStr->str;
+    
+    if (err != 0) {
+        runtimeError(vm, "Unable to open file '%s'.", file->path);
+        return ERROR_VAL;
+    }
+    
+    return OBJ_VAL(file);
+}
+
 Value useIoLib(VM *vm) {
     ObjString *name = copyString(vm, "io", 2);
     push(vm, OBJ_VAL(name));
@@ -134,6 +177,8 @@ Value useIoLib(VM *vm) {
 
     defineNative(vm, "input", ioInput, &lib->values);
     defineNative(vm, "getNumber", ioGetNumber, &lib->values);
+    
+    defineNative(vm, "openFile", ioOpenFile, &lib->values);
 
     pop(vm);
     pop(vm);

@@ -1280,6 +1280,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 Value val = frame->slots[slot];
                 ObjFile *file = AS_FILE(val);
                 fclose(file->file);
+                file->file = NULL;
             } break;
         }
     }

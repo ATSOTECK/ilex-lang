@@ -3,7 +3,51 @@ with('tst.txt', 'w') {
     file.writeln('Hello world!')
 }
 
+with('tst.txt', 'r') {
+    str ::= file.read()
+    assert(str == 'Hello world!\n')
+}
+
 with('tst.txt', 'a') as tst {
     println(tst)
     tst.write('yeet')
 }
+
+with('tst.txt', 'r') {
+    ln()
+    str := file.readln()
+    
+    while (str != null) {
+        println(str)
+        str = file.readln()
+    }
+    ln()
+}
+
+use { openFile } from <io>
+
+file ::= openFile('tst.txt', 'w')
+assert(file.empty())
+file.write('ya yeet')
+
+assert(file.isOpen())
+file.close()
+assert(!file.isOpen())
+
+file.open('r')
+str ::= file.read()
+size ::= file.size()
+file.close()
+assert(str == 'ya yeet')
+assert(size == 7)
+// println('file size:', size, 'bytes')
+
+with('tst.txt', 'rb+') {
+    file.seek(1)
+    file.write('e')
+    file.seek(0)
+    str ::= file.read()
+    assert(str == 'ye yeet')
+}
+
+println('Done!')
