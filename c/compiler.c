@@ -232,6 +232,8 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     compiler->loop = NULL;
     compiler->locals = NULL;
     compiler->upvalues = NULL;
+    compiler->isWithBlock = false;
+    compiler->withVarName = NULL;
 
     compiler->locals   = (Local*)  malloc(sizeof(Local)   * LOCAL_COUNT);
     compiler->upvalues = (Upvalue*)malloc(sizeof(Upvalue) * LOCAL_COUNT);
@@ -271,11 +273,11 @@ static bool identifiersEqual(Token *a, Token *b) {
     return memcmp(a->start, b->start, a->len) == 0;
 }
 
-static int resolveLocal(Compiler *compiler, Token *name) {
+static int resolveLocal(Compiler *compiler, Token *name, bool inFunction) {
     for (int i = compiler->localCount - 1; i >= 0; i--) {
         Local *local = &compiler->locals[i];
         if (identifiersEqual(name, &local->name)) {
-            if (local->depth == -1) {
+            if (!inFunction && local->depth == -1) {
                 error(compiler->parser, "Can't read local variable in its own initializer.");
             }
             return i;
@@ -311,7 +313,7 @@ static int resolveUpvalue(Compiler *compiler, Token *name) {
         return -1;
     }
 
-    int local = resolveLocal(compiler->enclosing, name);
+    int local = resolveLocal(compiler->enclosing, name, true);
     if (local != -1) {
         compiler->enclosing->locals[local].isCaptured = true;
         return addUpvalue(compiler, (uint16_t)local, true);
@@ -651,7 +653,7 @@ static void checkIfConst(Compiler *compiler, uint8_t setOp, int arg) {
 
 static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
     uint8_t getOp, setOp;
-    int arg = resolveLocal(compiler, &name);
+    int arg = resolveLocal(compiler, &name, false);
 
     if (arg != -1) {
         getOp = OP_GET_LOCAL;
@@ -1260,6 +1262,7 @@ static int getArgCount(const uint8_t *code, const ValueArray constants, int ip) 
         case OP_CLOSE_UPVALUE:
         case OP_RETURN:
         case OP_BREAK:
+        case OP_OPEN_FILE:
             return 0;
 
         case OP_CONSTANT:
@@ -1439,7 +1442,7 @@ static void switchStatement(Compiler *compiler) {
             } while (match(compiler, TK_COMMA));
             emitBytes(compiler, OP_MULTI_CASE, multipleCases);
         }
-        if (!check(compiler, TK_COLON) && !check(compiler, TK_FALLTHROUGH)) {
+        if (!check(compiler, TK_COLON) && !check(compiler, TK_ARROW)) {
             eat(compiler->parser, TK_COLON, "Expect ':' or '->' after expression.");
         }
 
@@ -1451,7 +1454,7 @@ static void switchStatement(Compiler *compiler) {
             patchJump(compiler, compareJump);
         }*/
 
-        if (match(compiler, TK_FALLTHROUGH)) {
+        if (match(compiler, TK_ARROW)) {
             //nextJmp = emitJump(compiler, OP_JUMP);
         } else {
             match(compiler, TK_COLON);
@@ -1525,24 +1528,6 @@ static void ifStatement(Compiler *compiler) {
         }
     }
     patchJump(compiler, elseJump);
-}
-
-static void returnStatement(Compiler *compiler) {
-    if (compiler->type == TYPE_SCRIPT) {
-        error(compiler->parser, "Can't return from top-level code.");
-    }
-
-    if (match(compiler, TK_SEMICOLON)) {
-        emitReturn(compiler);
-    } else {
-        if (compiler->type == TYPE_INITIALIZER) {
-            error(compiler->parser, "Can't return a value from an initializer.");
-        }
-
-        expression(compiler);
-        match(compiler, TK_SEMICOLON);
-        emitByte(compiler, OP_RETURN);
-    }
 }
 
 static void whileStatement(Compiler *compiler) {
@@ -1758,6 +1743,87 @@ static void breakStatement(Compiler *compiler) {
     emitJump(compiler, OP_BREAK);
 }
 
+static void withStatement(Compiler *compiler) {
+    if (compiler->isWithBlock) {
+        error(compiler->parser, "Can't have a with statement inside a with statement.");
+        return;
+    }
+    
+    compiler->isWithBlock = true;
+    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'with'.");
+    expression(compiler);
+    eat(compiler->parser, TK_COMMA, "Expect ',' after path.");
+    expression(compiler);
+    eat(compiler->parser, TK_RPAREN, "Expect ')' after flags.");
+    if (match(compiler, TK_AS)) {
+        eat(compiler->parser, TK_IDENT, "Expect name after 'as'.");
+        int len = compiler->parser->previous.len;
+        compiler->withVarName = (char*)malloc(sizeof(char) * len + 1);
+        // strcpy_s(compiler->withVarName, len, compiler->parser->previous.start);
+        memcpy(compiler->withVarName, compiler->parser->previous.start, len);
+        compiler->withVarName[len] = '\0';
+    
+        eat(compiler->parser, TK_LBRACE, "Expect '{' after name.");
+    } else {
+        eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
+    }
+    
+    beginScope(compiler);
+    
+    int fileIdx = compiler->localCount;
+    Local *local = &compiler->locals[compiler->localCount++];
+    local->depth = compiler->scopeDepth;
+    local->name = compiler->withVarName == NULL ? syntheticToken("file") : syntheticToken(compiler->withVarName);
+    local->isCaptured = false;
+    local->isConst = true;
+    
+    emitByte(compiler, OP_OPEN_FILE);
+    block(compiler);
+    emitByteShort(compiler, OP_CLOSE_FILE, fileIdx);
+    endScope(compiler);
+    
+    compiler->isWithBlock = false;
+    if (compiler->withVarName != NULL) {
+        free(compiler->withVarName);
+        compiler->withVarName = NULL;
+    }
+}
+
+static void checkWithFile(Compiler *compiler) {
+    if (compiler->isWithBlock) {
+        Token token = compiler->withVarName == NULL ? syntheticToken("file") : syntheticToken(compiler->withVarName);
+        int local = resolveLocal(compiler, &token, true);
+        
+        if (local != -1) {
+            emitByteShort(compiler, OP_CLOSE_FILE, local);
+            if (compiler->withVarName != NULL) {
+                free(compiler->withVarName);
+                compiler->withVarName = NULL;
+            }
+        }
+    }
+}
+
+static void returnStatement(Compiler *compiler) {
+    if (compiler->type == TYPE_SCRIPT) {
+        error(compiler->parser, "Can't return from top-level code.");
+    }
+    
+    if (match(compiler, TK_SEMICOLON)) {
+        checkWithFile(compiler);
+        emitReturn(compiler);
+    } else {
+        if (compiler->type == TYPE_INITIALIZER) {
+            error(compiler->parser, "Can't return a value from an initializer.");
+        }
+        
+        expression(compiler);
+        match(compiler, TK_SEMICOLON);
+        checkWithFile(compiler);
+        emitByte(compiler, OP_RETURN);
+    }
+}
+
 static void declaration(Compiler *compiler) {
     if (match(compiler, TK_CLASS)) {
         classDeclaration(compiler);
@@ -1805,6 +1871,8 @@ static void statement(Compiler *compiler) {
         continueStatement(compiler);
     } else if (match(compiler, TK_BREAK)) {
         breakStatement(compiler);
+    } else if (match(compiler, TK_WITH)) {
+        withStatement(compiler);
     } else if (match(compiler, TK_LBRACE)) {
         beginScope(compiler);
         block(compiler);

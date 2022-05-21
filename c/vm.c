@@ -12,6 +12,7 @@
 
 #include "libs/lib_array.h"
 #include "libs/lib_builtIn.h"
+#include "libs/lib_file.h"
 #include "libs/lib_natives.h"
 #include "libs/lib_string.h"
 
@@ -133,6 +134,7 @@ VM *initVM(const char *path) {
     initTable(&vm->scripts);
     initTable(&vm->stringFunctions);
     initTable(&vm->arrayFunctions);
+    initTable(&vm->fileFunctions);
 
     vm->initString = NULL;
     vm->scriptName = NULL;
@@ -143,6 +145,7 @@ VM *initVM(const char *path) {
     defineNatives(vm);
     defineStringFunctions(vm);
     defineArrayFunctions(vm);
+    defineFileFunctions(vm);
 
     return vm;
 }
@@ -153,6 +156,7 @@ void freeVM(VM *vm) {
     freeTable(vm, &vm->strings);
     freeTable(vm, &vm->stringFunctions);
     freeTable(vm, &vm->arrayFunctions);
+    freeTable(vm, &vm->fileFunctions);
     vm->initString = NULL;
     vm->scriptName = NULL;
     freeObjects(vm);
@@ -287,8 +291,8 @@ static bool invokeFromClass(VM *vm, ObjClass *objClass, ObjString *name, int arg
     return call(vm, AS_CLOSURE(method), argCount);
 }
 
-static bool invoke(VM *vm, ObjString *name, int argCount) {
-    Value receiver = peek(vm, argCount);
+static bool invoke(VM *vm, ObjString *name, int argc) {
+    Value receiver = peek(vm, argc);
     
     if (!IS_OBJ(receiver)) {
         runtimeError(vm, "Only instances have methods.");
@@ -301,19 +305,19 @@ static bool invoke(VM *vm, ObjString *name, int argCount) {
 
             Value value;
             if (tableGet(&instance->fields, name, &value)) {
-                vm->stackTop[-argCount - 1] = value;
-                return callValue(vm, value, argCount);
+                vm->stackTop[-argc - 1] = value;
+                return callValue(vm, value, argc);
             }
 
-            return invokeFromClass(vm, instance->objClass, name, argCount);
+            return invokeFromClass(vm, instance->objClass, name, argc);
         }
         case OBJ_STRING: {
             Value value;
             if (tableGet(&vm->stringFunctions, name, &value)) {
-                return callNativeFunction(vm, value, argCount);
+                return callNativeFunction(vm, value, argc);
             }
 
-            runtimeError(vm, "String has no method %s().", name->str);
+            runtimeError(vm, "String has no function %s().", name->str);
             return false;
         }
         case OBJ_ENUM: {
@@ -321,7 +325,7 @@ static bool invoke(VM *vm, ObjString *name, int argCount) {
             Value value;
 
             if (tableGet(&enumObj->values, name, &value)) {
-                return callValue(vm, value, argCount);
+                return callValue(vm, value, argc);
             }
 
             runtimeError(vm, "'%s' enum has no property '%s'.", enumObj->name->str, name->str);
@@ -336,15 +340,24 @@ static bool invoke(VM *vm, ObjString *name, int argCount) {
                 return false;
             }
 
-            return callValue(vm, value, argCount);
+            return callValue(vm, value, argc);
         }
         case OBJ_ARRAY: {
             Value value;
             if (tableGet(&vm->arrayFunctions, name, &value)) {
-                return callNativeFunction(vm, value, argCount);
+                return callNativeFunction(vm, value, argc);
             }
     
-            runtimeError(vm, "Array has no method %s().", name->str);
+            runtimeError(vm, "Array has no function %s().", name->str);
+            return false;
+        }
+        case OBJ_FILE: {
+            Value value;
+            if (tableGet(&vm->fileFunctions, name, &value)) {
+                return callNativeFunction(vm, value, argc);
+            }
+    
+            runtimeError(vm, "File has no function %s().", name->str);
             return false;
         }
     }
@@ -1221,6 +1234,47 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 pop(vm);
     
                 push(vm, returnVal);
+            } break;
+            case OP_OPEN_FILE: {
+                Value flag = peek(vm, 0);
+                Value name = peek(vm, 1);
+                
+                if (!IS_STRING(flag)) {
+                    char *type = valueType(flag);
+                    runtimeError(vm, "File flag must be a string got '%s'.", type);
+                    free(type);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+    
+                if (!IS_STRING(name)) {
+                    char *type = valueType(name);
+                    runtimeError(vm, "File name must be a string got '%s'.", type);
+                    free(type);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                ObjString *flagStr = AS_STRING(flag);
+                ObjString *nameStr = AS_STRING(name);
+                
+                ObjFile *file = newFile(vm);
+                errno_t err = fopen_s(&file->file, nameStr->str, flagStr->str);
+                file->path = nameStr->str;
+                file->flags = flagStr->str;
+                
+                if (err != 0) {
+                    runtimeError(vm, "Unable to open file '%s'.", file->path);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+    
+                pop(vm);
+                pop(vm);
+                push(vm, OBJ_VAL(file));
+            } break;
+            case OP_CLOSE_FILE: {
+                uint16_t slot = READ_SHORT();
+                Value val = frame->slots[slot];
+                ObjFile *file = AS_FILE(val);
+                fclose(file->file);
             } break;
         }
     }

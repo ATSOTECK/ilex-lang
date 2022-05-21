@@ -193,6 +193,10 @@ ObjArray *newArray(VM *vm) {
     return array;
 }
 
+ObjFile *newFile(VM *vm) {
+    return ALLOCATE_OBJ(vm, ObjFile, OBJ_FILE);
+}
+
 static void printFunction(ObjFunction *function) {
     if (function->name == NULL) {
         printf("<script>");
@@ -244,8 +248,8 @@ static char *enumToString(ObjEnum *objEnum) {
 
 char *arrayToString(ObjArray *array) {
     int size = 64;
-    char *arrayString = (char*)malloc(sizeof(char) * size);
-    arrayString[0] = '[';
+    char *arrayStr = (char*)malloc(sizeof(char) * size);
+    arrayStr[0] = '[';
     int len = 1;
     
     for (int i = 0; i < array->data.count; ++i) {
@@ -269,31 +273,39 @@ char *arrayToString(ObjArray *array) {
             } else {
                 size = size * 2 + 6;
             }
-            
-            arrayString = (char*)realloc(arrayString, sizeof(char) * size);
+    
+            arrayStr = (char*)realloc(arrayStr, sizeof(char) * size);
         }
         
         if (IS_STRING(value)) {
-            memcpy(arrayString + len, "\"", 1);
-            memcpy(arrayString + len + 1, elementStr, elementSize);
-            memcpy(arrayString + len + 1 + elementSize, "\"", 1);
+            memcpy(arrayStr + len, "\"", 1);
+            memcpy(arrayStr + len + 1, elementStr, elementSize);
+            memcpy(arrayStr + len + 1 + elementSize, "\"", 1);
             len += elementSize + 2;
         } else {
-            memcpy(arrayString + len, elementStr, elementSize);
+            memcpy(arrayStr + len, elementStr, elementSize);
             len += elementSize;
             free(elementStr);
         }
     
         if (i != array->data.count - 1) {
-            memcpy(arrayString + len, ", ", 2);
+            memcpy(arrayStr + len, ", ", 2);
             len += 2;
         }
     }
     
-    arrayString[len] = ']';
-    arrayString[len + 1] = '\0';
+    arrayStr[len] = ']';
+    arrayStr[len + 1] = '\0';
     
-    return arrayString;
+    return arrayStr;
+}
+
+static char *fileToString(ObjFile *file) {
+    size_t len = strlen(file->path) + strlen(file->flags) + 11;
+    char *fileStr = (char*)malloc(sizeof(char*) * len);
+    snprintf(fileStr, len, "<file %s \"%s\">", file->path, file->flags);
+    
+    return fileStr;
 }
 
 char *objectType(Value value) {
@@ -312,6 +324,7 @@ char *objectType(Value value) {
         case OBJ_UPVALUE: return newCString("upvalue");
         case OBJ_ENUM: return newCString("enum");
         case OBJ_ARRAY: return newCString("array");
+        case OBJ_FILE: return newCString("file");
     }
 
     return newCString("unknown type");
@@ -330,6 +343,7 @@ char *objectToString(Value value) {
         case OBJ_UPVALUE: return newCString("Should never happen.");
         case OBJ_ENUM: return enumToString(AS_ENUM(value));
         case OBJ_ARRAY: return arrayToString(AS_ARRAY(value));
+        case OBJ_FILE: return fileToString(AS_FILE(value));
     }
     
     return newCString("unknown object");

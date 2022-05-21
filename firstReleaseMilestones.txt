@@ -1,0 +1,16 @@
+map datatype
+set datatype
+shallow/deep copy for arrays 
+file IO
+HTTP lib
+SQL lib
+use user made scripts
+16 bit?
+switch fallthrough
+annonomys functions
+
+arr.map(fn |x| x * 2)
+arr.map(fn |x| -> {
+    x ** 2
+})
+someFunc(fn -> println('yeet'))

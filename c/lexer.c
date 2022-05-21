@@ -238,7 +238,13 @@ static IlexTokenType identType() {
             } break;
         case 'u': return checkKeyword(1, 2, "se", TK_USE);
         case 'v': return checkKeyword(1, 2, "ar", TK_VAR);
-        case 'w': return checkKeyword(1, 4, "hile", TK_WHILE);
+        case 'w':
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'h': return checkKeyword(2, 3, "ile", TK_WHILE);
+                    case 'i': return checkKeyword(2, 2, "th", TK_WITH);
+                }
+            }
     }
     
     return TK_IDENT;
@@ -406,7 +412,7 @@ Token nextToken() {
             } else if (match('=')) {
                 return makeToken(TK_MINUSEQ);
             } else if (match('>')) {
-                return makeToken(TK_FALLTHROUGH);
+                return makeToken(TK_ARROW);
             } else {
                 return makeToken(TK_MINUS);
             }

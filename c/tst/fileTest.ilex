@@ -1,0 +1,9 @@
+with('tst.txt', 'w') {
+    println(file)
+    file.writeln('Hello world!')
+}
+
+with('tst.txt', 'a') as tst {
+    println(tst)
+    tst.write('yeet')
+}

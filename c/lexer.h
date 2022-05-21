@@ -55,7 +55,7 @@ typedef enum {
     TK_OPT,              // ?.
     TK_NULL_COALESCE,    // ??
     TK_NULL_COALESCE_EQ, // ??=
-    TK_FALLTHROUGH,      // ->
+    TK_ARROW,            // ->
 
     TK_VAR_DECL,         // :=
     TK_CONST_DECL,       // ::=
@@ -97,6 +97,7 @@ typedef enum {
     TK_USE,
     TK_VAR,
     TK_WHILE,
+    TK_WITH,
 
     TK_ERROR,
     TK_EOF

@@ -11,6 +11,8 @@
 #include "table.h"
 #include "value.h"
 
+#include <stdio.h>
+
 #define OBJ_TYPE(value)        (AS_OBJ(value)->type)
 
 #define IS_BOUND_METHOD(value) isObjType(value, OBJ_BOUND_METHOD)
@@ -23,6 +25,7 @@
 #define IS_STRING(value)       isObjType(value, OBJ_STRING)
 #define IS_ENUM(value)         isObjType(value, OBJ_ENUM)
 #define IS_ARRAY(value)        isObjType(value, OBJ_ARRAY)
+#define IS_FILE(value)         isObjType(value, OBJ_FILE)
 
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
 #define AS_CLASS(value)        ((ObjClass*)AS_OBJ(value))
@@ -35,6 +38,7 @@
 #define AS_CSTRING(value)      (((ObjString*)AS_OBJ(value))->str)
 #define AS_ENUM(value)         ((ObjEnum*)AS_OBJ(value))
 #define AS_ARRAY(value)        ((ObjArray*)AS_OBJ(value))
+#define AS_FILE(value)         ((ObjFile*)AS_OBJ(value))
 
 typedef enum {
     OBJ_BOUND_METHOD,
@@ -48,6 +52,7 @@ typedef enum {
     OBJ_UPVALUE,
     OBJ_ENUM,
     OBJ_ARRAY,
+    OBJ_FILE,
 } ObjType;
 
 struct Obj {
@@ -128,6 +133,13 @@ typedef struct {
     ValueArray data;
 } ObjArray;
 
+typedef struct {
+    Obj obj;
+    FILE *file;
+    char *path;
+    char *flags;
+} ObjFile;
+
 ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
 ObjClass *newClass(VM *vm, ObjString *name);
 ObjClosure *newClosure(VM *vm, ObjFunction *function);
@@ -142,6 +154,7 @@ ObjString *copyString(VM *vm, const char* chars, int length);
 ObjUpvalue *newUpvalue(VM *vm, Value *slot);
 ObjEnum *newEnum(VM *vm, ObjString *name);
 ObjArray *newArray(VM *vm);
+ObjFile *newFile(VM *vm);
 char *objectType(Value value);
 char *objectToString(Value value);
 char *arrayToString(ObjArray *array);

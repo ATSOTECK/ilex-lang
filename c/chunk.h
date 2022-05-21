@@ -80,6 +80,8 @@ typedef enum {
     OP_INDEX,
     OP_INDEX_ASSIGN,
     OP_INDEX_PUSH,
+    OP_OPEN_FILE,
+    OP_CLOSE_FILE,
 } OpCode;
 
 typedef struct {

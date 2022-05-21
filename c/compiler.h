@@ -63,6 +63,8 @@ typedef struct Compiler {
     uint16_t currentLibName;
     ObjScript *currentScript;
     Loop *loop;
+    bool isWithBlock;
+    char *withVarName;
 } Compiler;
 
 ObjFunction *compile(VM *vm, const char *source);
