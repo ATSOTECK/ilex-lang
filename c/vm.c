@@ -247,7 +247,7 @@ static bool callValue(VM *vm, Value callee, int argc) {
                 NativeFn native = AS_NATIVE(callee);
                 Value result = native(vm, argc, vm->stackTop - argc);
 
-                if (IS_ERROR(result)) {
+                if (IS_ERR(result)) {
                     return false;
                 }
 
@@ -268,7 +268,7 @@ static bool callNativeFunction(VM *vm, Value function, int argc) {
     NativeFn native = AS_NATIVE(function);
 
     Value res = native(vm, argc, vm->stackTop - argc - 1);
-    if (IS_ERROR(res)) {
+    if (IS_ERR(res)) {
         return false;
     }
 
@@ -890,7 +890,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
 
                 Value lib = useBuiltInLib(vm, idx);
 
-                if (IS_ERROR(lib)) {
+                if (IS_ERR(lib)) {
                     return INTERPRET_COMPILE_ERROR;
                 }
 
@@ -1138,12 +1138,12 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                if (!IS_NUMBER(sliceStartIndex) && !IS_ERROR(sliceStartIndex)) {
+                if (!IS_NUMBER(sliceStartIndex) && !IS_ERR(sliceStartIndex)) {
                     runtimeError(vm, "Slice start index must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                if (!IS_NUMBER(sliceEndIndex) && !IS_ERROR(sliceEndIndex)) {
+                if (!IS_NUMBER(sliceEndIndex) && !IS_ERR(sliceEndIndex)) {
                     runtimeError(vm, "Slice end index must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1152,7 +1152,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 int indexEnd;
                 Value returnVal;
                 
-                if (IS_ERROR(sliceStartIndex)) {
+                if (IS_ERR(sliceStartIndex)) {
                     indexStart = 0;
                 } else {
                     indexStart = AS_NUMBER(sliceStartIndex);
@@ -1168,7 +1168,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                         push(vm, OBJ_VAL(retArray));
                         ObjArray *array = AS_ARRAY(receiver);
                         
-                        if (IS_ERROR(sliceEndIndex)) {
+                        if (IS_ERR(sliceEndIndex)) {
                             indexEnd = array->data.count;
                         } else {
                             indexEnd = AS_NUMBER(sliceEndIndex);
@@ -1190,7 +1190,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                     case OBJ_STRING: {
                         ObjString *str = AS_STRING(receiver);
     
-                        if (IS_ERROR(sliceEndIndex)) {
+                        if (IS_ERR(sliceEndIndex)) {
                             indexEnd = str->len;
                         } else {
                             indexEnd = AS_NUMBER(sliceEndIndex);

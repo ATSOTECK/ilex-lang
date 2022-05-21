@@ -8,9 +8,86 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #define RM_BRACKET(name) name + 1
 #define RM_SPACE(value) value + 1
+
+#ifdef I_WIN
+#define unsetenv(NAME) _putenv_s(NAME, "")
+int setenv(const char *name, const char *value, int overwrite) {
+    if (!overwrite && getenv(name) == NULL) {
+        return 0;
+    }
+    
+    if (_putenv_s(name, value)) {
+        return -1;
+    } else {
+        return 0;
+    }
+}
+
+static void fseterr(FILE *fp) {
+    struct file {
+        unsigned char *_ptr;
+        unsigned char *_base;
+        int _cnt;
+        int _flag;
+        int _file;
+        int _charbuf;
+        int _bufsiz;
+    };
+#define IOERR_ 0x10
+    ((struct file *)fp)->_flag |= IOERR_;
+}
+
+ssize_t getline(char **restrict line, size_t *restrict n, FILE *restrict file) {
+    if (line == NULL || n == NULL || file == NULL) {
+        return -1;
+    }
+    
+    if (feof(file) || ferror(file)) {
+        return -1;
+    }
+    
+    if (*line == NULL) {
+        *n = 128;
+        *line = (char*)malloc(sizeof(char) * *n);
+        if (*line == NULL) {
+            fseterr(file);
+            return -1;
+        }
+    }
+    
+    ssize_t len = 0;
+    int c = EOF;
+    while (c != '\n') {
+        c = fgetc(file);
+        if (c == EOF) {
+            break;
+        }
+        
+        if (len >= *n - 1) {
+            *n += 128;
+            *line = (char*)realloc(*line, sizeof(char) * *n);
+            if (*line == NULL) {
+                fseterr(file);
+                return -1;
+            }
+        }
+        (*line)[len++] = (char)c;
+    }
+    
+    if (c == EOF && len == 0) {
+        return -1;
+    }
+    
+    (*line)[len] = '\0';
+    *n = len + 1;
+    
+    return len;
+}
+#endif
 
 static bool isCommented(const char *line) {
     if (line[0] == '#') {
@@ -81,7 +158,7 @@ static bool readEnv(VM *vm, const char *path) {
     char *key, *value, *ptr;
     char *line = NULL;
     size_t len = 0;
-
+    
     while (getline(&line, &len, file) != -1) {
         if (!isCommented(line)) {
             key = strtok_r(line, "=", &ptr);
