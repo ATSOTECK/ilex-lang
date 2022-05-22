@@ -150,6 +150,9 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_ASSERT: return constantInstruction("OP_ASSERT", chunk, offset);
         case OP_NEW_ARRAY: return byteInstruction("OP_NEW_ARRAY", chunk, offset);
         case OP_USE_BUILTIN: return useBuiltinInstruction("OP_USE_BUILTIN", chunk, offset);
+        case OP_MULTI_CASE: return byteInstruction("OP_MULTI_CASE", chunk, offset);
+        case OP_CMP_JMP: return jumpInstruction("OP_CMP_JMP", 1, chunk, offset);
+        case OP_CMP_JMP_FALL: return jumpInstruction("OP_CMP_JMP_FALL", 1, chunk, offset);
         case OP_INDEX: return simpleInstruction("OP_INDEX", offset);
         case OP_INDEX_ASSIGN: return simpleInstruction("OP_INDEX_ASSIGN", offset);
         case OP_INDEX_PUSH: return simpleInstruction("OP_INDEX_PUSH", offset);

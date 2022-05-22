@@ -69,6 +69,7 @@ typedef enum {
     OP_OR,
     OP_MULTI_CASE,
     OP_CMP_JMP,
+    OP_CMP_JMP_FALL,
     OP_ENUM,
     OP_ENUM_SET_VALUE,
     OP_USE_BUILTIN,

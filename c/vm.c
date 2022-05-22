@@ -141,6 +141,7 @@ VM *initVM(const char *path) {
     vm->initString = copyString(vm, "init", 4);
     vm->scriptName = copyString(vm, path, (int)strlen(path));
     vm->envLoaded = false;
+    vm->fallThrough = false;
 
     defineNatives(vm);
     defineStringFunctions(vm);
@@ -872,10 +873,21 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
             case OP_CMP_JMP: {
                 uint16_t offset = READ_SHORT();
                 Value a = pop(vm);
-                if (!valuesEqual(peek(vm,0), a)) {
+                if (!vm->fallThrough && !valuesEqual(peek(vm,0), a)) {
                     frame->ip += offset;
                 } else {
                     pop(vm); // switch expression.
+                    vm->fallThrough = false;
+                }
+            } break;
+            case OP_CMP_JMP_FALL: {
+                uint16_t offset = READ_SHORT();
+                Value a = pop(vm);
+                if (!vm->fallThrough && !valuesEqual(peek(vm,0), a)) {
+                    frame->ip += offset;
+                } else {
+                    pop(vm); // switch expression.
+                    vm->fallThrough = true;
                 }
             } break;
             case OP_ENUM: {

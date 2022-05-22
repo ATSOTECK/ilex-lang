@@ -1495,26 +1495,24 @@ static void switchStatement(Compiler *compiler) {
             eat(compiler->parser, TK_COLON, "Expect ':' or '->' after expression.");
         }
 
-        int compareJump = compareJump = emitJump(compiler, OP_CMP_JMP);
+        uint8_t jmpType = check(compiler, TK_ARROW) ? OP_CMP_JMP_FALL : OP_CMP_JMP;
+        int compareJump = emitJump(compiler, jmpType);
 
-        /*
-        fflush(stdout);
-        if (nextJmp > 0) {
-            patchJump(compiler, compareJump);
-        }*/
-
+        bool dontJump = false;
         if (match(compiler, TK_ARROW)) {
-            //nextJmp = emitJump(compiler, OP_JUMP);
+            dontJump = true;
         } else {
             match(compiler, TK_COLON);
             nextJmp = -1;
         }
 
-        // printf("jmp %d\n", compareJump);
-
         statement(compiler);
 
-        caseEnds[caseCount++] = emitJump(compiler, OP_JUMP);
+        if (dontJump) {
+            caseEnds[caseCount++] = -1;
+        } else {
+            caseEnds[caseCount++] = emitJump(compiler, OP_JUMP);
+        }
         patchJump(compiler, compareJump);
 
         if (caseCount > 255) {
@@ -1543,7 +1541,9 @@ static void switchStatement(Compiler *compiler) {
     eat(compiler->parser, TK_RBRACE, "Expect '}' after cases.");
 
     for (int i = 0; i < caseCount; i++) {
-        patchJump(compiler, caseEnds[i]);
+        if (caseEnds[i] >= 0) {
+            patchJump(compiler, caseEnds[i]);
+        }
     }
 }
 

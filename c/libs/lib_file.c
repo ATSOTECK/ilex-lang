@@ -238,6 +238,31 @@ static Value fileIsOpen(VM *vm, int argc, Value *args) {
     return BOOL_VAL(pos >= 0);
 }
 
+static Value fileExists(VM *vm, int argc, Value *args) {
+    ObjFile *file = AS_FILE(args[0]);
+    
+    // Check if it is open first.
+    if (file->file != NULL) {
+        if (ftell(file->file) >= 0) {
+            return TRUE_VAL;
+        }
+    }
+    
+    FILE *f;
+#ifdef I_WIN
+    fopen_s(&f, file->path, file->flags);
+    fclose(f);
+    return BOOL_VAL(f != NULL);
+#else
+    if (f = fopen(file->path, file->flags)) {
+        fclose(f);
+        return TRUE_VAL;
+    } else {
+        return FALSE_VAL;
+    }
+#endif
+}
+
 static Value fileOpen(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function open() expected 0 or 1 arguments but got '%d'.", argc);
@@ -298,6 +323,7 @@ void defineFileFunctions(VM *vm) {
     defineNative(vm, "size", fileSize, &vm->fileFunctions);
     defineNative(vm, "empty", fileEmpty, &vm->fileFunctions);
     defineNative(vm, "isOpen", fileIsOpen, &vm->fileFunctions);
+    defineNative(vm, "exists", fileExists, &vm->fileFunctions);
     
     defineNative(vm, "open", fileOpen, &vm->fileFunctions);
     defineNative(vm, "close", fileClose, &vm->fileFunctions);

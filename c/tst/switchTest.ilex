@@ -13,11 +13,12 @@ fn str(arg) {
         case "two", "three", "four", "five": println("two")
         case "six", "seven", "eight", "nine": println("three")
         case "yeet": {
-            println("ya")
+            println("yaat")
             println("yeet")
         }
         case "ya" -> println("woo")
         case "ya2": println("woo 2")
+        // case "ya": println("woo 3") //TODO: Should error on duplicate case.
         default: println("yote")
     }
 }

@@ -48,6 +48,7 @@ struct VM_ {
     ObjString *scriptName;
 
     bool envLoaded;
+    bool fallThrough;
 };
 
 typedef enum {
