@@ -8,6 +8,7 @@ use user made scripts
 16 bit?
 (done) switch fallthrough
 (done) annonomys functions
+fix GC bugs
 
 arr.map(fn |x| x * 2)
 arr.map(fn |x| -> {
