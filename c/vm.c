@@ -179,13 +179,13 @@ Value peek(VM *vm, int amount) {
 
 Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
     if (argc != closure->function->arity) {
-        runtimeError(vm ,"Expected %d arguments but got %d.", closure->function->arity, argc);
-        return false;
+        runtimeError(vm ,"Function '%s' expected %d arguments but got %d.", closure->function->name->str, closure->function->arity, argc);
+        return ERROR_VAL;
     }
 
     if (vm->frameCount == FRAMES_MAX) {
         runtimeError(vm, "Stack overflow.");
-        return false;
+        return ERROR_VAL;
     }
 
     int currentFrameIndex = vm->frameCount - 1;
@@ -206,7 +206,7 @@ Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
 
 static bool call(VM *vm, ObjClosure *closure, int argc) {
     if (argc != closure->function->arity) {
-        runtimeError(vm ,"Expected %d arguments but got %d.", closure->function->arity, argc);
+        runtimeError(vm ,"Function '%s' expected %d arguments but got %d.", closure->function->name->str, closure->function->arity, argc);
         return false;
     }
 

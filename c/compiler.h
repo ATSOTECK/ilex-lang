@@ -33,7 +33,8 @@ typedef enum {
     TYPE_FUNCTION,
     TYPE_INITIALIZER,
     TYPE_METHOD,
-    TYPE_SCRIPT
+    TYPE_SCRIPT,
+    TYPE_ANON,
 } FunctionType;
 
 typedef struct Loop {

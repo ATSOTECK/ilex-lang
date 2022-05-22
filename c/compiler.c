@@ -245,14 +245,18 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
 
     parser->vm->compiler = compiler;
 
-    if (type != TYPE_SCRIPT) {
+    if (type == TYPE_ANON) {
+        compiler->function->name = copyString(parser->vm, "<anonymous>", 11);
+    } else if (type != TYPE_SCRIPT) {
         compiler->function->name = copyString(parser->vm, parser->previous.start, parser->previous.len);
+    } else {
+        compiler->function->name = NULL;
     }
 
     Local *local = &compiler->locals[compiler->localCount++];
     local->depth = 0;
     local->isCaptured = false;
-    if (type != TYPE_FUNCTION) {
+    if (type == TYPE_METHOD || type == TYPE_INITIALIZER) {
         local->name.start = "this";
         local->name.len = 4;
     } else {
@@ -395,7 +399,7 @@ static uint8_t argumentList(Compiler *compiler) {
             argCount++;
         } while (match(compiler, TK_COMMA));
     }
-
+    
     eat(compiler->parser, TK_RPAREN, "Expect ')' after arguments.");
     return argCount;
 }
@@ -853,9 +857,9 @@ static void dot(Compiler *compiler, bool canAssign) {
         emitByte(compiler, OP_DEC);
         emitByteShort(compiler, OP_SET_PROPERTY, name);
     } else if (match(compiler, TK_LPAREN)) {
-            uint8_t argCount = argumentList(compiler);
+            uint8_t argc = argumentList(compiler);
             emitByteShort(compiler, OP_INVOKE, name);
-            emitByte(compiler, argCount);
+            emitByte(compiler, argc);
     } else {
         emitByteShort(compiler, OP_GET_PROPERTY, name);
     }
@@ -906,6 +910,50 @@ static void dec(Compiler *compiler, bool canAssign) {
     emitByte(compiler, OP_DEC);
 }
 
+static void anon(Compiler *compiler, bool canAssign) {
+    Compiler functionCompiler;
+    initCompiler(compiler->parser, &functionCompiler, compiler, TYPE_ANON);
+    beginScope(&functionCompiler);
+    
+    if (match(&functionCompiler, TK_ARROW)) {
+        if (match(&functionCompiler, TK_LBRACE)) {
+            block(&functionCompiler);
+        } else {
+            expression(&functionCompiler);
+            emitByte(&functionCompiler, OP_RETURN);
+        }
+    } else if (match(&functionCompiler, TK_BIT_OR)) {
+        if (!check(&functionCompiler, TK_BIT_OR)) {
+            do {
+                functionCompiler.function->arity++;
+                if (functionCompiler.function->arity > 255) {
+                    errorAtCurrent(functionCompiler.parser, "Can't have more than 255 parameters.");
+                }
+            
+                uint16_t constant = parseVariable(&functionCompiler, "Expect parameter name.");
+                defineVariable(&functionCompiler, constant, false); // TODO: Should this be true?
+            } while (match(&functionCompiler, TK_COMMA));
+        }
+        eat(functionCompiler.parser, TK_BIT_OR, "Expect '|' after parameters.");
+        
+        if (match(&functionCompiler, TK_ARROW)) {
+            eat(functionCompiler.parser, TK_LBRACE, "Expect '{' after '->'.");
+            block(&functionCompiler);
+        } else {
+            expression(&functionCompiler);
+            emitByte(&functionCompiler, OP_RETURN);
+        }
+    }
+    
+    ObjFunction *function = endCompiler(&functionCompiler);
+    emitByteShort(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
+    
+    for (int i = 0; i < function->upvalueCount; ++i) {
+        emitByte(compiler, functionCompiler.upvalues[i].isLocal ? 1 : 0);
+        emitShort(compiler, functionCompiler.upvalues[i].index);
+    }
+}
+
 //                              prefix, infix, precedence
 ParseRule rules[] = {
         [TK_LPAREN]           = {grouping, call,    PREC_CALL},
@@ -954,7 +1002,8 @@ ParseRule rules[] = {
         [TK_ELSE]             = {NULL,     NULL,    PREC_NONE},
         [TK_FALSE]            = {literal,  NULL,    PREC_NONE},
         [TK_FOR]              = {NULL,     NULL,    PREC_NONE},
-        [TK_FN]               = {NULL,     NULL,    PREC_NONE},
+        [TK_FN]               = {anon,     NULL,    PREC_NONE},
+        [TK_ARROW]            = {NULL,     NULL,    PREC_NONE},
         [TK_IF]               = {NULL,     NULL,    PREC_NONE},
         [TK_NULL]             = {literal,  NULL,    PREC_NONE},
         [TK_OR]               = {NULL,     or_,     PREC_OR},
@@ -1397,7 +1446,7 @@ static void forStatement(Compiler *compiler) {
 static void assertStatement(Compiler *compiler) {
     eat(compiler->parser, TK_LPAREN, "Expect '(' after 'assert'.");
 
-    int constant = addConstant(compiler->parser->vm, currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, "", 0)));
+    int constant = addConstant(compiler->parser->vm, currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, "no msg", 6)));
 
     expression(compiler);
 

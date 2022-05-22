@@ -138,4 +138,23 @@ assert(small == small)
 tmp ::= [1, 2, 3]
 assert(small == tmp)
 
+mostlyEven ::= [1, 2, 3, 4, 6, 8, 10]
+println('mosly even', mostlyEven)
+mostlyEven.forEach(fn |num| println('This is', num))
+println('square', mostlyEven.map(fn |x| x ** 2))
+println('even', mostlyEven.filter(fn |x| x % 2 == 0))
+println('odd', mostlyEven.filter(fn |x| -> {
+    return x % 2 != 0
+}))
+
+// Not array related but I figured I'd test all anon functions at once.
+anon := fn -> println('Hi from anon function!')
+anon()
+
+anon = fn -> {
+    println('1st', mostlyEven)
+    println('2nd', tmp)
+}
+anon()
+
 println('Done!')

@@ -465,7 +465,11 @@ static Value arrayForEach(VM *vm, int argc, Value *args) {
     ObjClosure *closure = AS_CLOSURE(args[1]);
 
     for (int i = 0; i < array->data.count; ++i) {
-        callFromScript(vm, closure, 1, &array->data.values[i]);
+        Value value = callFromScript(vm, closure, 1, &array->data.values[i]);
+        
+        if (IS_ERR(value)) {
+            return ERROR_VAL;
+        }
     }
 
     return ZERO_VAL;
@@ -490,6 +494,11 @@ static Value arrayMap(VM *vm, int argc, Value *args) {
 
     for (int i = 0; i < array->data.count; ++i) {
         Value value = callFromScript(vm, closure, 1, &array->data.values[i]);
+        
+        if (IS_ERR(value)) {
+            return ERROR_VAL;
+        }
+        
         writeValueArray(vm, &ret->data, value);
     }
 
@@ -514,8 +523,20 @@ static Value arrayFilter(VM *vm, int argc, Value *args) {
     ObjArray *ret = newArray(vm);
     
     for (int i = 0; i < array->data.count; ++i) {
-        bool res = AS_BOOL(callFromScript(vm, closure, 1, &array->data.values[i]));
-        if (res) {
+        Value value = callFromScript(vm, closure, 1, &array->data.values[i]);
+        
+        if (IS_ERR(value)) {
+            return ERROR_VAL;
+        }
+        
+        if (!IS_BOOL(value)) {
+            char *type = valueType(value);
+            runtimeError(vm, "Function filter() expected return type 'bool' but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+        
+        if (AS_BOOL(value)) {
             writeValueArray(vm, &ret->data, array->data.values[i]);
         }
     }

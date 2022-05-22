@@ -20,10 +20,6 @@ static int constantInstruction(const char *name, Chunk *chunk, int offset) {
     uint16_t constant = (uint16_t)(chunk->code[offset + 1] << 8);
     constant |= chunk->code[offset + 2];
 
-    if (constant == 38) {
-        printf("");
-    }
-
     printf("%-16s %4d '", name, constant);
     printValue(chunk->constants.values[constant]);
     printf("'\n");
@@ -129,7 +125,9 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_SUPER_INVOKE: return invokeInstruction("OP_SUPER_INVOKE", chunk, offset);
         case OP_CLOSURE: {
             offset++;
-            uint8_t constant = chunk->code[offset];
+            uint16_t constant = (uint16_t)(chunk->code[offset] << 8);
+            constant |= chunk->code[offset + 1];
+            offset += 2;
             printf("%-16s %4d ", "OP_CLOSURE", constant);
             printValue(chunk->constants.values[constant]);
             printf("\n");
@@ -137,7 +135,8 @@ int disassembleInstruction(Chunk *chunk, int offset) {
             ObjFunction *function = AS_FUNCTION(chunk->constants.values[constant]);
             for (int i = 0; i < function->upvalueCount; ++i) {
                 int isLocal = chunk->code[offset++];
-                int index = chunk->code[offset++];
+                int index = (int)(chunk->code[offset++] << 8);
+                index |= chunk->code[offset++ + 1];
                 printf("%04d      |                     %s %d\n", offset - 2, isLocal ? "local" : "upvalue", index);
             }
 
