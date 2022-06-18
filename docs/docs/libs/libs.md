@@ -46,7 +46,7 @@ println(sqrt2 == sqrt(2)) // true
 Or you can use all of them.
 
 ```ts
-use { * } from <io>
+use * from <io>
 
 num := getNumber("Enter a number: ")
 println("You entered", num)

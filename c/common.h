@@ -35,4 +35,19 @@
 #   define I_MAC
 #endif
 
+#ifdef I_WIN
+#   define PATH_SEPARATOR '\\'
+#   define NORMAL_SEPARATOR '/'
+#else
+#   define PATH_SEPARATOR '/'
+#endif
+
+#ifdef NORMAL_SEPARATOR
+#   define IS_SEP(x) ((x) == PATH_SEPARATOR || (x) == NORMAL_SEPARATOR)
+#else
+#   define IS_SEP(x) (x == PATH_SEPARATOR)
+#endif
+
+#define I_MAX_PATH 4096
+
 #endif //C_COMMON_H

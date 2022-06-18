@@ -63,7 +63,7 @@ static void errorAt(Parser *parser, Token* token, const char* message) {
     }
 
     parser->panicMode = true;
-    fprintf(stderr, "[line %d] \033[31mError\033[m", token->line);
+    fprintf(stderr, "%s [line %d] \033[31mError\033[m", parser->script->name->str, token->line);
 
     if (token->type == TK_EOF) {
         fprintf(stderr, " at end");
@@ -226,7 +226,7 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     compiler->type = type;
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
-    compiler->function = newFunction(parser->vm);
+    compiler->function = newFunction(parser->vm, parser->script);
     compiler->currentLibName = 0;
     compiler->currentScript = NULL;
     compiler->loop = NULL;
@@ -410,7 +410,7 @@ static ObjFunction *endCompiler(Compiler *compiler) {
 
 #ifdef DEBUG_PRINT_CODE
     if (!compiler->parser->hadError) {
-        disassembleChunk(currentChunk(compiler), function->name != NULL ? function->name->str : "<script>");
+        disassembleChunk(currentChunk(compiler), function->name != NULL ? function->name->str : function->script->name->str);
     }
 #endif
 
@@ -1667,6 +1667,17 @@ static void useStatement(Compiler *compiler, bool isFrom) {
             defineVariable(compiler, compiler->currentLibName, false);
         }
         eat(compiler->parser, TK_GR, "Expect '>' after library name.");
+    } else if (match(compiler, TK_STRING)) {
+        uint16_t useConstant = makeConstant(compiler, OBJ_VAL(copyString(compiler->parser->vm, compiler->parser->previous.start + 1,
+                                                                    compiler->parser->previous.len - 2)));
+        emitByteShort(compiler, OP_USE, useConstant);
+        emitByte(compiler, OP_POP);
+        
+        if (match(compiler, TK_AS)) {
+            uint16_t useName = parseVariable(compiler, "Expect use name.");
+            emitByte(compiler, OP_USE_VAR);
+            defineVariable(compiler, useName, false); // TODO(Skyler): Should this be true?
+        }
     } else if (match(compiler, TK_LBRACE)) {
         uint16_t variables[255];
         Token tokens[255];
@@ -1931,7 +1942,7 @@ static void statement(Compiler *compiler) {
     }
 }
 
-ObjFunction *compile(VM *vm, const char *source) {
+ObjFunction *compile(VM *vm, ObjScript *script,  const char *source) {
     Parser parser;
     parser.vm = vm;
     parser.hadError = false;

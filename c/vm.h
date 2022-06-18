@@ -52,18 +52,18 @@ struct VM_ {
 };
 
 typedef enum {
-    INTERPRET_GOOD          = 0x0B00B135,
-    INTERPRET_COMPILE_ERROR = 0xBAADF00D,
-    INTERPRET_RUNTIME_ERROR = 0xDEADDEAD,
-    INTERPRET_ASSERT_ERROR  = 0xBAADC0DE,
-    INTERPRET_PANIC_ERROR   = 0xBAAAAAAD
+    INTERPRET_GOOD          = (int)0x0B00B135,
+    INTERPRET_COMPILE_ERROR = (int)0xBAADF00D,
+    INTERPRET_RUNTIME_ERROR = (int)0xDEADDEAD,
+    INTERPRET_ASSERT_ERROR  = (int)0xBAADC0DE,
+    INTERPRET_PANIC_ERROR   = (int)0xBAAAAAAD
 } InterpretResult;
 
 VM *initVM(const char *path);
 void freeVM(VM *vm);
 
 void runtimeError(VM *vm, const char *format, ...);
-InterpretResult interpret(VM *vm, const char *source);
+InterpretResult interpret(VM *vm, const char *scriptName, const char *source);
 void defineNative(VM *vm, const char *name, NativeFn function, Table *table);
 void defineNativeValue(VM *vm, const char *name, Value value, Table *table);
 

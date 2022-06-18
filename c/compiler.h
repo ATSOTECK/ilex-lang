@@ -15,6 +15,7 @@ typedef struct {
     Token next;
     bool hadError;
     bool panicMode;
+    ObjScript *script;
 } Parser;
 
 typedef struct {
@@ -68,7 +69,7 @@ typedef struct Compiler {
     char *withVarName;
 } Compiler;
 
-ObjFunction *compile(VM *vm, const char *source);
+ObjFunction *compile(VM *vm, ObjScript *script, const char *source);
 void markCompilerRoots(VM *vm);
 
 #endif //__C_COMPILER_H__

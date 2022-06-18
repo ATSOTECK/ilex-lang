@@ -211,7 +211,13 @@ static IlexTokenType identType() {
                 }
             }
         case 'i': return checkKeyword(1, 1, "f", TK_IF);
-        case 'n': return checkKeyword(1, 3, "ull", TK_NULL);
+        case 'n':
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'a': return checkKeyword(2, 7, "mespace", TK_NAMESPACE);
+                    case 'u': return checkKeyword(2, 2, "ll", TK_NULL);
+                }
+            }
         case 'o': return checkKeyword(1, 1, "r", TK_OR);
         case 'p': {
             int tk = checkKeyword(1, 4, "anic", TK_PANIC);

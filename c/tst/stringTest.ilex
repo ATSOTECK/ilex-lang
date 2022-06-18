@@ -22,6 +22,12 @@ assert(str.contains("a"))
 
 assert('yeet' == "yeet")
 
+count ::= 10
+str = 'You have ${count + 2} items.'
+println(str)
+
+println('hello' + ' there')
+
 println("String test passed in", milliseconds(), "ms!")
 
 assert("yeet" == "YEET", "This should fail.")

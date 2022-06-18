@@ -86,6 +86,7 @@ typedef enum {
     TK_FROM,
     TK_GOTO, // TODO
     TK_IF,
+    TK_NAMESPACE,
     TK_NULL,
     TK_OR,
     TK_PANIC,

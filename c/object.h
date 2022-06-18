@@ -74,6 +74,7 @@ typedef struct {
     int upvalueCount;
     Chunk chunk;
     ObjString *name;
+    ObjScript *script;
 } ObjFunction;
 
 typedef Value (*NativeFn)(VM *vm, int argCount, Value *args);
@@ -143,7 +144,7 @@ typedef struct {
 ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
 ObjClass *newClass(VM *vm, ObjString *name);
 ObjClosure *newClosure(VM *vm, ObjFunction *function);
-ObjFunction *newFunction(VM *vm);
+ObjFunction *newFunction(VM *vm, ObjScript *script);
 ObjInstance *newInstance(VM *vm, ObjClass *objClass);
 ObjScript *newScript(VM *vm, ObjString* name);
 ObjNative *newNative(VM *vm, NativeFn function);

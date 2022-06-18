@@ -9,6 +9,7 @@
 #include "debug.h"
 #include "object.h"
 #include "memory.h"
+#include "util.h"
 
 #include "libs/lib_array.h"
 #include "libs/lib_builtIn.h"
@@ -901,6 +902,23 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 tableSet(vm, &enumObj->values, READ_STRING(), value);
                 pop(vm);
             } break;
+            case OP_USE: {
+                ObjString *filename = READ_STRING();
+                Value scriptVal;
+                
+                if (tableGet(&vm->scripts, filename, &scriptVal)) {
+                    vm->lastScript = AS_SCRIPT(scriptVal);
+                    push(vm, NULL_VAL);
+                    break;
+                }
+                
+                char path[I_MAX_PATH];
+                if (!resolvePath(frame->closure->function->script->path->str, filename->str, path)) {
+                    runtimeError(vm, "Coule not open file '%s'.", filename->str);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+            } break;
             case OP_USE_BUILTIN: {
                 int idx = READ_BYTE();
                 ObjString *fileName = READ_STRING();
@@ -1304,8 +1322,17 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
 #undef BINARY_OP
 }
 
-InterpretResult interpret(VM *vm, const char *source) {
-    ObjFunction *function = compile(vm, source);
+InterpretResult interpret(VM *vm, const char *scriptName, const char *source) {
+    ObjString *name = copyString(vm, scriptName, (int)strlen(scriptName));
+    push(vm, OBJ_VAL(name));
+    ObjScript *script = newScript(vm, name);
+    pop(vm);
+    
+    push(vm, OBJ_VAL(script));
+    script->path = getDir(vm, scriptName);
+    pop(vm);
+    
+    ObjFunction *function = compile(vm, script, source);
     if (function == NULL) {
         return INTERPRET_COMPILE_ERROR;
     }

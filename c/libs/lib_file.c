@@ -129,6 +129,22 @@ static Value fileReadln(VM *vm, int argc, Value *args) {
     return NULL_VAL;
 }
 
+static Value fileReadChar(VM *vm, int argc, Value *args) {
+    ObjFile *file = AS_FILE(args[0]);
+    
+    if (file->file == NULL) {
+        runtimeError(vm, "File is not open.");
+        return ERROR_VAL;
+    }
+    
+    int c = fgetc(file->file);
+    char *cStr = ALLOCATE(vm, char, 2);
+    cStr[0] = (char)c;
+    cStr[1] = '\0';
+    
+    return OBJ_VAL(takeString(vm, cStr, 2));
+}
+
 static Value fileSeek(VM *vm, int argc, Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function seek() expected 1 or 2 arguments but got '%d'.", argc);
@@ -317,6 +333,7 @@ void defineFileFunctions(VM *vm) {
     defineNative(vm, "writeln", fileWriteLine, &vm->fileFunctions);
     defineNative(vm, "read", fileRead, &vm->fileFunctions);
     defineNative(vm, "readln", fileReadln, &vm->fileFunctions);
+    defineNative(vm, "readChar", fileReadChar, &vm->fileFunctions);
     
     defineNative(vm, "seek", fileSeek, &vm->fileFunctions);
     defineNative(vm, "tell", fileTell, &vm->fileFunctions);
