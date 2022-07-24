@@ -213,7 +213,7 @@ static bool call(VM *vm, ObjClosure *closure, int argc) {
     }
 
     if (vm->frameCount == FRAMES_MAX) {
-        runtimeError(vm, "Stack overflow.");
+        runtimeError(vm, "Stack overflow. (FRAMES_MAX)");
         return false;
     }
 
@@ -248,7 +248,10 @@ static bool callValue(VM *vm, Value callee, int argc) {
                 return true;
             }
             // TODO: OBJ_FUNCTION
-            case OBJ_CLOSURE: return call(vm, AS_CLOSURE(callee), argc);
+            case OBJ_CLOSURE: {
+                vm->stackTop[-argc - 1] = callee;
+                return call(vm, AS_CLOSURE(callee), argc);
+            }
             case OBJ_NATIVE: {
                 NativeFn native = AS_NATIVE(callee);
                 Value result = native(vm, argc, vm->stackTop - argc);
@@ -447,11 +450,12 @@ static void concat(VM *vm) {
     push(vm, OBJ_VAL(res));
 }
 
-InterpretResult run(VM *vm, int frameIndex, Value *value) {
+InterpretResult run(VM *vm, int frameIndex, Value *val) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1];
+    register uint8_t *ip = frame->ip;
 
-#define READ_BYTE() (*frame->ip++)
-#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+#define READ_BYTE() (*ip++)
+#define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 #define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_SHORT()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op, type) \
@@ -474,7 +478,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
             printf(" ]");
         }
         printf("\n");
-        disassembleInstruction(&frame->closure->function->chunk, (int)(frame->ip - frame->closure->function->chunk.code));
+        disassembleInstruction(&frame->closure->function->chunk, (int)(ip - frame->closure->function->chunk.code));
 #endif
         uint8_t instruction;
         switch (instruction = READ_BYTE()) {
@@ -495,8 +499,18 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 ObjString *name = READ_STRING();
                 Value value;
                 if (!tableGet(&vm->globals, name, &value)) {
-                    runtimeError(vm, "Undefined variable '%s'.", name->str);
+                    runtimeError(vm, "GET_GLOBAL: Undefined variable '%s'.", name->str);
 
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                push(vm, value);
+            } break;
+            case OP_GET_SCRIPT: {
+                ObjString *name = READ_STRING();
+                Value value;
+                if (!tableGet(&frame->closure->function->script->values, name, &value)) {
+                    runtimeError(vm, "GET_SCRIPT: Undefined variable '%s'.", name->str);
+    
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 push(vm, value);
@@ -597,6 +611,11 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 tableSet(vm, &vm->globals, name, peek(vm, 0));
                 pop(vm);
             } break;
+            case OP_DEFINE_SCRIPT: {
+                ObjString *name = READ_STRING();
+                tableSet(vm, &frame->closure->function->script->values, name, peek(vm, 0));
+                pop(vm);
+            } break;
             case OP_SET_LOCAL: {
                 uint16_t slot = READ_SHORT();
                 frame->slots[slot] = peek(vm, 0);
@@ -605,7 +624,15 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 ObjString *name = READ_STRING();
                 if (tableSet(vm, &vm->globals, name, peek(vm, 0))) {
                     tableDelete(&vm->globals, name);
-                    runtimeError(vm, "Undefined variable '%s'.", name->str);
+                    runtimeError(vm, "SET_GLOBAL: Undefined variable '%s'.", name->str);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+            } break;
+            case OP_SET_SCRIPT: {
+                ObjString *name = READ_STRING();
+                if (tableSet(vm, &frame->closure->function->script->values, name, peek(vm, 0))) {
+                    tableDelete(&frame->closure->function->script->values, name);
+                    runtimeError(vm, "SET_SCRIPT: Undefined variable '%s'.", name->str);
                     return INTERPRET_RUNTIME_ERROR;
                 }
             } break;
@@ -614,16 +641,22 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 *frame->closure->upvalues[slot]->location = peek(vm, 0);
             } break;
             case OP_SET_PROPERTY: {
-                if (!IS_INSTANCE(peek(vm, 1))) {
+                if (IS_SCRIPT(peek(vm, 1))) {
+                    ObjScript *script = AS_SCRIPT(peek(vm, 1));
+                    tableSet(vm, &script->values, READ_STRING(), peek(vm, 0));
+                    Value value = pop(vm);
+                    pop(vm);  // Script.
+                    push(vm, value);
+                } else if (IS_INSTANCE(peek(vm, 1))) {
+                    ObjInstance *instance = AS_INSTANCE(peek(vm, 1));
+                    tableSet(vm, &instance->fields, READ_STRING(), peek(vm, 0));
+                    Value value = pop(vm);
+                    pop(vm);  // Instance.
+                    push(vm, value);
+                } else {
                     runtimeError(vm, "Only instances have fields.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
-
-                ObjInstance *instance = AS_INSTANCE(peek(vm, 1));
-                tableSet(vm, &instance->fields, READ_STRING(), peek(vm, 0));
-                Value value = pop(vm);
-                pop(vm);  // Instance.
-                push(vm, value);
             } break;
             case OP_EQ: {
                 Value a = pop(vm);
@@ -730,55 +763,61 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
             } break;
             case OP_JUMP: {
                 uint16_t offset = READ_SHORT();
-                frame->ip += offset;
+                ip += offset;
             } break;
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
                 if (isFalsy(peek(vm, 0))) {
-                    frame->ip += offset;
+                    ip += offset;
                 }
             } break;
             case OP_JUMP_IF_TRUE: {
                 uint16_t offset = READ_SHORT();
                 if (!isFalsy(peek(vm, 0))) {
-                    frame->ip += offset;
+                    ip += offset;
                 }
             } break;
             case OP_JUMP_DO_WHILE: {
                 uint16_t offset = READ_SHORT();
                 if (!isFalsy(peek(vm, 0))) {
-                    frame->ip -= offset;
+                    ip -= offset;
                 }
             } break;
             case OP_LOOP: {
                 uint16_t offset = READ_SHORT();
-                frame->ip -= offset;
+                ip -= offset;
             } break;
             case OP_CALL: {
                 int argc = READ_BYTE();
+                frame->ip = ip;
                 if (!callValue(vm, peek(vm, argc), argc)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 frame = &vm->frames[vm->frameCount - 1];
+                ip = frame->ip;
             } break;
             case OP_INVOKE: {
                 ObjString *method = READ_STRING();
                 int argc = READ_BYTE();
+                frame->ip = ip;
                 if (!invoke(vm, method, argc)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
                 frame = &vm->frames[vm->frameCount - 1];
+                ip = frame->ip;
             } break;
             case OP_SUPER_INVOKE: {
                 ObjString *method = READ_STRING();
                 int argc = READ_BYTE();
+                frame->ip = ip;
                 ObjClass *superclass = AS_CLASS(pop(vm));
                 if (!invokeFromClass(vm, superclass, method, argc)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
                 frame = &vm->frames[vm->frameCount - 1];
+                ip = frame->ip;
             } break;
             case OP_CLOSURE: {
                 ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
@@ -808,7 +847,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 // A frameIndex of -1 indicates that this is running in a normal state.
                 if (vm->frameCount == 0 || (frameIndex != -1 && &vm->frames[vm->frameCount - 1] == &vm->frames[frameIndex])) {
                     if (frameIndex != -1) {
-                        *value = result;
+                        *val = result;
                     }
 
                     pop(vm);
@@ -818,6 +857,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 vm->stackTop = frame->slots;
                 push(vm, result);
                 frame = &vm->frames[vm->frameCount - 1];
+                ip = frame->ip;
             } break;
             case OP_CLASS: {
                 push(vm, OBJ_VAL(newClass(vm, READ_STRING())));
@@ -875,7 +915,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 uint16_t offset = READ_SHORT();
                 Value a = pop(vm);
                 if (!vm->fallThrough && !valuesEqual(peek(vm,0), a)) {
-                    frame->ip += offset;
+                    ip += offset;
                 } else {
                     pop(vm); // switch expression.
                     vm->fallThrough = false;
@@ -885,7 +925,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                 uint16_t offset = READ_SHORT();
                 Value a = pop(vm);
                 if (!vm->fallThrough && !valuesEqual(peek(vm,0), a)) {
-                    frame->ip += offset;
+                    ip += offset;
                 } else {
                     pop(vm); // switch expression.
                     vm->fallThrough = true;
@@ -918,6 +958,47 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
+                size_t len = strlen(path);
+                if (strcmp(path + len - 5, ".ilex") != 0) {
+                    strcat_s(path, I_MAX_PATH, ".ilex");
+                    len += 5;
+                }
+                
+                char *src = readFile(path);
+                if (src == NULL) {
+                    runtimeError(vm, "Could not open file '%s'.", filename->str);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                
+                ObjString *pathStr = copyString(vm, path, len);
+                push(vm, OBJ_VAL(pathStr));
+                ObjScript *script = newScript(vm, pathStr);
+                script->path = dirName(vm, path, len);
+                vm->lastScript = script;
+                pop(vm);
+                
+                push(vm, OBJ_VAL(script));
+                ObjFunction *function = compile(vm, script, src);
+                pop(vm);
+    
+                FREE_ARRAY(vm, char, src, strlen(src));
+                
+                if (function == NULL) {
+                    return INTERPRET_COMPILE_ERROR;
+                }
+                
+                push(vm, OBJ_VAL(function));
+                ObjClosure *closure = newClosure(vm, function);
+                pop(vm);
+                push (vm, OBJ_VAL(closure));
+                
+                frame->ip = ip;
+                call(vm, closure, 0);
+                frame = &vm->frames[vm->frameCount - 1];
+                ip = frame->ip;
+            } break;
+            case OP_USE_VAR: {
+                push(vm, OBJ_VAL(vm->lastScript));
             } break;
             case OP_USE_BUILTIN: {
                 int idx = READ_BYTE();
@@ -965,6 +1046,9 @@ InterpretResult run(VM *vm, int frameIndex, Value *value) {
                     push(vm, libVar);
                 }
             } break;
+            case OP_USE_END:
+                vm->lastScript = frame->closure->function->script;
+                break;
             case OP_BREAK: break; // lol
             case OP_NEW_ARRAY: {
                 int count = READ_BYTE();

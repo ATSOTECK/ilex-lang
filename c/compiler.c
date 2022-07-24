@@ -375,17 +375,18 @@ static uint16_t parseVariable(Compiler *compiler, const char *errorMessage) {
 }
 
 static void defineVariable(Compiler *compiler, uint16_t global, bool isConst) {
-    if (compiler->scopeDepth > 0) {
+    if (compiler->scopeDepth == 0) {
+        if (isConst) {
+            tableSet(compiler->parser->vm, &compiler->parser->vm->consts, AS_STRING(currentChunk(compiler)->constants.values[global]), NULL_VAL);
+        }
+    
+        emitByteShort(compiler, OP_DEFINE_SCRIPT, global);
+    } else {
         compiler->locals[compiler->localCount - 1].depth = compiler->scopeDepth;
         compiler->locals[compiler->localCount - 1].isConst = isConst;
 
         return;
     }
-
-    if (isConst) {
-        tableSet(compiler->parser->vm, &compiler->parser->vm->consts, AS_STRING(currentChunk(compiler)->constants.values[global]), NULL_VAL);
-    }
-    emitByteShort(compiler, OP_DEFINE_GLOBAL, global);
 }
 
 static uint8_t argumentList(Compiler *compiler) {
@@ -652,6 +653,12 @@ static void checkIfConst(Compiler *compiler, uint8_t setOp, int arg) {
         if (tableGet(&compiler->parser->vm->consts, name, &_)) {
             error(compiler->parser, "Cannot assign to const variable '%s'.", name->str);
         }
+    } else if (setOp == OP_SET_SCRIPT) {
+        Value _;
+        ObjString *name = AS_STRING(currentChunk(compiler)->constants.values[arg]);
+        if (tableGet(&compiler->parser->vm->consts, name, &_)) {
+            error(compiler->parser, "Cannot assign to const variable '%s'.", name->str);
+        }
     }
 }
 
@@ -667,8 +674,15 @@ static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
         setOp = OP_SET_UPVALUE;
     } else {
         arg = (int)identifierConstant(compiler, &name);
-        getOp = OP_GET_GLOBAL;
-        setOp = OP_SET_GLOBAL;
+        ObjString *str = copyString(compiler->parser->vm, name.start, name.len);
+        Value value;
+        if (tableGet(&compiler->parser->vm->globals, str, &value)) {
+            getOp = OP_GET_GLOBAL;
+            canAssign = false;
+        } else {
+            getOp = OP_GET_SCRIPT;
+            setOp = OP_SET_SCRIPT;
+        }
     }
 
 #define EMIT_OP_EQ(token) do { \
@@ -1328,6 +1342,9 @@ static int getArgCount(const uint8_t *code, const ValueArray constants, int ip) 
         case OP_METHOD:
         case OP_USE:
         case OP_MULTI_CASE:
+        case OP_GET_SCRIPT:
+        case OP_SET_SCRIPT:
+        case OP_DEFINE_SCRIPT:
             return 1;
 
         case OP_JUMP:
@@ -1668,8 +1685,9 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         }
         eat(compiler->parser, TK_GR, "Expect '>' after library name.");
     } else if (match(compiler, TK_STRING)) {
-        uint16_t useConstant = makeConstant(compiler, OBJ_VAL(copyString(compiler->parser->vm, compiler->parser->previous.start + 1,
-                                                                    compiler->parser->previous.len - 2)));
+        uint16_t useConstant = makeConstant(compiler, OBJ_VAL(copyString(compiler->parser->vm,
+                                                                         compiler->parser->previous.start + 1,
+                                                                         compiler->parser->previous.len - 2)));
         emitByteShort(compiler, OP_USE, useConstant);
         emitByte(compiler, OP_POP);
         
@@ -1767,7 +1785,8 @@ static void useStatement(Compiler *compiler, bool isFrom) {
             }
         }
     }
-
+    
+    emitByte(compiler, OP_USE_END);
     match(compiler, TK_SEMICOLON);
 }
 
@@ -1947,6 +1966,7 @@ ObjFunction *compile(VM *vm, ObjScript *script,  const char *source) {
     parser.vm = vm;
     parser.hadError = false;
     parser.panicMode = false;
+    parser.script = script;
 
     initLexer(source);
     Compiler compiler;

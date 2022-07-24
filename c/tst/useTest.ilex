@@ -1,0 +1,10 @@
+use 'hello' as hi
+
+hi.hello()
+
+println(hi.someVar)
+
+hi.someVar = 69
+println(hi.someVar)
+
+println('Passed!')

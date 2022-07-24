@@ -94,11 +94,14 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_GET_PROPERTY: return constantInstruction("OP_GET_PROPERTY", chunk, offset);
         case OP_GET_PROPERTY_NO_POP: return constantInstruction("OP_GET_PROPERTY_NO_POP", chunk, offset);
         case OP_GET_SUPER: return constantInstruction("OP_GET_SUPER", chunk, offset);
+        case OP_GET_SCRIPT: return constantInstruction("OP_GET_SCRIPT", chunk, offset);
         case OP_DEFINE_GLOBAL: return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);
+        case OP_DEFINE_SCRIPT: return constantInstruction("OP_DEFINE_SCRIPT", chunk, offset);
         case OP_SET_LOCAL: return shortInstruction("OP_SET_LOCAL", chunk, offset);
         case OP_SET_GLOBAL: return constantInstruction("OP_SET_GLOBAL", chunk, offset);
         case OP_SET_UPVALUE: return shortInstruction("OP_SET_UPVALUE", chunk, offset);
         case OP_SET_PROPERTY: return constantInstruction("OP_SET_PROPERTY", chunk, offset);
+        case OP_SET_SCRIPT: return constantInstruction("OP_SET_SCRIPT", chunk, offset);
         case OP_EQ: return simpleInstruction("OP_EQ", offset);
         case OP_NOTEQ: return simpleInstruction("OP_NOTEQ", offset);
         case OP_GR: return simpleInstruction("OP_GR", offset);
@@ -149,7 +152,10 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_METHOD: return constantInstruction("OP_METHOD", chunk, offset);
         case OP_ASSERT: return constantInstruction("OP_ASSERT", chunk, offset);
         case OP_NEW_ARRAY: return byteInstruction("OP_NEW_ARRAY", chunk, offset);
+        case OP_USE: return constantInstruction("OP_USE", chunk, offset);
+        case OP_USE_VAR: return simpleInstruction("OP_USE_VAR", offset);
         case OP_USE_BUILTIN: return useBuiltinInstruction("OP_USE_BUILTIN", chunk, offset);
+        case OP_USE_END: return simpleInstruction("OP_USE_END", offset);
         case OP_MULTI_CASE: return byteInstruction("OP_MULTI_CASE", chunk, offset);
         case OP_CMP_JMP: return jumpInstruction("OP_CMP_JMP", 1, chunk, offset);
         case OP_CMP_JMP_FALL: return jumpInstruction("OP_CMP_JMP_FALL", 1, chunk, offset);

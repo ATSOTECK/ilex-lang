@@ -1,0 +1,11 @@
+
+fn hello() {
+    println('hello')
+}
+
+fn hello2() {
+    println('hello2')
+}
+
+someVar := 12
+someConst ::= 'ya yeet'

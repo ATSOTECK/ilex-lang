@@ -123,7 +123,7 @@ ObjString *dirName(VM *vm, const char *path, size_t len) {
 
 ObjString *getDir(VM *vm, const char *source) {
     char res[I_MAX_PATH];
-    if (resolvePath(".", source, res)) {
+    if (!resolvePath(".", source, res)) {
         runtimeError(vm, "Unable to resolve path '%s'.", source);
         exit(1);
     }

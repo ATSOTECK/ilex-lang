@@ -75,6 +75,7 @@ typedef enum {
     OP_USE_VAR,
     OP_USE_BUILTIN,
     OP_USE_BUILTIN_VAR,
+    OP_USE_END,
     OP_BREAK,
     OP_NEW_ARRAY,
     OP_EMPTY,
@@ -84,6 +85,9 @@ typedef enum {
     OP_INDEX_PUSH,
     OP_OPEN_FILE,
     OP_CLOSE_FILE,
+    OP_GET_SCRIPT,
+    OP_SET_SCRIPT,
+    OP_DEFINE_SCRIPT,
 } OpCode;
 
 typedef struct {
