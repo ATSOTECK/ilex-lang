@@ -14,6 +14,7 @@
 #include "libs/lib_array.h"
 #include "libs/lib_builtIn.h"
 #include "libs/lib_file.h"
+#include "libs/lib_map.h"
 #include "libs/lib_natives.h"
 #include "libs/lib_string.h"
 
@@ -136,6 +137,7 @@ VM *initVM(const char *path) {
     initTable(&vm->stringFunctions);
     initTable(&vm->arrayFunctions);
     initTable(&vm->fileFunctions);
+    initTable(&vm->mapFunctions);
 
     vm->initString = NULL;
     vm->scriptName = NULL;
@@ -148,6 +150,7 @@ VM *initVM(const char *path) {
     defineStringFunctions(vm);
     defineArrayFunctions(vm);
     defineFileFunctions(vm);
+    defineMapFunctions(vm);
 
     return vm;
 }
@@ -159,6 +162,7 @@ void freeVM(VM *vm) {
     freeTable(vm, &vm->stringFunctions);
     freeTable(vm, &vm->arrayFunctions);
     freeTable(vm, &vm->fileFunctions);
+    freeTable(vm, &vm->mapFunctions);
     vm->initString = NULL;
     vm->scriptName = NULL;
     freeObjects(vm);

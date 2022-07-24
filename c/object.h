@@ -26,6 +26,7 @@
 #define IS_ENUM(value)         isObjType(value, OBJ_ENUM)
 #define IS_ARRAY(value)        isObjType(value, OBJ_ARRAY)
 #define IS_FILE(value)         isObjType(value, OBJ_FILE)
+#define IS_MAP(value)          isObjType(value, OBJ_MAP)
 
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
 #define AS_CLASS(value)        ((ObjClass*)AS_OBJ(value))
@@ -39,6 +40,7 @@
 #define AS_ENUM(value)         ((ObjEnum*)AS_OBJ(value))
 #define AS_ARRAY(value)        ((ObjArray*)AS_OBJ(value))
 #define AS_FILE(value)         ((ObjFile*)AS_OBJ(value))
+#define AS_MAP(value)          ((ObjMap*)AS_OBJ(value))
 
 typedef enum {
     OBJ_BOUND_METHOD,
@@ -53,6 +55,7 @@ typedef enum {
     OBJ_ENUM,
     OBJ_ARRAY,
     OBJ_FILE,
+    OBJ_MAP,
 } ObjType;
 
 struct Obj {
@@ -141,6 +144,19 @@ typedef struct {
     char *flags;
 } ObjFile;
 
+typedef struct {
+    Value key;
+    Value value;
+    uint32_t psl;
+} MapItem;
+
+typedef struct {
+    Obj obj;
+    int count;
+    int capacity;
+    MapItem *items;
+} ObjMap;
+
 ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
 ObjClass *newClass(VM *vm, ObjString *name);
 ObjClosure *newClosure(VM *vm, ObjFunction *function);
@@ -156,9 +172,11 @@ ObjUpvalue *newUpvalue(VM *vm, Value *slot);
 ObjEnum *newEnum(VM *vm, ObjString *name);
 ObjArray *newArray(VM *vm);
 ObjFile *newFile(VM *vm);
+ObjMap *newMap(VM *vm);
 char *objectType(Value value);
 char *objectToString(Value value);
 char *arrayToString(ObjArray *array);
+char *mapToString(ObjMap *map);
 
 static inline bool isObjType(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;

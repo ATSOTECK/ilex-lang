@@ -198,6 +198,15 @@ ObjFile *newFile(VM *vm) {
     return ALLOCATE_OBJ(vm, ObjFile, OBJ_FILE);
 }
 
+ObjMap *newMap(VM *vm) {
+    ObjMap *map = ALLOCATE_OBJ(vm, ObjMap, OBJ_MAP);
+    map->count = 0;
+    map->capacity = -1;
+    map->items = NULL;
+    
+    return map;
+}
+
 static void printFunction(ObjFunction *function) {
     if (function->name == NULL) {
         printf("<script>");
@@ -309,6 +318,114 @@ static char *fileToString(ObjFile *file) {
     return fileStr;
 }
 
+char *mapToString(ObjMap *map) {
+    int count = 0;
+    int size = 0;
+    char *mapStr = malloc(sizeof(char) * size);
+    memcpy(mapStr, "{", 1);
+    int strLen = 1;
+    
+    for (int i = 0; i <= map->capacity; ++i) {
+        MapItem *item = &map->items[i];
+        if (IS_ERR(item->key)) {
+            continue;
+        }
+        
+        ++count;
+        
+        char *key;
+        int keySize;
+        
+        if (IS_STRING(item->key)) {
+            ObjString *str = AS_STRING(item->key);
+            key = str->str;
+            keySize = str->len;
+        } else {
+            key = valueToString(item->key);
+            keySize = (int)strlen(key);
+        }
+        
+        if (keySize > (size - strLen - keySize - 4)) {
+            if (keySize > size) {
+                size += keySize * 2 + 4;
+            } else {
+                size *= 2 + 4;
+            }
+            
+            char *buf = realloc(mapStr, sizeof(char) * size);
+            
+            if (buf == NULL) {
+                printf("Out of memory!\n");
+                exit(114);
+            }
+            
+            mapStr = buf;
+        }
+        
+        if (IS_STRING(item->key)) {
+            memcpy(mapStr + strLen, "\"", 1);
+            memcpy(mapStr + strLen + 1, key, keySize);
+            memcpy(mapStr + strLen + 1 + keySize, "\": ", 3);
+            strLen += keySize + 4;
+        } else {
+            memcpy(mapStr + strLen, key, keySize);
+            memcpy(mapStr + strLen + keySize, ": ", 2);
+            strLen += keySize + 2;
+            free(key);
+        }
+        
+        char *valueStr;
+        int valueSize;
+        
+        if (IS_STRING(item->value)) {
+            ObjString *str = AS_STRING(item->value);
+            valueStr = str->str;
+            valueSize = str->len;
+        } else {
+            valueStr = valueToString(item->value);
+            valueSize = (int)strlen(valueStr);
+        }
+    
+        if (valueSize > (size - strLen - valueSize - 4)) {
+            if (valueSize > size) {
+                size += valueSize * 2 + 6;
+            } else {
+                size *= 2 + 6;
+            }
+        
+            char *buf = realloc(mapStr, sizeof(char) * size);
+        
+            if (buf == NULL) {
+                printf("Out of memory!\n");
+                exit(114);
+            }
+        
+            mapStr = buf;
+        }
+        
+        if (IS_STRING(item->value)) {
+            memcpy(mapStr + strLen, "\"", 1);
+            memcpy(mapStr + strLen + 1, valueStr, valueSize);
+            memcpy(mapStr + strLen + 1 + valueSize, "\"", 1);
+            strLen += valueSize + 4;
+        } else {
+            memcpy(mapStr + strLen, valueStr, valueSize);
+            strLen += valueSize + 2;
+            free(valueStr);
+        }
+        
+        if (count != map->count) {
+            memcpy(mapStr + strLen, ", ", 2);
+            strLen += 2;
+        }
+    }
+    
+    memcpy(mapStr + strLen, "}", 1);
+    mapStr[strLen + 1] = '\0';
+    
+    return mapStr;
+}
+
 char *objectType(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD:
@@ -326,6 +443,7 @@ char *objectType(Value value) {
         case OBJ_ENUM: return newCString("enum");
         case OBJ_ARRAY: return newCString("array");
         case OBJ_FILE: return newCString("file");
+        case OBJ_MAP: return newCString("map");
     }
 
     return newCString("unknown type");
@@ -345,6 +463,7 @@ char *objectToString(Value value) {
         case OBJ_ENUM: return enumToString(AS_ENUM(value));
         case OBJ_ARRAY: return arrayToString(AS_ARRAY(value));
         case OBJ_FILE: return fileToString(AS_FILE(value));
+        case OBJ_MAP: return mapToString(AS_MAP(value));
     }
     
     return newCString("unknown object");
