@@ -1,9 +1,9 @@
-http://cloc.sourceforge.net v 1.62  T=0.12 s (353.9 files/s, 69548.7 lines/s)
+http://cloc.sourceforge.net v 1.62  T=0.11 s (384.8 files/s, 75692.4 lines/s)
 ------------------------------------------------------------------------------------
 File                                  blank        comment           code
 ------------------------------------------------------------------------------------
 .\c\compiler.c                          327             14           1651
-.\c\vm.c                                181              9           1241
+.\c\vm.c                                183              9           1247
 .\c\lexer.c                              66             10            440
 .\c\libs\lib_array.c                    123              4            440
 .\c\object.c                             71              4            276
@@ -27,7 +27,7 @@ File                                  blank        comment           code
 .\c\vm.h                                 15              3             59
 .\c\value.h                              20              3             59
 .\c\main.c                                6              0             38
-.\c\common.h                             12              6             35
+.\c\common.h                             12              7             34
 .\c\chunk.c                               9              3             34
 .\c\table.h                               9              3             25
 .\c\libs\lib_builtIn.c                    5              3             20
@@ -46,5 +46,5 @@ File                                  blank        comment           code
 .\c\libs\lib_math.h                       4              3              5
 .\c\ilex_include.h                        3              3              4
 ------------------------------------------------------------------------------------
-SUM:                                   1454            185           6812
+SUM:                                   1456            186           6817
 ------------------------------------------------------------------------------------

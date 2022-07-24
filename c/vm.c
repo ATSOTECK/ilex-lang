@@ -643,7 +643,15 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             case OP_SET_PROPERTY: {
                 if (IS_SCRIPT(peek(vm, 1))) {
                     ObjScript *script = AS_SCRIPT(peek(vm, 1));
-                    tableSet(vm, &script->values, READ_STRING(), peek(vm, 0));
+                    ObjString *name = READ_STRING();
+                    Value _;
+                    
+                    if (tableGet(&vm->consts, name, &_)) {
+                        runtimeError(vm, "Cannot assign to const variable '%s'.", name->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    
+                    tableSet(vm, &script->values, name, peek(vm, 0));
                     Value value = pop(vm);
                     pop(vm);  // Script.
                     push(vm, value);
