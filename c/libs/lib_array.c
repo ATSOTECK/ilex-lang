@@ -443,6 +443,11 @@ static Value arrayClear(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
+static Value arrayIsEmpty(VM *vm, int argc, Value *args) {
+    ObjArray *array = AS_ARRAY(args[0]);
+    return array->data.count == 0 ? TRUE_VAL : FALSE_VAL;
+}
+
 static Value arrayCopy(VM *vm, int argc, Value *args) {
     // TODO
     return NULL_VAL;
@@ -560,6 +565,7 @@ void defineArrayFunctions(VM *vm) {
     defineNative(vm, "sort", arraySort, &vm->arrayFunctions);
     defineNative(vm, "join", arrayJoin, &vm->arrayFunctions);
     defineNative(vm, "clear", arrayClear, &vm->arrayFunctions);
+    defineNative(vm, "isEmpty", arrayIsEmpty, &vm->arrayFunctions);
 
     defineNative(vm, "forEach", arrayForEach, &vm->arrayFunctions);
     defineNative(vm, "map", arrayMap, &vm->arrayFunctions);
