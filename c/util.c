@@ -165,3 +165,7 @@ char* readFile(const char *path) {
     fclose(file);
     return buffer;
 }
+
+bool isValidKey(Value value) {
+    return (IS_STRING(value) || IS_NUMBER(value));
+}

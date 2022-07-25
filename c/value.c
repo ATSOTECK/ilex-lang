@@ -83,6 +83,43 @@ void freeValueArray(VM *vm, ValueArray *array) {
     initValueArray(array);
 }
 
+static inline uint32_t hashBits(uint64_t hash) {
+    // From v8's ComputeLongHash() which in turn cites:
+    // Thomas Wang, Integer Hash Functions.
+    hash = ~hash + (hash << 18);  // hash = (hash << 18) - hash - 1;
+    hash = hash ^ (hash >> 31);
+    hash = hash * 21;  // hash = (hash + (hash << 2)) + (hash << 4);
+    hash = hash ^ (hash >> 11);
+    hash = hash + (hash << 6);
+    hash = hash ^ (hash >> 22);
+    return (uint32_t) (hash & 0x3fffffff);
+}
+
+static uint32_t hashObject(Obj *obj) {
+    switch (obj->type) {
+        case OBJ_STRING: {
+            return ((ObjString *)obj)->hash;
+        }
+        default: {
+#ifdef DEBUG_PRINT_CODE
+            printf("Object: ");
+            printValue(OBJ_VAL(obj));
+            printf(" is not hashable!\n");
+            exit(1);
+#endif
+            return -1;
+        }
+    }
+}
+
+uint32_t hashValue(Value value) {
+    if (IS_OBJ(value)) {
+        return hashObject(AS_OBJ(value));
+    }
+    
+    return hashBits(value);
+}
+
 char *valueType(Value value) {
     if (IS_BOOL(value)) {
         return newCString("bool");

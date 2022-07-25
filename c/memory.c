@@ -56,16 +56,6 @@ void markObject(VM *vm, Obj *obj) {
 
     obj->isMarked = true;
 
-    switch (obj->type) {
-        //TODO(Skyler): Add more object types.
-        case OBJ_SCRIPT: {
-            ObjScript *script = (ObjScript*)obj;
-            markObject(vm, (Obj*)script->name);
-            markObject(vm, (Obj*)script->path);
-            markTable(vm, &script->values);
-        } break;
-    }
-
     if (vm->grayCapacity < vm->grayCount + 1) {
         vm->grayCapacity = GROW_CAPACITY(vm->grayCapacity);
         vm->grayStack = (Obj**)realloc(vm->grayStack, sizeof(Obj*) * vm->grayCapacity);
@@ -140,6 +130,18 @@ static void blackenObject(VM *vm, Obj *obj) {
             ObjArray *array = (ObjArray*)obj;
             markArray(vm, &array->data);
         } break;
+        case OBJ_MAP: {
+            ObjMap *map = (ObjMap*)obj;
+            markMap(vm, map);
+        } break;
+        case OBJ_SCRIPT: {
+            ObjScript *script = (ObjScript*)obj;
+            markObject(vm, (Obj*)script->name);
+            markObject(vm, (Obj*)script->path);
+            markTable(vm, &script->values);
+        } break;
+        case OBJ_FILE:
+            break;
     }
 }
 
@@ -193,6 +195,19 @@ static void freeObject(VM *vm, Obj *obj) {
             freeValueArray(vm, &array->data);
             FREE(vm, ObjArray, obj);
         } break;
+        case OBJ_MAP: {
+            ObjMap *map = (ObjMap*)obj;
+            FREE_ARRAY(vm, MapItem, map->items, map->capacity + 1);
+            FREE(vm, ObjMap, obj);
+        } break;
+        case OBJ_SCRIPT: {
+            ObjScript *script = (ObjScript*)obj;
+            freeTable(vm, &script->values);
+            FREE(vm, ObjScript, obj);
+        } break;
+        case OBJ_FILE: {
+            FREE(vm, ObjFile, obj);
+        } break;
     }
 }
 
@@ -214,6 +229,7 @@ static void markRoots(VM *vm) {
     markTable(vm, &vm->consts);
     markTable(vm, &vm->stringFunctions);
     markTable(vm, &vm->arrayFunctions);
+    markTable(vm, &vm->mapFunctions);
     markCompilerRoots(vm);
     markObject(vm, (Obj*)vm->initString);
     markObject(vm, (Obj*)vm->scriptName);

@@ -22,12 +22,12 @@ static Value mapKeys(VM *vm, int argc, Value *args) {
     ObjArray *keys = newArray(vm);
     push(vm, OBJ_VAL(keys));
     
-    for (int i = 0; i < map->capacity; ++i) {
+    for (int i = 0; i < map->capacity + 1; ++i) {
         if (IS_ERR(map->items[i].key)) {
             continue;
         }
     
-        writeValueArray(vm, &keys->data, map->items[i].value);
+        writeValueArray(vm, &keys->data, map->items[i].key);
     }
     
     pop(vm);

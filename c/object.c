@@ -320,7 +320,7 @@ static char *fileToString(ObjFile *file) {
 
 char *mapToString(ObjMap *map) {
     int count = 0;
-    int size = 0;
+    int size = 64;
     char *mapStr = malloc(sizeof(char) * size);
     memcpy(mapStr, "{", 1);
     int strLen = 1;
@@ -386,7 +386,7 @@ char *mapToString(ObjMap *map) {
             valueSize = (int)strlen(valueStr);
         }
     
-        if (valueSize > (size - strLen - valueSize - 4)) {
+        if (valueSize > (size - strLen - valueSize - 6)) {
             if (valueSize > size) {
                 size += valueSize * 2 + 6;
             } else {
@@ -407,10 +407,10 @@ char *mapToString(ObjMap *map) {
             memcpy(mapStr + strLen, "\"", 1);
             memcpy(mapStr + strLen + 1, valueStr, valueSize);
             memcpy(mapStr + strLen + 1 + valueSize, "\"", 1);
-            strLen += valueSize + 4;
+            strLen += valueSize + 2;
         } else {
             memcpy(mapStr + strLen, valueStr, valueSize);
-            strLen += valueSize + 2;
+            strLen += valueSize;
             free(valueStr);
         }
         
@@ -424,6 +424,168 @@ char *mapToString(ObjMap *map) {
     mapStr[strLen + 1] = '\0';
     
     return mapStr;
+}
+
+static void adjustMapCapacity(VM *vm, ObjMap *map, int capacity) {
+    MapItem *items = ALLOCATE(vm, MapItem, capacity + 1);
+    for (int i = 0; i <= capacity; ++i) {
+        items[i].key = ERROR_VAL;
+        items[i].value = NULL_VAL;
+        items[i].psl = 0;
+    }
+    
+    MapItem *oldItems = map->items;
+    int oldCapacity = map->capacity;
+    
+    map->count = 0;
+    map->items = items;
+    map->capacity = capacity;
+    
+    for (int i = 0; i <= oldCapacity; ++i) {
+        MapItem *item = &oldItems[i];
+        if (IS_ERR(item->key)) {
+            continue;
+        }
+    
+        mapSet(vm, map, item->key, item->value);
+    }
+    
+    FREE_ARRAY(vm, MapItem, oldItems, oldCapacity + 1);
+}
+
+bool mapSet(VM *vm, ObjMap *map, Value key, Value value) {
+    if (map->count + 1 > (map->capacity + 1) * TABLE_MAX_LOAD) {
+        int capacity = GROW_CAPACITY(map->capacity + 1) - 1;
+        adjustMapCapacity(vm, map, capacity);
+    }
+    
+    uint32_t index = hashValue(key) & map->capacity;
+    MapItem *bucket;
+    bool isNewKey = false;
+    
+    MapItem item;
+    item.key = key;
+    item.value = value;
+    item.psl = 0;
+    
+    for (;;) {
+        bucket = &map->items[index];
+        
+        if (IS_ERR(bucket->key)) {
+            isNewKey = true;
+            break;
+        } else {
+            if (valuesEqual(key, bucket->key)) {
+                break;
+            }
+            
+            if (item.psl > bucket->psl) {
+                isNewKey = true;
+                MapItem tmp = item;
+                item = *bucket;
+                *bucket = tmp;
+            }
+        }
+        
+        index = (index + 1) & map->capacity;
+        ++item.psl;
+    }
+    
+    *bucket = item;
+    if (isNewKey) {
+        ++map->count;
+    }
+    
+    return isNewKey;
+}
+
+bool mapGet(ObjMap *map, Value key, Value *value) {
+    if (map->count == 0) {
+        return false;
+    }
+    
+    MapItem *item;
+    uint32_t index = hashValue(key) & map->capacity;
+    uint32_t psl = 0;
+    
+    for (;;) {
+        item = &map->items[index];
+        
+        if (IS_ERR(item->key) || psl > item->psl) {
+            return false;
+        }
+        
+        if (valuesEqual(key, item->key)) {
+            break;
+        }
+        
+        index = (index + 1) & map->capacity;
+        ++psl;
+    }
+    
+    *value = item->value;
+    return true;
+}
+
+bool mapDelete(VM *vm, ObjMap *map, Value key) {
+    if (map->count == 0) {
+        return false;
+    }
+    
+    int capacity = map->capacity;
+    uint32_t index = hashValue(key) & capacity;
+    uint32_t psl = 0;
+    MapItem *item;
+    
+    for (;;) {
+        item = &map->items[index];
+        
+        if (IS_ERR(key) || psl > item->psl) {
+            return false;
+        }
+        
+        if (valuesEqual(key, item->key)) {
+            break;
+        }
+        
+        index = (index + 1) & capacity;
+        ++psl;
+    }
+    
+    --map->count;
+    
+    for (;;) {
+        MapItem *nextItem;
+        item->key = ERROR_VAL;
+        item->value = ERROR_VAL;
+        
+        index = (index + 1) & capacity;
+        nextItem = &map->items[index];
+        
+        // Stop if we hit an empty bucket or hit a key which is in its original location.
+        if (IS_ERR(nextItem->key) || nextItem->psl == 0) {
+            break;
+        }
+        
+        --nextItem->psl;
+        *item = *nextItem;
+        item = nextItem;
+    }
+    
+    if (map->count - 1 < map->capacity * TABLE_MIN_LOAD) {
+        capacity = SHRINK_CAPACITY(map->capacity + 1) - 1;
+        adjustMapCapacity(vm, map, capacity);
+    }
+    
+    return true;
+}
+
+void markMap(VM *vm, ObjMap *map) {
+    for (int i = 0; i <= map->capacity; ++i) {
+        MapItem *item = &map->items[i];
+        markValue(vm, item->key);
+        markValue(vm, item->value);
+    }
 }
 
 char *objectType(Value value) {

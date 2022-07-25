@@ -369,6 +369,16 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
             runtimeError(vm, "File has no function %s().", name->str);
             return false;
         }
+        case OBJ_MAP: {
+            Value value;
+            if (tableGet(&vm->mapFunctions, name, &value)) {
+                return callNativeFunction(vm, value, argc);
+            }
+    
+            runtimeError(vm, "Map has no function %s().", name->str);
+            return false;
+        }
+        default: break;
     }
 
     runtimeError(vm, "Only instances have methods.");
@@ -1134,6 +1144,25 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         runtimeError(vm, "String index '%d' out of bounds.", oIdx);
                         return INTERPRET_RUNTIME_ERROR;
                     }
+                    case OBJ_MAP: {
+                        ObjMap *map = AS_MAP(receiver);
+                        if (!isValidKey(indexValue)) {
+                            char *type = valueType(indexValue);
+                            runtimeError(vm, "Expect string or number for key but got '%s'.", type);
+                            free(type);
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                        
+                        Value v;
+                        pop(vm);
+                        pop(vm);
+                        
+                        if (mapGet(map, indexValue, &v)) {
+                            push(vm, v);
+                        } else {
+                            push(vm, NULL_VAL); // Return null if the key doesn't exist.
+                        }
+                    } break;
                     default: {
                         char *type = valueType(receiver);
                         runtimeError(vm, "Type '%s' is not indexable.", type);
@@ -1213,6 +1242,21 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         runtimeError(vm, "String index '%d' out of bounds.", oIdx);
                         return INTERPRET_RUNTIME_ERROR;
                     }
+                    case OBJ_MAP: {
+                        ObjMap *map = AS_MAP(receiver);
+                        if (!isValidKey(indexValue)) {
+                            char *type = valueType(indexValue);
+                            runtimeError(vm, "Expect string or number for key but got '%s'.", type);
+                            free(type);
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+    
+                        mapSet(vm, map, indexValue, assignValue);
+                        pop(vm);
+                        pop(vm);
+                        pop(vm);
+                        push(vm, NULL_VAL);
+                    } break;
                     default: {
                         char *type = valueType(receiver);
                         runtimeError(vm, "Type '%s' is not indexable.", type);
@@ -1257,6 +1301,23 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         runtimeError(vm, "Array index '%d' out of bounds.", oIdx);
                         return INTERPRET_RUNTIME_ERROR;
                     }
+                    case OBJ_MAP: {
+                        ObjMap *map = AS_MAP(receiver);
+                        if (!isValidKey(indexValue)) {
+                            char *type = valueType(indexValue);
+                            runtimeError(vm, "Expect string or number for key but got '%s'.", type);
+                            free(type);
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                        
+                        Value mapValue;
+                        if (!mapGet(map, indexValue, &mapValue)) {
+                            mapValue = NULL_VAL;
+                        }
+                        
+                        vm->stackTop[-1] = mapValue;
+                        push(vm, pushValue);
+                    } break;
                     default: {
                         char *type = valueType(receiver);
                         runtimeError(vm, "Type '%s' is not indexable.", type);
@@ -1403,10 +1464,29 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             } break;
             case OP_CLOSE_FILE: {
                 uint16_t slot = READ_SHORT();
-                Value val = frame->slots[slot];
-                ObjFile *file = AS_FILE(val);
+                Value value = frame->slots[slot];
+                ObjFile *file = AS_FILE(value);
                 fclose(file->file);
                 file->file = NULL;
+            } break;
+            case OP_NEW_MAP: {
+                int count = READ_BYTE();
+                ObjMap *map = newMap(vm);
+                push(vm, OBJ_VAL(map));
+                
+                for (int i = count * 2; i > 0; i -= 2) {
+                    if (!isValidKey(peek(vm, i))) {
+                        char *type = valueType(peek(vm, i));
+                        runtimeError(vm, "Expect string or number for key but got '%s'.", type);
+                        free(type);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+    
+                    mapSet(vm, map, peek(vm, i), peek(vm, i - 1));
+                }
+                
+                vm->stackTop -= count * 2 + 1;
+                push(vm, OBJ_VAL(map));
             } break;
         }
     }

@@ -177,6 +177,10 @@ char *objectType(Value value);
 char *objectToString(Value value);
 char *arrayToString(ObjArray *array);
 char *mapToString(ObjMap *map);
+bool mapSet(VM *vm, ObjMap *map, Value key, Value value);
+bool mapGet(ObjMap *map, Value key, Value *value);
+bool mapDelete(VM *vm, ObjMap *map, Value key);
+void markMap(VM *vm, ObjMap *map);
 
 static inline bool isObjType(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;

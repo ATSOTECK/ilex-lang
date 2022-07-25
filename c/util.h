@@ -19,5 +19,6 @@ bool resolvePath(const char *dir, const char *path, char *ret);
 ObjString *dirName(VM *vm, const char *path, size_t len);
 ObjString *getDir(VM *vm, const char *source);
 char* readFile(const char *path);
+bool isValidKey(Value value);
 
 #endif //__C_UTIL_H__

@@ -74,6 +74,8 @@ void writeValueArray(VM *vm, ValueArray *array, Value value);
 void fillValueArray(VM *vm, int count, ValueArray *array, Value value);
 void freeValueArray(VM *vm, ValueArray *array);
 
+uint32_t hashValue(Value value);
+
 char *valueType(Value value);
 
 char *valueToString(Value value);

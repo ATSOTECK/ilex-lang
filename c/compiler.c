@@ -569,6 +569,24 @@ static void array(Compiler *compiler, bool canAssign) {
     eat(compiler->parser, TK_RBRACKET, "Expect ']' after array elements.");
 }
 
+static void map(Compiler *compiler, bool canAssign) {
+    int count = 0;
+    
+    do {
+        if (check(compiler, TK_RBRACE)) {
+            break;
+        }
+    
+        expression(compiler);
+        eat(compiler->parser, TK_COLON, "Expect ':'.");
+        expression(compiler);
+        ++count;
+    } while (match(compiler, TK_COMMA));
+    
+    emitBytes(compiler, OP_NEW_MAP, count);
+    eat(compiler->parser, TK_RBRACE, "Expect closing '}'.");
+}
+
 static void index_(Compiler *compiler, bool canAssign) {
     if (match(compiler, TK_COLON)) {
         emitByte(compiler, OP_EMPTY);
@@ -972,7 +990,7 @@ static void anon(Compiler *compiler, bool canAssign) {
 ParseRule rules[] = {
         [TK_LPAREN]           = {grouping, call,    PREC_CALL},
         [TK_RPAREN]           = {NULL,     NULL,    PREC_NONE},
-        [TK_LBRACE]           = {NULL,     NULL,    PREC_NONE},
+        [TK_LBRACE]           = {map,      NULL,    PREC_NONE},
         [TK_RBRACE]           = {NULL,     NULL,    PREC_NONE},
         [TK_LBRACKET]         = {array,    index_,  PREC_CALL},
         [TK_RBRACKET]         = {NULL,     NULL,    PREC_NONE},
@@ -1345,6 +1363,7 @@ static int getArgCount(const uint8_t *code, const ValueArray constants, int ip) 
         case OP_GET_SCRIPT:
         case OP_SET_SCRIPT:
         case OP_DEFINE_SCRIPT:
+        case OP_NEW_MAP:
             return 1;
 
         case OP_JUMP:

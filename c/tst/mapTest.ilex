@@ -1,0 +1,17 @@
+map := { 'key1' : 'yeet', 'key2' : 12 }
+
+assert(map['key1'] == 'yeet')
+assert(map['key2'] == 12)
+assert(map['key3'] == null)
+assert(map.len() == 2)
+assert(map.keys().len() == 2)
+
+map['key3'] = 'woo'
+
+assert(map['key1'] == 'yeet')
+assert(map['key2'] == 12)
+assert(map['key3'] == 'woo')
+assert(map.len() == 3)
+assert(map.keys().len() == 3)
+
+println("Map test \033[32mpassed\033[0m in", milliseconds(), "ms!")
