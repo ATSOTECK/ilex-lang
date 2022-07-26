@@ -270,7 +270,7 @@ static Value fileExists(VM *vm, int argc, Value *args) {
     fclose(f);
     return BOOL_VAL(f != NULL);
 #else
-    if (f = fopen(file->path, file->flags)) {
+    if ((f = fopen(file->path, file->flags))) {
         fclose(f);
         return TRUE_VAL;
     } else {

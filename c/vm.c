@@ -982,7 +982,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 
                 size_t len = strlen(path);
                 if (strcmp(path + len - 5, ".ilex") != 0) {
-                    strcat_s(path, I_MAX_PATH, ".ilex");
+                    strncat(path, ".ilex", 5);
                     len += 5;
                 }
                 

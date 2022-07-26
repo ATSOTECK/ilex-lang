@@ -9,6 +9,7 @@ use user made scripts
 (done) switch fallthrough
 (done) annonomys functions
 fix GC bugs
+readPassword function for io
 
 arr.map(fn |x| x * 2)
 arr.map(fn |x| -> {

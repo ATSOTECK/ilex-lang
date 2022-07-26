@@ -6,6 +6,8 @@
 
 #include "../util.h"
 
+#include <stdlib.h>
+
 static Value mapSize(VM *vm, int argc, Value *args) {
     ObjMap *map = AS_MAP(args[0]);
     return NUMBER_VAL(map->count);

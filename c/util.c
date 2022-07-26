@@ -4,6 +4,8 @@
 
 #include "util.h"
 
+#include <stdlib.h>
+
 #ifdef I_WIN
 static void fseterr(FILE *fp) {
     struct file {
@@ -137,7 +139,7 @@ char* readFile(const char *path) {
     errno_t err = fopen_s(&file, path, "rb");
 #else
     FILE* file = fopen(path, "rb");
-    errno_t = file == NULL ? -1 : 0;
+    errno_t err = file == NULL ? -1 : 0;
 #endif
     if (err != 0) {
         fprintf(stderr, "Could not open file '%s'.\n", path);
