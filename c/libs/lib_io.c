@@ -10,6 +10,9 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef I_WIN
+#   include <termios.h>
+#endif
 
 static Value ioInput(VM *vm, int argc, Value *args) {
     if (argc > 1) {
@@ -126,6 +129,120 @@ static Value ioGetNumber(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(number);
 }
 
+static Value ioGetPass(VM *vm, int argc, Value *args) {
+    if (argc > 1) {
+        runtimeError(vm, "Function getPass() expected 1 or 0 arguments but got %d", argc);
+        return ERROR_VAL;
+    }
+
+    if (argc != 0) {
+        Value prompt = args[0];
+        if (!IS_STRING(prompt)) {
+            char *str = valueType(args[1]);
+            runtimeError(vm, "Function input() expected type 'string' but got '%s'.", str);
+            free(str);
+
+            return ERROR_VAL;
+        }
+
+        printf("%s", AS_CSTRING(prompt));
+    }
+
+    uint64_t currentSize = 128;
+    char *line = ALLOCATE(vm, char, currentSize);
+
+    if (line == NULL) {
+        runtimeError(vm, "Memory error on input()!");
+        return ERROR_VAL;
+    }
+
+#ifndef I_WIN
+    struct termios old, new;
+    if (tcgetattr(fileno(stdin), &old) != 0) {
+        runtimeError(vm, "Could not disable echo.");
+        return ERROR_VAL;
+    }
+
+    new = old;
+    new.c_lflag &= ~ECHO;
+    if (tcsetattr(fileno(stdin), TCSAFLUSH, &new) != 0) {
+        runtimeError(vm, "Could not disable echo.");
+        return ERROR_VAL;
+    }
+#else
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD mode = 0;
+    GetConsoleMode(hStdin, &mode);
+    SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
+#endif
+
+    int c = EOF;
+    uint64_t length = 0;
+    while ((c = getchar()) != '\n' && c != EOF) {
+        line[length++] = (char) c;
+
+        if (length + 1 == currentSize) {
+            uint64_t oldSize = currentSize;
+            currentSize = GROW_CAPACITY(currentSize);
+            line = GROW_ARRAY(vm, char, line, oldSize, currentSize);
+
+            if (line == NULL) {
+                printf("Unable to allocate memory\n");
+                exit((int)INTERPRET_RUNTIME_ERROR);
+            }
+        }
+    }
+
+    // If length has changed then shrink.
+    if (length != currentSize) {
+        line = SHRINK_ARRAY(vm, line, char, currentSize, length + 1);
+    }
+
+    line[length] = '\0';
+
+#ifndef I_WIN
+    (void) tcsetattr (fileno(stdin), TCSAFLUSH, &old);
+#else
+    SetConsoleMode(hStdin, mode & ENABLE_ECHO_INPUT);
+#endif
+
+    printf("\n");
+
+    return OBJ_VAL(takeString(vm, line, length));
+}
+
+static Value ioFflush(VM *vm, int argc, Value *args) {
+    if (argc > 1) {
+        runtimeError(vm, "Function fflush() expected 1 or 0 arguments but got %d", argc);
+        return ERROR_VAL;
+    }
+
+    if (argc == 0) {
+        fflush(stdout);
+        return NULL_VAL;
+    }
+
+    if (IS_NUMBER(args[0])) {
+        switch ((int)AS_NUMBER(args[0])) {
+            case 0: fflush(stdin); return NULL_VAL;
+            case 1: fflush(stdout); return NULL_VAL;
+            case 2: fflush(stderr); return NULL_VAL;
+            default: return NULL_VAL;
+        }
+    }
+
+    if (IS_NULL(args[0])) {
+        fflush(NULL);
+        return NULL_VAL;
+    }
+
+    char *str = valueType(args[1]);
+    runtimeError(vm, "Function fflush() expected type 'number' or 'null' but got '%s'.", str);
+    free(str);
+
+    return ERROR_VAL;
+}
+
 static Value ioOpenFile(VM *vm, int argc, Value *args) {
     if (argc != 2) {
         runtimeError(vm, "Function openFile() expected 2 arguments but got '%d'.", argc);
@@ -177,8 +294,14 @@ Value useIoLib(VM *vm) {
 
     defineNative(vm, "input", ioInput, &lib->values);
     defineNative(vm, "getNumber", ioGetNumber, &lib->values);
+    defineNative(vm, "getPass", ioGetPass, &lib->values);
     
     defineNative(vm, "openFile", ioOpenFile, &lib->values);
+
+    defineNative(vm, "fflush", ioFflush, &lib->values);
+    defineNativeValue(vm, "stdin", NUMBER_VAL(0), &lib->values);
+    defineNativeValue(vm, "stdout", NUMBER_VAL(1), &lib->values);
+    defineNativeValue(vm, "stderr", NUMBER_VAL(2), &lib->values);
 
     pop(vm);
     pop(vm);
