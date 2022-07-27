@@ -10,6 +10,7 @@ BuiltInLibs libs[] = {
         {"io",     &useIoLib},
         {"random", &useRandomLib},
         {"env",    &useEnvLib},
+        {"sys",    &useSysLib},
         {NULL, NULL},
 };
 

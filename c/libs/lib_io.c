@@ -219,21 +219,21 @@ static Value ioFflush(VM *vm, int argc, Value *args) {
 
     if (argc == 0) {
         fflush(stdout);
-        return NULL_VAL;
+        return ZERO_VAL;
     }
 
     if (IS_NUMBER(args[0])) {
         switch ((int)AS_NUMBER(args[0])) {
-            case 0: fflush(stdin); return NULL_VAL;
-            case 1: fflush(stdout); return NULL_VAL;
-            case 2: fflush(stderr); return NULL_VAL;
-            default: return NULL_VAL;
+            case 0: fflush(stdin); return ZERO_VAL;
+            case 1: fflush(stdout); return ZERO_VAL;
+            case 2: fflush(stderr); return ZERO_VAL;
+            default: return ZERO_VAL;
         }
     }
 
     if (IS_NULL(args[0])) {
         fflush(NULL);
-        return NULL_VAL;
+        return ZERO_VAL;
     }
 
     char *str = valueType(args[1]);

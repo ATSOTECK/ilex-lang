@@ -12,6 +12,7 @@
 #include "lib_io.h"
 #include "lib_math.h"
 #include "lib_random.h"
+#include "lib_sys.h"
 
 typedef Value (*BuiltInLib)(VM *vm);
 

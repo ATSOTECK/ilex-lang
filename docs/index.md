@@ -6,7 +6,7 @@ permalink: /
 ---
 
 
-# Ilex v0.0.52
+# Ilex v0.0.57
 Ilex is a simple easy to use, statically (not yet) typed programming language.
 
 ![Ilex Rock, Paper, Scissors example](/img/RPS.png)

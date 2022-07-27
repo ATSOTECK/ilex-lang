@@ -20,8 +20,8 @@
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION_BUILD 56
-#define ILEX_VERSION "0.0.56"
+#define ILEX_VERSION_BUILD 57
+#define ILEX_VERSION "0.0.57"
 #define ILEX_DATE "26 - July - 2022"
 
 #if defined(WIN32) || defined(_WIN32)
@@ -45,7 +45,7 @@
 #ifdef NORMAL_SEPARATOR
 #   define IS_SEP(x) ((x) == PATH_SEPARATOR || (x) == NORMAL_SEPARATOR)
 #else
-#   define IS_SEP(x) (x == PATH_SEPARATOR)
+#   define IS_SEP(x) ((x) == PATH_SEPARATOR)
 #endif
 
 #define I_MAX_PATH 4096

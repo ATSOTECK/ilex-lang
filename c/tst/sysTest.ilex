@@ -1,0 +1,20 @@
+use <sys>
+use <io>
+
+print('Hello ')
+io::fflush(io::stdout)
+sys::sleep(3000)
+println('world')
+
+cwd := sys::cwd()
+println("cwd:", cwd)
+sys::pwd()
+
+sys::cd('../')
+sys::pwd()
+
+sys::cd('../docs')
+sys::pwd()
+
+sys::exit(69)
+assert(true == false)
