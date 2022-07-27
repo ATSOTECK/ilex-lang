@@ -27,6 +27,14 @@ If I haven't been too lazy there should be links to download the executables for
 
 ```bash
 $ git clone https://github.com/ATSOTECK/ilex-lang.git
+$ cd ilex-lang
+$ sh build.sh
+```
+
+Or
+
+```bash
+$ git clone https://github.com/ATSOTECK/ilex-lang.git
 $ cd ilex-lang/c
 $ cmake -DCMAKE_BUILD_TYPE=Release -B ./bin 
 $ cmake --build ./bin

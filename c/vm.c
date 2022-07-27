@@ -973,26 +973,30 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     push(vm, NULL_VAL);
                     break;
                 }
-                
-                char path[I_MAX_PATH];
-                if (!resolvePath(frame->closure->function->script->path->str, filename->str, path)) {
-                    runtimeError(vm, "Coule not open file '%s'.", filename->str);
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-                
-                size_t len = strlen(path);
-                if (strcmp(path + len - 5, ".ilex") != 0) {
-                    strncat(path, ".ilex", 5);
+
+                char filenameStr[1024];
+                memcpy(filenameStr, filename->str, filename->len);
+                filenameStr[filename->len] = '\0';
+                size_t len = strlen(filenameStr);
+
+                if (strcmp(filenameStr + len - 5, ".ilex") != 0) {
+                    strncat(filenameStr, ".ilex", 5);
                     len += 5;
+                }
+
+                char path[I_MAX_PATH];
+                if (!resolvePath(frame->closure->function->script->path->str, filenameStr, path)) {
+                    runtimeError(vm, "Coule not open file '%s'.", filenameStr);
+                    return INTERPRET_RUNTIME_ERROR;
                 }
                 
                 char *src = readFile(path);
                 if (src == NULL) {
-                    runtimeError(vm, "Could not open file '%s'.", filename->str);
+                    runtimeError(vm, "Could not open file '%s'.", filenameStr);
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                ObjString *pathStr = copyString(vm, path, len);
+                ObjString *pathStr = copyString(vm, path, (int)len);
                 push(vm, OBJ_VAL(pathStr));
                 ObjScript *script = newScript(vm, pathStr);
                 script->path = dirName(vm, path, len);
