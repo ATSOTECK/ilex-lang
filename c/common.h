@@ -22,13 +22,14 @@
 #define ILEX_VERSION_MINOR 0
 #define ILEX_VERSION_BUILD 57
 #define ILEX_VERSION "0.0.57"
-#define ILEX_DATE "26 - July - 2022"
+#define ILEX_DATE "27 - July - 2022"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN
 #   include <Windows.h>
 #   define strtok_r strtok_s
 #   define ssize_t SSIZE_T
+#   define PATH_MAX 1024
 #endif
 
 #if defined(__APPLE__)

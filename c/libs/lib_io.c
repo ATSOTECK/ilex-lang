@@ -12,6 +12,9 @@
 #include <stdlib.h>
 #ifndef I_WIN
 #   include <termios.h>
+#   define _fileno fileno
+#else
+#   include <io.h>
 #endif
 
 static Value ioInput(VM *vm, int argc, Value *args) {
@@ -201,14 +204,97 @@ static Value ioGetPass(VM *vm, int argc, Value *args) {
     line[length] = '\0';
 
 #ifndef I_WIN
-    (void) tcsetattr (fileno(stdin), TCSAFLUSH, &old);
+    (void) tcsetattr(fileno(stdin), TCSAFLUSH, &old);
 #else
-    SetConsoleMode(hStdin, mode & ENABLE_ECHO_INPUT);
+    SetConsoleMode(hStdin, mode | ENABLE_ECHO_INPUT);
 #endif
 
     printf("\n");
 
     return OBJ_VAL(takeString(vm, line, length));
+}
+
+static Value ioDisableEcho(VM *vm, int argc, Value *args) {
+#ifndef I_WIN
+    struct termios old, new;
+    if (tcgetattr(fileno(stdin), &old) != 0) {
+        runtimeError(vm, "Could not disable echo.");
+        return ERROR_VAL;
+    }
+
+    new = old;
+    new.c_lflag &= ~ECHO;
+    if (tcsetattr(fileno(stdin), TCSAFLUSH, &new) != 0) {
+        runtimeError(vm, "Could not disable echo.");
+        return ERROR_VAL;
+    }
+#else
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD mode = 0;
+    GetConsoleMode(hStdin, &mode);
+    SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
+#endif
+    
+    return ZERO_VAL;
+}
+
+static Value ioEnableEcho(VM *vm, int argc, Value *args) {
+#ifndef I_WIN
+    struct termios ts;
+
+    tcgetattr(fileno(stdin), &ts);
+    ts.c_lflag |= ECHO;
+    tcsetattr(fileno(stdin), TCSANOW, &ts);
+#else
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD mode = 0;
+    GetConsoleMode(hStdin, &mode);
+    SetConsoleMode(hStdin, mode | ENABLE_ECHO_INPUT);
+#endif
+    
+    return ZERO_VAL;
+}
+
+static Value ioIsATTY(VM *vm, int argc, Value *args) {
+    if (argc > 1) {
+        runtimeError(vm, "Function isatty() expected 1 or 0 arguments but got %d", argc);
+        return ERROR_VAL;
+    }
+    
+    int fd;
+    if (argc == 0) {
+        fd = _fileno(stdout);
+    } else if (IS_NUMBER(args[0])){
+        fd = (int)AS_NUMBER(args[0]);
+    } else {
+        char *str = valueType(args[0]);
+        runtimeError(vm, "Function isatty() expected type 'number' but got '%s'.", str);
+        free(str);
+        
+        return ERROR_VAL;
+    }
+    
+#ifdef I_WIN
+    DWORD st;
+    HANDLE h;
+    
+    if (!_isatty(fd)) {
+        return FALSE_VAL;
+    }
+    
+    h = (HANDLE)_get_osfhandle(fd);
+    if (h == INVALID_HANDLE_VALUE) {
+        return FALSE_VAL;
+    }
+    
+    if (!GetConsoleMode(h, &st)) {
+        return FALSE_VAL;
+    }
+    
+    return TRUE_VAL;
+#else
+    return isatty(fd) ? TRUE_VAL : FALSE_VAL;
+#endif
 }
 
 static Value ioFflush(VM *vm, int argc, Value *args) {
@@ -236,7 +322,7 @@ static Value ioFflush(VM *vm, int argc, Value *args) {
         return ZERO_VAL;
     }
 
-    char *str = valueType(args[1]);
+    char *str = valueType(args[0]);
     runtimeError(vm, "Function fflush() expected type 'number' or 'null' but got '%s'.", str);
     free(str);
 
@@ -295,6 +381,9 @@ Value useIoLib(VM *vm) {
     defineNative(vm, "input", ioInput, &lib->values);
     defineNative(vm, "getNumber", ioGetNumber, &lib->values);
     defineNative(vm, "getPass", ioGetPass, &lib->values);
+    defineNative(vm, "echoOff", ioDisableEcho, &lib->values);
+    defineNative(vm, "echoOn", ioEnableEcho, &lib->values);
+    defineNative(vm, "isatty", ioIsATTY, &lib->values);
     
     defineNative(vm, "openFile", ioOpenFile, &lib->values);
 

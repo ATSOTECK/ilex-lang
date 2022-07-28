@@ -1,6 +1,6 @@
 // Both of these work.
 // use * from <io>
-use { input, getNumber, getPass } from <io>
+use { input, getNumber, getPass, isatty } from <io>
 
 use <math as M>
 
@@ -21,6 +21,8 @@ fn test() {
     pass := getPass('Enter password:')
     println(pass)
     str = input('Can you see what you type? ')
+    
+    println('isatty?', isatty())
 }
 
 /-

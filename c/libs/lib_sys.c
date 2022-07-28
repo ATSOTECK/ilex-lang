@@ -7,8 +7,13 @@
 #include "../vm.h"
 
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/syslimits.h>
+#ifndef I_WIN
+#   include <unistd.h>
+#   include <sys/syslimits.h>
+#   define _getcwd getcwd
+#else
+#   include <direct.h>
+#endif
 
 static Value sysSleep(VM *vm, int argc, Value *args) {
     if (argc != 1) {
@@ -52,7 +57,7 @@ static Value sysExit(VM *vm, int argc, Value *args) {
 static Value sysGetCWD(VM *vm, int argc, Value *args) {
     char cwd[PATH_MAX];
 
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    if (_getcwd(cwd, sizeof(cwd)) != NULL) {
         return OBJ_VAL(copyString(vm, cwd, strlen(cwd)));
     }
 
@@ -62,7 +67,7 @@ static Value sysGetCWD(VM *vm, int argc, Value *args) {
 static Value sysPWD(VM *vm, int argc, Value *args) {
     char cwd[PATH_MAX];
 
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    if (_getcwd(cwd, sizeof(cwd)) != NULL) {
         printf("%s\n", cwd);
         return ZERO_VAL;
     }
