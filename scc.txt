@@ -1,4 +1,4 @@
-http://cloc.sourceforge.net v 1.62  T=0.12 s (388.9 files/s, 77341.3 lines/s)
+http://cloc.sourceforge.net v 1.62  T=0.13 s (372.0 files/s, 74097.1 lines/s)
 ------------------------------------------------------------------------------------
 File                                  blank        comment           code
 ------------------------------------------------------------------------------------
@@ -16,9 +16,9 @@ File                                  blank        comment           code
 .\c\debug.c                              18              3            151
 .\c\table.c                              27              3            148
 .\c\util.c                               29              3            141
+.\c\libs\lib_map.c                       35              3            127
 .\c\value.c                              26             13            123
 .\c\libs\lib_random.c                    35              3            116
-.\c\libs\lib_map.c                       33              3            115
 .\c\libs\lib_ilex.c                      34              3            113
 .\c\lexer.h                              10              8             99
 .\c\chunk.h                               6              3             98
@@ -51,5 +51,5 @@ File                                  blank        comment           code
 .\c\ilex_include.h                        3              3              4
 .\build.sh                                0              0              3
 ------------------------------------------------------------------------------------
-SUM:                                   1660            202           7684
+SUM:                                   1662            202           7696
 ------------------------------------------------------------------------------------

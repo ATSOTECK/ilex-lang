@@ -138,6 +138,18 @@ static Value mapIsEmpty(VM *vm, int argc, Value *args) {
     return map->count == 0 ? TRUE_VAL : FALSE_VAL;
 }
 
+static Value mapCopyShallow(VM *vm, int argc, Value *args) {
+    ObjMap *map = AS_MAP(args[0]);
+    ObjMap *ret = copyMap(vm, map, true);
+    return OBJ_VAL(ret);
+}
+
+static Value mapCopyDeep(VM *vm, int argc, Value *args) {
+    ObjMap *map = AS_MAP(args[0]);
+    ObjMap *ret = copyMap(vm, map, false);
+    return OBJ_VAL(ret);
+}
+
 void defineMapFunctions(VM *vm) {
     defineNative(vm, "size", mapSize, &vm->mapFunctions);
     defineNative(vm, "maxSize", mapMaxSize, &vm->mapFunctions);
@@ -148,4 +160,6 @@ void defineMapFunctions(VM *vm) {
     defineNative(vm, "delete", mapDeleteLib, &vm->mapFunctions);
     defineNative(vm, "exists", mapExists, &vm->mapFunctions);
     defineNative(vm, "isEmpty", mapIsEmpty, &vm->mapFunctions);
+    defineNative(vm, "shallowCopy", mapCopyShallow, &vm->mapFunctions);
+    defineNative(vm, "deepCopy", mapCopyDeep, &vm->mapFunctions);
 }
