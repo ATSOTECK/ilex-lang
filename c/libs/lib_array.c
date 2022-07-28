@@ -449,8 +449,15 @@ static Value arrayIsEmpty(VM *vm, int argc, Value *args) {
 }
 
 static Value arrayCopy(VM *vm, int argc, Value *args) {
-    // TODO
-    return NULL_VAL;
+    ObjArray *array = AS_ARRAY(args[0]);
+    ObjArray *ret = copyArray(vm, array, true);
+    return OBJ_VAL(ret);
+}
+
+static Value arrayCopyDeep(VM *vm, int argc, Value *args) {
+    ObjArray *array = AS_ARRAY(args[0]);
+    ObjArray *ret = copyArray(vm, array, false);
+    return OBJ_VAL(ret);
 }
 
 static Value arrayForEach(VM *vm, int argc, Value *args) {
@@ -549,6 +556,39 @@ static Value arrayFilter(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
+static Value arrayReduce(VM *vm, int argc, Value *args) {
+    if (argc == 0 || argc > 2) {
+        runtimeError(vm, "Function reduce() expected 1 or 2 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+    
+    if (!IS_CLOSURE(args[1])) {
+        char *str = valueType(args[1]);
+        runtimeError(vm, "Function reduce() expected type 'closure' for first argument but got '%s'.", str);
+        free(str);
+        return ERROR_VAL;
+    }
+    
+    ObjArray *array = AS_ARRAY(args[0]);
+    ObjClosure *closure = AS_CLOSURE(args[1]);
+    Value accumulator = ZERO_VAL;
+    
+    if (argc == 2) {
+        accumulator = args[2];
+    }
+    
+    Value *argv = malloc(sizeof(Value) * 2);
+    
+    for (int i = 0; i < array->data.count; ++i) {
+        argv[0] = accumulator;
+        argv[1] = array->data.values[i];
+        accumulator = callFromScript(vm, closure, 2, argv);
+    }
+    
+    free(argv);
+    return accumulator;
+}
+
 void defineArrayFunctions(VM *vm) {
     defineNative(vm, "len", arrayLen, &vm->arrayFunctions);
     defineNative(vm, "toString", arrayToStringLib, &vm->arrayFunctions);
@@ -566,8 +606,11 @@ void defineArrayFunctions(VM *vm) {
     defineNative(vm, "join", arrayJoin, &vm->arrayFunctions);
     defineNative(vm, "clear", arrayClear, &vm->arrayFunctions);
     defineNative(vm, "isEmpty", arrayIsEmpty, &vm->arrayFunctions);
+    defineNative(vm, "shallowCopy", arrayCopy, &vm->arrayFunctions);
+    defineNative(vm, "deepCopy", arrayCopyDeep, &vm->arrayFunctions);
 
     defineNative(vm, "forEach", arrayForEach, &vm->arrayFunctions);
     defineNative(vm, "map", arrayMap, &vm->arrayFunctions);
     defineNative(vm, "filter", arrayFilter, &vm->arrayFunctions);
+    defineNative(vm, "reduce", arrayReduce, &vm->arrayFunctions);
 }

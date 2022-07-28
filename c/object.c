@@ -588,6 +588,60 @@ void markMap(VM *vm, ObjMap *map) {
     }
 }
 
+ObjArray *copyArray(VM *vm, ObjArray *array, bool isShallow) {
+    ObjArray *ret = newArray(vm);
+    push(vm, OBJ_VAL(ret));
+    
+    for (int i = 0; i < array->data.count; ++i) {
+        Value val = array->data.values[i];
+        
+        if (!isShallow) {
+            if (IS_ARRAY(val)) {
+                val = OBJ_VAL(copyArray(vm, AS_ARRAY(val), false));
+            } else if (IS_MAP(val)) {
+                val = OBJ_VAL(copyMap(vm, AS_MAP(val), false));
+            }
+            // TODO: Instance
+        }
+    
+        push(vm, val);
+        writeValueArray(vm, &ret->data, val);
+        pop(vm);
+    }
+    
+    pop(vm);
+    return ret;
+}
+
+ObjMap *copyMap(VM *vm, ObjMap *map, bool isShallow) {
+    ObjMap *ret = newMap(vm);
+    push(vm, OBJ_VAL(ret));
+    
+    for (int i = 0; i < ret->capacity; ++i) {
+        if (IS_ERR(map->items[i].key)) {
+            continue;
+        }
+        
+        Value val = map->items[i].value;
+        
+        if (!isShallow) {
+            if (IS_ARRAY(val)) {
+                val = OBJ_VAL(copyArray(vm, AS_ARRAY(val), false));
+            } else if (IS_MAP(val)) {
+                val = OBJ_VAL(copyMap(vm, AS_MAP(val), false));
+            }
+            // TODO: Instance
+        }
+        
+        push(vm, val);
+        mapSet(vm, ret, map->items[i].key, val);
+        pop(vm);
+    }
+    
+    pop(vm);
+    return ret;
+}
+
 char *objectType(Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD:

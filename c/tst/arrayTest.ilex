@@ -147,6 +147,11 @@ println('odd', mostlyEven.filter(fn |x| -> {
     return x % 2 != 0
 }))
 
+y ::= mostlyEven.reduce(fn |n, item| n + item)
+assert(y == 34)
+z ::= mostlyEven.reduce(fn |n, item| n + item, 100)
+assert(z == 134)
+
 // Not array related but I figured I'd test all anon functions at once.
 anon := fn -> println('Hi from anon function!')
 anon()
@@ -156,5 +161,32 @@ anon = fn -> {
     println('2nd', tmp)
 }
 anon()
+
+a1 ::= [0, [1, 4], 2, 3]
+a2 := a1
+
+println(a1, a2)
+
+a1[0] = 12
+
+ln()
+println(a1, a2)
+
+a2 = a1.shallowCopy()
+a1[0] = 0
+
+ln()
+println(a1, a2)
+
+a1[1][0] = 12
+
+ln()
+println(a1, a2)
+
+a2 = a1.deepCopy()
+a1[1][0] = 1
+
+ln()
+println(a1, a2)
 
 println('Done!')

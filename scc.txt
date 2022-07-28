@@ -1,18 +1,18 @@
-http://cloc.sourceforge.net v 1.62  T=0.13 s (361.8 files/s, 71191.7 lines/s)
+http://cloc.sourceforge.net v 1.62  T=0.12 s (388.9 files/s, 77341.3 lines/s)
 ------------------------------------------------------------------------------------
 File                                  blank        comment           code
 ------------------------------------------------------------------------------------
 .\c\compiler.c                          331             14           1666
 .\c\vm.c                                193              9           1325
-.\c\object.c                            129              5            498
-.\c\libs\lib_array.c                    124              4            445
+.\c\object.c                            140              7            539
+.\c\libs\lib_array.c                    132              3            481
 .\c\lexer.c                              66             10            440
 .\c\libs\lib_io.c                        80              6            313
 .\c\libs\lib_file.c                      78              5            264
 .\c\libs\lib_math.c                      81             11            264
 .\c\memory.c                             34              3            261
 .\c\libs\lib_env.c                       52              3            180
-.\c\object.h                             27              3            163
+.\c\object.h                             28              3            165
 .\c\debug.c                              18              3            151
 .\c\table.c                              27              3            148
 .\c\util.c                               29              3            141
@@ -51,5 +51,5 @@ File                                  blank        comment           code
 .\c\ilex_include.h                        3              3              4
 .\build.sh                                0              0              3
 ------------------------------------------------------------------------------------
-SUM:                                   1640            201           7605
+SUM:                                   1660            202           7684
 ------------------------------------------------------------------------------------
