@@ -1,6 +1,6 @@
 // Both of these work.
 // use * from <io>
-use { input, getNumber, getPass, isatty } from <io>
+use { input, getNumber, getPass, isatty, echoOn, echoOff } from <io>
 
 use <math as M>
 
@@ -23,6 +23,12 @@ fn test() {
     str = input('Can you see what you type? ')
     
     println('isatty?', isatty())
+    
+    echoOff()
+    input('passwd: ')
+    ln()
+    echoOn()
+    input('can see what type? ')
 }
 
 /-

@@ -207,6 +207,15 @@ ObjMap *newMap(VM *vm) {
     return map;
 }
 
+ObjSet *newSet(VM *vm) {
+    ObjSet *set = ALLOCATE_OBJ(vm, ObjSet, OBJ_SET);
+    set->count = 0;
+    set->capacity = -1;
+    set->items = NULL;
+
+    return set;
+}
+
 static void printFunction(ObjFunction *function) {
     if (function->name == NULL) {
         printf("<script>");
@@ -424,6 +433,73 @@ char *mapToString(ObjMap *map) {
     mapStr[strLen + 1] = '\0';
     
     return mapStr;
+}
+
+char *setToString(ObjSet *set) {
+    int count = 0;
+    int size = 64;
+    char *setStr = malloc(sizeof(char) * size);
+    memcpy(setStr, "{", 1);
+    int strLen = 1;
+
+    for (int i = 0; i <= set->capacity; ++i) {
+        SetItem *item = &set->items[i];
+        if (IS_ERR(item->value)) {
+            continue;
+        }
+
+        ++count;
+
+        char *valueStr;
+        int valueSize;
+
+        if (IS_STRING(item->value)) {
+            ObjString *str = AS_STRING(item->value);
+            valueStr = str->str;
+            valueSize = str->len;
+        } else {
+            valueStr = valueToString(item->value);
+            valueSize = (int) strlen(valueStr);
+        }
+
+        if (valueSize > (size - strLen - 5)) {
+            if (valueSize > size * 2) {
+                size += valueSize * 2 + 5;
+            } else {
+                size *= 2 + 5;
+            }
+
+            char *buf = realloc(setStr, sizeof(char) * size);
+
+            if (buf == NULL) {
+                printf("Out of memory!\n");
+                exit(114);
+            }
+
+            setStr = buf;
+        }
+
+        if (IS_STRING(item->value)) {
+            memcpy(setStr + strLen, "\"", 1);
+            memcpy(setStr + strLen + 1, valueStr, valueSize);
+            memcpy(setStr + strLen + 1 + valueSize, "\"", 1);
+            strLen += valueSize + 2;
+        } else {
+            memcpy(setStr + strLen, valueStr, valueSize);
+            strLen += valueSize;
+            free(valueStr);
+        }
+
+        if (count != set->count) {
+            memcpy(setStr + strLen, ", ", 2);
+            strLen += 2;
+        }
+    }
+
+    memcpy(setStr + strLen, "}", 1);
+    setStr[strLen + 1] = '\0';
+
+    return setStr;
 }
 
 static void adjustMapCapacity(VM *vm, ObjMap *map, int capacity) {
@@ -660,6 +736,7 @@ char *objectType(Value value) {
         case OBJ_ARRAY: return newCString("array");
         case OBJ_FILE: return newCString("file");
         case OBJ_MAP: return newCString("map");
+        case OBJ_SET: return newCString("set");
     }
 
     return newCString("unknown type");
@@ -680,6 +757,7 @@ char *objectToString(Value value) {
         case OBJ_ARRAY: return arrayToString(AS_ARRAY(value));
         case OBJ_FILE: return fileToString(AS_FILE(value));
         case OBJ_MAP: return mapToString(AS_MAP(value));
+        case OBJ_SET: return setToString(AS_SET(value));
     }
     
     return newCString("unknown object");

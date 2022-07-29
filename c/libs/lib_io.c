@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #ifndef I_WIN
 #   include <termios.h>
+#   include <unistd.h>
 #   define _fileno fileno
 #else
 #   include <io.h>
