@@ -134,6 +134,10 @@ static void blackenObject(VM *vm, Obj *obj) {
             ObjMap *map = (ObjMap*)obj;
             markMap(vm, map);
         } break;
+        case OBJ_SET: {
+            ObjSet *set = (ObjSet*)obj;
+            markSet(vm, set);
+        } break;
         case OBJ_SCRIPT: {
             ObjScript *script = (ObjScript*)obj;
             markObject(vm, (Obj*)script->name);
@@ -199,6 +203,11 @@ static void freeObject(VM *vm, Obj *obj) {
             ObjMap *map = (ObjMap*)obj;
             FREE_ARRAY(vm, MapItem, map->items, map->capacity + 1);
             FREE(vm, ObjMap, obj);
+        } break;
+        case OBJ_SET: {
+            ObjSet *set = (ObjSet*)obj;
+            FREE_ARRAY(vm, SetItem, set->items, set->capacity + 1);
+            FREE(vm, ObjSet, obj);
         } break;
         case OBJ_SCRIPT: {
             ObjScript *script = (ObjScript*)obj;

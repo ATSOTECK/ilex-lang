@@ -664,6 +664,109 @@ void markMap(VM *vm, ObjMap *map) {
     }
 }
 
+static SetItem *setFindItem(SetItem *items, int capacity, Value value) {
+    uint32_t index = hashValue(value) & capacity;
+    SetItem *tombstone = NULL;
+    
+    for (;;) {
+        SetItem *item = &items[index];
+        
+        if (IS_ERR(item->value)) {
+            if (!item->deleted) {
+                return tombstone != NULL ? tombstone : item;
+            } else {
+                if (tombstone == NULL) {
+                    tombstone = item;
+                }
+            }
+        } else if (valuesEqual(value, item->value)) {
+            return item;
+        }
+        
+        index = (index + 1) & capacity;
+    }
+}
+
+static void adjustSetCapacity(VM *vm, ObjSet *set, int capacity) {
+    SetItem *items = ALLOCATE(vm, SetItem, capacity + 1);
+    for (int i = 0; i <= capacity; ++i) {
+        items[i].value = ERROR_VAL;
+        items[i].deleted = false;
+    }
+    
+    set->count = 0;
+    
+    for (int i = 0; i <= set->capacity; ++i) {
+        SetItem *item = &set->items[i];
+        if (IS_ERR(item->value) || item->deleted) {
+            continue;
+        }
+        
+        SetItem *dst = setFindItem(items, capacity, item->value);
+        dst->value = item->value;
+        ++set->count;
+    }
+    
+    FREE_ARRAY(vm, SetItem, set->items, set->capacity + 1);
+    set->items = items;
+    set->capacity = capacity;
+}
+
+bool setAdd(VM *vm, ObjSet *set, Value value) {
+    if (set->count + 1 > (set->capacity + 1) * TABLE_MAX_LOAD) {
+        int capacity = GROW_CAPACITY(set->capacity + 1) - 1;
+        adjustSetCapacity(vm, set, capacity);
+    }
+    
+    SetItem *item = setFindItem(set->items, set->capacity, value);
+    bool isNewValue = IS_ERR(item->value) || item->deleted;
+    item->value = value;
+    item->deleted = false;
+    
+    if (isNewValue) {
+        ++set->count;
+    }
+    
+    return isNewValue;
+}
+
+bool setGet(VM *vm, ObjSet *set, Value value) {
+    if (set->count == 0) {
+        return false;
+    }
+    
+    SetItem *item = setFindItem(set->items, set->capacity, value);
+    return !(IS_ERR(item->value) || item->deleted);
+}
+
+bool setDelete(VM *vm, ObjSet *set, Value value) {
+    if (set->count == 0) {
+        return false;
+    }
+    
+    SetItem *item = setFindItem(set->items, set->capacity, value);
+    if (IS_ERR(item->value)) {
+        return false;
+    }
+    
+    --set->count;
+    item->deleted = true;
+    
+    if (set->count - 1 < set->capacity * TABLE_MIN_LOAD) {
+        int capacity = SHRINK_CAPACITY(set->capacity + 1) - 1;
+        adjustSetCapacity(vm, set, capacity);
+    }
+    
+    return true;
+}
+
+void markSet(VM *vm, ObjSet *set) {
+    for (int i = 0; i <= set->capacity; ++i) {
+        SetItem *item = &set->items[i];
+        markValue(vm, item->value);
+    }
+}
+
 ObjArray *copyArray(VM *vm, ObjArray *array, bool isShallow) {
     ObjArray *ret = newArray(vm);
     push(vm, OBJ_VAL(ret));

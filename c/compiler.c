@@ -587,6 +587,21 @@ static void map(Compiler *compiler, bool canAssign) {
     eat(compiler->parser, TK_RBRACE, "Expect closing '}'.");
 }
 
+static void set(Compiler *compiler, bool canAssign) {
+    int count = 0;
+    do {
+        if (check(compiler, TK_GR)) {
+            break;
+        }
+    
+        expression(compiler);
+        ++count;
+    } while (match(compiler, TK_COMMA));
+    
+    emitBytes(compiler, OP_NEW_SET, count);
+    eat(compiler->parser, TK_GR, "Expect closing '>'.");
+}
+
 static void index_(Compiler *compiler, bool canAssign) {
     if (match(compiler, TK_COLON)) {
         emitByte(compiler, OP_EMPTY);
@@ -1019,7 +1034,7 @@ ParseRule rules[] = {
         [TK_EQ]               = {NULL,     binary,  PREC_EQUALITY},
         [TK_GR]               = {NULL,     binary,  PREC_COMPARISON},
         [TK_GREQ]             = {NULL,     binary,  PREC_COMPARISON},
-        [TK_LT]               = {NULL,     binary,  PREC_COMPARISON},
+        [TK_LT]               = {set,      binary,  PREC_COMPARISON},
         [TK_LTEQ]             = {NULL,     binary,  PREC_COMPARISON},
         [TK_BIT_AND]          = {NULL,     binary,  PREC_BIT_AND},
         [TK_BIT_OR]           = {NULL,     binary,  PREC_BIT_OR},

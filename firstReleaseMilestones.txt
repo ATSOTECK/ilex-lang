@@ -1,4 +1,4 @@
-map datatype
+(done) map datatype
 set datatype
 (done) shallow/deep copy for arrays 
 (done) file IO

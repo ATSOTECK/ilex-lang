@@ -198,6 +198,10 @@ bool mapSet(VM *vm, ObjMap *map, Value key, Value value);
 bool mapGet(ObjMap *map, Value key, Value *value);
 bool mapDelete(VM *vm, ObjMap *map, Value key);
 void markMap(VM *vm, ObjMap *map);
+bool setAdd(VM *vm, ObjSet *set, Value value);
+bool setGet(VM *vm, ObjSet *set, Value value);
+bool setDelete(VM *vm, ObjSet *set, Value value);
+void markSet(VM *vm, ObjSet *set);
 
 ObjArray *copyArray(VM *vm, ObjArray *array, bool isShallow);
 ObjMap *copyMap(VM *vm, ObjMap *map, bool isShallow);

@@ -1492,6 +1492,25 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 vm->stackTop -= count * 2 + 1;
                 push(vm, OBJ_VAL(map));
             } break;
+            case OP_NEW_SET: {
+                int count = READ_BYTE();
+                ObjSet *set = newSet(vm);
+                push(vm, OBJ_VAL(set));
+                
+                for (int i = count; i > 0; --i) {
+                    if (!isValidKey(peek(vm, i))) {
+                        char *type = valueType(peek(vm, i));
+                        runtimeError(vm, "Expect string or number for value but got '%s'.", type);
+                        free(type);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+    
+                    setAdd(vm, set, peek(vm, i));
+                }
+                
+                vm->stackTop -= count + 1;
+                push(vm, OBJ_VAL(set));
+            } break;
         }
     }
 

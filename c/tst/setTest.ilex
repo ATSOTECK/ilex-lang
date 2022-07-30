@@ -1,0 +1,2 @@
+set := <1, 2, 'three'>;
+println(set);

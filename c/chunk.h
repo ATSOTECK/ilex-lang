@@ -89,6 +89,7 @@ typedef enum {
     OP_SET_SCRIPT,
     OP_DEFINE_SCRIPT,
     OP_NEW_MAP,
+    OP_NEW_SET,
 } OpCode;
 
 typedef struct {
