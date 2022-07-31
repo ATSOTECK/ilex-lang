@@ -12,6 +12,7 @@
 #include "value.h"
 
 #include <stdio.h>
+#include <time.h>
 
 #define OBJ_TYPE(value)        (AS_OBJ(value)->type)
 
@@ -171,6 +172,11 @@ typedef struct {
     int capacity;
     SetItem *items;
 } ObjSet;
+
+typedef struct {
+    Obj obj;
+    struct tm time;
+} ObjDateTime;
 
 ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
 ObjClass *newClass(VM *vm, ObjString *name);

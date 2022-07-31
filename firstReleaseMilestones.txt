@@ -5,7 +5,7 @@
 HTTP lib
 SQL lib
 use user made scripts
-16 bit?
+(nope) 16 bit?
 (done) switch fallthrough
 (done) annonomys functions
 fix GC bugs
