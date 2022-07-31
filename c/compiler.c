@@ -140,53 +140,36 @@ static bool match(Compiler *compiler, IlexTokenType type) {
     return true;
 }
 
-static void emitByte(Compiler *compiler, uint8_t byte) {
+static void emitByte(Compiler *compiler, uint16_t byte) {
     writeChunk(compiler->parser->vm, currentChunk(compiler), byte, compiler->parser->previous.line);
 }
 
-static void emitShort(Compiler *compiler, uint16_t byte) {
-    emitByte(compiler, (uint8_t)(byte >> 8));
-    emitByte(compiler, (uint8_t)byte);
-}
-
-static void emitBytes(Compiler *compiler, uint8_t byte1, uint8_t byte2) {
+static void emitBytes(Compiler *compiler, uint16_t byte1, uint16_t byte2) {
     emitByte(compiler, byte1);
-    emitByte(compiler, byte2);
-}
-
-static void emitByteShort(Compiler *compiler, uint8_t byte1, uint16_t byte2) {
-    emitByte(compiler, byte1);
-    emitShort(compiler, byte2);
-}
-
-static void emitShortByte(Compiler *compiler, uint16_t byte1, uint8_t byte2) {
-    emitShort(compiler, byte1);
     emitByte(compiler, byte2);
 }
 
 static void emitLoop(Compiler *compiler, int loopStart) {
     emitByte(compiler, OP_LOOP);
 
-    int offset = currentChunk(compiler)->count - loopStart + 2;
+    int offset = currentChunk(compiler)->count - loopStart + 1;
     if (offset > UINT16_MAX) {
         error(compiler->parser, "Loop body too large.");
     }
-
-    emitByte(compiler, (offset >> 8) & 0xff);
-    emitByte(compiler, offset & 0xff);
+    
+    emitByte(compiler, offset);
 }
 
-static int emitJump(Compiler *compiler, uint8_t instruction) {
+static int emitJump(Compiler *compiler, uint16_t instruction) {
     emitByte(compiler, instruction);
-    emitByte(compiler, 0xff);
-    emitByte(compiler, 0xff);
+    emitByte(compiler, 0xffff);
 
-    return currentChunk(compiler)->count - 2;
+    return currentChunk(compiler)->count - 1;
 }
 
 static void emitReturn(Compiler *compiler) {
     if (compiler->type == TYPE_INITIALIZER) {
-        emitByteShort(compiler, OP_GET_LOCAL, 0);  // this
+        emitBytes(compiler, OP_GET_LOCAL, 0);  // this
     } else {
         emitByte(compiler, OP_NULL);
     }
@@ -205,18 +188,17 @@ static uint16_t makeConstant(Compiler *compiler, Value value) {
 }
 
 static void emitConstant(Compiler *compiler, Value value) {
-    emitByteShort(compiler, OP_CONSTANT, makeConstant(compiler, value));
+    emitBytes(compiler, OP_CONSTANT, makeConstant(compiler, value));
 }
 
 static void patchJump(Compiler *compiler, int offset) {
-    int jump = currentChunk(compiler)->count - offset - 2;
+    int jump = currentChunk(compiler)->count - offset - 1;
 
     if (jump > UINT16_MAX) {
         error(compiler->parser, "Too much code to jump over.");
     }
 
-    currentChunk(compiler)->code[offset] = (jump >> 8) & 0xff;
-    currentChunk(compiler)->code[offset + 1] = jump & 0xff;
+    currentChunk(compiler)->code[offset] = jump;
 }
 
 static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, FunctionType type) {
@@ -380,7 +362,7 @@ static void defineVariable(Compiler *compiler, uint16_t global, bool isConst) {
             tableSet(compiler->parser->vm, &compiler->parser->vm->consts, AS_STRING(currentChunk(compiler)->constants.values[global]), NULL_VAL);
         }
     
-        emitByteShort(compiler, OP_DEFINE_SCRIPT, global);
+        emitBytes(compiler, OP_DEFINE_SCRIPT, global);
     } else {
         compiler->locals[compiler->localCount - 1].depth = compiler->scopeDepth;
         compiler->locals[compiler->localCount - 1].isConst = isConst;
@@ -389,8 +371,8 @@ static void defineVariable(Compiler *compiler, uint16_t global, bool isConst) {
     }
 }
 
-static uint8_t argumentList(Compiler *compiler) {
-    uint8_t argCount = 0;
+static uint16_t argumentList(Compiler *compiler) {
+    uint16_t argCount = 0;
     if (!check(compiler, TK_RPAREN)) {
         do {
             expression(compiler);
@@ -679,7 +661,7 @@ static void index_(Compiler *compiler, bool canAssign) {
     }
 }
 
-static void checkIfConst(Compiler *compiler, uint8_t setOp, int arg) {
+static void checkIfConst(Compiler *compiler, uint16_t setOp, int arg) {
     if (setOp == OP_SET_LOCAL) {
         if (compiler->locals[arg].isConst) {
             // TODO(Skyler): Find a better way to do this.
@@ -705,7 +687,7 @@ static void checkIfConst(Compiler *compiler, uint8_t setOp, int arg) {
 }
 
 static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
-    uint8_t getOp, setOp;
+    uint16_t getOp, setOp;
     int arg = resolveLocal(compiler, &name, false);
 
     if (arg != -1) {
@@ -732,13 +714,13 @@ static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
                               namedVariable(compiler, name, false); \
                               expression(compiler); \
                               emitByte(compiler, token); \
-                              emitByteShort(compiler, setOp, (uint16_t)arg); \
+                              emitBytes(compiler, setOp, (uint16_t)arg); \
                           } while (false) \
     
     if (canAssign && match(compiler, TK_ASSIGN)) {
         checkIfConst(compiler, setOp, arg);
         expression(compiler);
-        emitByteShort(compiler, setOp, (uint16_t)arg);
+        emitBytes(compiler, setOp, (uint16_t)arg);
     } else if (canAssign && match(compiler, TK_PLUSEQ)) {
         EMIT_OP_EQ(OP_ADD);
     } else if (canAssign && match(compiler, TK_MINUSEQ)) {
@@ -763,14 +745,14 @@ static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
         checkIfConst(compiler, setOp, arg);
         namedVariable(compiler, name, false);
         emitByte(compiler, OP_INC);
-        emitByteShort(compiler, setOp, (uint16_t)arg);
+        emitBytes(compiler, setOp, (uint16_t)arg);
     } else if (canAssign && match(compiler, TK_DEC)) {
         checkIfConst(compiler, setOp, arg);
         namedVariable(compiler, name, false);
         emitByte(compiler, OP_DEC);
-        emitByteShort(compiler, setOp, (uint16_t)arg);
+        emitBytes(compiler, setOp, (uint16_t)arg);
     } else {
-        emitByteShort(compiler, getOp, (uint16_t)arg);
+        emitBytes(compiler, getOp, (uint16_t)arg);
     }
 
 #undef EMIT_OP_EQ
@@ -801,13 +783,13 @@ static void super_(Compiler *compiler, bool canAssign) {
 
     namedVariable(compiler, syntheticToken("this"), false);
     if (match(compiler, TK_LPAREN)) {
-        uint8_t argc = argumentList(compiler);
+        uint16_t argc = argumentList(compiler);
         namedVariable(compiler, syntheticToken("super"), false);
-        emitByteShort(compiler, OP_SUPER_INVOKE, name);
+        emitBytes(compiler, OP_SUPER_INVOKE, name);
         emitByte(compiler, argc);
     } else {
         namedVariable(compiler, syntheticToken("super"), false);
-        emitByteShort(compiler, OP_GET_SUPER, name);
+        emitBytes(compiler, OP_GET_SUPER, name);
     }
 }
 
@@ -866,7 +848,7 @@ static void ternary(Compiler *compiler, bool canAssign) {
 }
 
 static void call(Compiler *compiler, bool canAssign) {
-    uint8_t argCount = argumentList(compiler);
+    uint16_t argCount = argumentList(compiler);
     emitBytes(compiler, OP_CALL, argCount);
 }
 
@@ -875,15 +857,15 @@ static void dot(Compiler *compiler, bool canAssign) {
     uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
 
 #define EMIT_OP_EQ(token) do { \
-                              emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name); \
+                              emitBytes(compiler, OP_GET_PROPERTY_NO_POP, name); \
                               expression(compiler); \
                               emitByte(compiler, token); \
-                              emitByteShort(compiler, OP_SET_PROPERTY, name); \
+                              emitBytes(compiler, OP_SET_PROPERTY, name); \
                           } while (false) \
     
     if (canAssign && match(compiler, TK_ASSIGN)) {
         expression(compiler);
-        emitByteShort(compiler, OP_SET_PROPERTY, name);
+        emitBytes(compiler, OP_SET_PROPERTY, name);
     } else if (canAssign && match(compiler, TK_PLUSEQ)) {
         EMIT_OP_EQ(OP_ADD);
     }  else if (canAssign && match(compiler, TK_MINUSEQ)) {
@@ -905,19 +887,19 @@ static void dot(Compiler *compiler, bool canAssign) {
     } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
         EMIT_OP_EQ(OP_NULL_COALESCE);
     } else if (canAssign && match(compiler, TK_INC)) {
-        emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name);
+        emitBytes(compiler, OP_GET_PROPERTY_NO_POP, name);
         emitByte(compiler, OP_INC);
-        emitByteShort(compiler, OP_SET_PROPERTY, name);
+        emitBytes(compiler, OP_SET_PROPERTY, name);
     } else if (canAssign && match(compiler, TK_DEC)) {
-        emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name);
+        emitBytes(compiler, OP_GET_PROPERTY_NO_POP, name);
         emitByte(compiler, OP_DEC);
-        emitByteShort(compiler, OP_SET_PROPERTY, name);
+        emitBytes(compiler, OP_SET_PROPERTY, name);
     } else if (match(compiler, TK_LPAREN)) {
-            uint8_t argc = argumentList(compiler);
-            emitByteShort(compiler, OP_INVOKE, name);
+            uint16_t argc = argumentList(compiler);
+            emitBytes(compiler, OP_INVOKE, name);
             emitByte(compiler, argc);
     } else {
-        emitByteShort(compiler, OP_GET_PROPERTY, name);
+        emitBytes(compiler, OP_GET_PROPERTY, name);
     }
 
 #undef EMIT_OP_EQ
@@ -929,10 +911,10 @@ static void scope(Compiler *compiler, bool canAssign) {
 
     if (match(compiler, TK_LPAREN)) {
         int argc = argumentList(compiler);
-        emitByteShort(compiler, OP_INVOKE, name);
+        emitBytes(compiler, OP_INVOKE, name);
         emitByte(compiler, argc);
     } else {
-        emitByteShort(compiler, OP_GET_PROPERTY, name);
+        emitBytes(compiler, OP_GET_PROPERTY, name);
     }
 }
 
@@ -1002,11 +984,11 @@ static void anon(Compiler *compiler, bool canAssign) {
     }
     
     ObjFunction *function = endCompiler(&functionCompiler);
-    emitByteShort(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
+    emitBytes(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
     
     for (int i = 0; i < function->upvalueCount; ++i) {
         emitByte(compiler, functionCompiler.upvalues[i].isLocal ? 1 : 0);
-        emitShort(compiler, functionCompiler.upvalues[i].index);
+        emitByte(compiler, functionCompiler.upvalues[i].index);
     }
 }
 
@@ -1200,11 +1182,11 @@ static void function(Compiler *compiler, FunctionType type) {
     block(&functionCompiler);
 
     ObjFunction *function = endCompiler(&functionCompiler);
-    emitByteShort(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
+    emitBytes(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
 
     for (int i = 0; i < function->upvalueCount; ++i) {
         emitByte(compiler, functionCompiler.upvalues[i].isLocal ? 1 : 0);
-        emitShort(compiler, functionCompiler.upvalues[i].index);
+        emitByte(compiler, functionCompiler.upvalues[i].index);
     }
 }
 
@@ -1218,7 +1200,7 @@ static void method(Compiler *compiler) {
         type = TYPE_INITIALIZER;
     }
     function(compiler, type);
-    emitByteShort(compiler, OP_METHOD, constant);
+    emitBytes(compiler, OP_METHOD, constant);
 }
 
 static void classDeclaration(Compiler *compiler) {
@@ -1227,7 +1209,7 @@ static void classDeclaration(Compiler *compiler) {
     uint16_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
     declareVariable(compiler);
 
-    emitByteShort(compiler, OP_CLASS, nameConstant);
+    emitBytes(compiler, OP_CLASS, nameConstant);
     defineVariable(compiler, nameConstant, false);
 
     ClassCompiler classCompiler;
@@ -1316,7 +1298,7 @@ static void enumDeclaration(Compiler *compiler) {
 
     uint16_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
     declareVariable(compiler);
-    emitByteShort(compiler, OP_ENUM, nameConstant);
+    emitBytes(compiler, OP_ENUM, nameConstant);
     eat(compiler->parser, TK_LBRACE, "Expect '{' before enum body.");
     int index = 0;
 
@@ -1334,7 +1316,7 @@ static void enumDeclaration(Compiler *compiler) {
             emitConstant(compiler, NUMBER_VAL(index));
         }
 
-        emitByteShort(compiler, OP_ENUM_SET_VALUE, name);
+        emitBytes(compiler, OP_ENUM_SET_VALUE, name);
         index++;
     } while (match(compiler, TK_COMMA));
 
@@ -1348,7 +1330,7 @@ static void expressionStatement(Compiler *compiler) {
     emitByte(compiler, OP_POP);
 }
 
-static int getArgCount(const uint8_t *code, const ValueArray constants, int ip) {
+static int getArgCount(const uint16_t *code, const ValueArray constants, int ip) {
     switch (code[ip]) {
         case OP_NULL:
         case OP_TRUE:
@@ -1389,6 +1371,7 @@ static int getArgCount(const uint8_t *code, const ValueArray constants, int ip) 
         case OP_SET_SCRIPT:
         case OP_DEFINE_SCRIPT:
         case OP_NEW_MAP:
+        case OP_NEW_SET:
             return 1;
 
         case OP_JUMP:
@@ -1518,7 +1501,7 @@ static void assertStatement(Compiler *compiler) {
     eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
     match(compiler, TK_SEMICOLON);
 
-    emitByteShort(compiler, OP_ASSERT, (uint16_t)constant);
+    emitBytes(compiler, OP_ASSERT, (uint16_t)constant);
 }
 
 static void panicStatement(Compiler *compiler) {
@@ -1528,7 +1511,7 @@ static void panicStatement(Compiler *compiler) {
     eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
     match(compiler, TK_SEMICOLON);
 
-    emitByteShort(compiler, OP_PANIC, (uint16_t)constant);
+    emitBytes(compiler, OP_PANIC, (uint16_t)constant);
 }
 
 static void switchStatement(Compiler *compiler) {
@@ -1556,7 +1539,7 @@ static void switchStatement(Compiler *compiler) {
             eat(compiler->parser, TK_COLON, "Expect ':' or '->' after expression.");
         }
 
-        uint8_t jmpType = check(compiler, TK_ARROW) ? OP_CMP_JMP_FALL : OP_CMP_JMP;
+        uint16_t jmpType = check(compiler, TK_ARROW) ? OP_CMP_JMP_FALL : OP_CMP_JMP;
         int compareJump = emitJump(compiler, jmpType);
 
         bool dontJump = false;
@@ -1722,7 +1705,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         declareVariable(compiler);
 
         emitBytes(compiler, OP_USE_BUILTIN, idx);
-        emitShort(compiler, compiler->currentLibName);
+        emitByte(compiler, compiler->currentLibName);
 
         if (!isFrom) {
             defineVariable(compiler, compiler->currentLibName, false);
@@ -1732,7 +1715,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         uint16_t useConstant = makeConstant(compiler, OBJ_VAL(copyString(compiler->parser->vm,
                                                                          compiler->parser->previous.start + 1,
                                                                          compiler->parser->previous.len - 2)));
-        emitByteShort(compiler, OP_USE, useConstant);
+        emitBytes(compiler, OP_USE, useConstant);
         emitByte(compiler, OP_POP);
         
         if (match(compiler, TK_AS)) {
@@ -1768,10 +1751,10 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         if (builtin) {
             emitByte(compiler, OP_POP);
             emitByte(compiler, OP_USE_BUILTIN_VAR);
-            emitShortByte(compiler, compiler->currentLibName, varCount);
+            emitBytes(compiler, compiler->currentLibName, varCount);
 
             for (int i = 0; i < varCount; ++i) {
-                emitShort(compiler, variables[i]);
+                emitByte(compiler, variables[i]);
             }
 
             for (int i = varCount - 1; i >= 0; --i) {
@@ -1818,10 +1801,10 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         if (builtin) {
             emitByte(compiler, OP_POP);
             emitByte(compiler, OP_USE_BUILTIN_VAR);
-            emitShortByte(compiler, compiler->currentLibName, varCount);
+            emitBytes(compiler, compiler->currentLibName, varCount);
 
             for (int i = 0; i < varCount; ++i) {
-                emitShort(compiler, variables[i]);
+                emitByte(compiler, variables[i]);
             }
 
             for (int i = varCount - 1; i >= 0; --i) {
@@ -1902,7 +1885,7 @@ static void withStatement(Compiler *compiler) {
     
     emitByte(compiler, OP_OPEN_FILE);
     block(compiler);
-    emitByteShort(compiler, OP_CLOSE_FILE, fileIdx);
+    emitBytes(compiler, OP_CLOSE_FILE, fileIdx);
     endScope(compiler);
     
     compiler->isWithBlock = false;
@@ -1918,7 +1901,7 @@ static void checkWithFile(Compiler *compiler) {
         int local = resolveLocal(compiler, &token, true);
         
         if (local != -1) {
-            emitByteShort(compiler, OP_CLOSE_FILE, local);
+            emitBytes(compiler, OP_CLOSE_FILE, local);
             if (compiler->withVarName != NULL) {
                 free(compiler->withVarName);
                 compiler->withVarName = NULL;

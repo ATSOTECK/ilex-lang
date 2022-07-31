@@ -479,11 +479,10 @@ static void concat(VM *vm) {
 
 InterpretResult run(VM *vm, int frameIndex, Value *val) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1];
-    register uint8_t *ip = frame->ip;
+    register uint16_t *ip = frame->ip;
 
 #define READ_BYTE() (*ip++)
-#define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
-#define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_SHORT()])
+#define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_BYTE()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op, type) \
     do { \
@@ -507,7 +506,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
         printf("\n");
         disassembleInstruction(&frame->closure->function->chunk, (int)(ip - frame->closure->function->chunk.code));
 #endif
-        uint8_t instruction;
+        uint16_t instruction;
         switch (instruction = READ_BYTE()) {
             case OP_CONSTANT: {
                 Value constant = READ_CONSTANT();
@@ -519,7 +518,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             case OP_FALSE: push(vm, BOOL_VAL(false)); break;
             case OP_POP: pop(vm); break;
             case OP_GET_LOCAL: {
-                uint16_t slot = READ_SHORT();
+                uint16_t slot = READ_BYTE();
                 push(vm, frame->slots[slot]);
             } break;
             case OP_GET_GLOBAL: {
@@ -543,7 +542,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 push(vm, value);
             } break;
             case OP_GET_UPVALUE: {
-                uint16_t slot = READ_SHORT();
+                uint16_t slot = READ_BYTE();
                 push(vm, *frame->closure->upvalues[slot]->location);
             } break;
             case OP_GET_PROPERTY: {
@@ -644,7 +643,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 pop(vm);
             } break;
             case OP_SET_LOCAL: {
-                uint16_t slot = READ_SHORT();
+                uint16_t slot = READ_BYTE();
                 frame->slots[slot] = peek(vm, 0);
             } break;
             case OP_SET_GLOBAL: {
@@ -664,7 +663,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 }
             } break;
             case OP_SET_UPVALUE: {
-                uint16_t slot = READ_SHORT();
+                uint16_t slot = READ_BYTE();
                 *frame->closure->upvalues[slot]->location = peek(vm, 0);
             } break;
             case OP_SET_PROPERTY: {
@@ -797,29 +796,29 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 push(vm, NUMBER_VAL(-AS_NUMBER(pop(vm))));
             } break;
             case OP_JUMP: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = READ_BYTE();
                 ip += offset;
             } break;
             case OP_JUMP_IF_FALSE: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = READ_BYTE();
                 if (isFalsy(peek(vm, 0))) {
                     ip += offset;
                 }
             } break;
             case OP_JUMP_IF_TRUE: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = READ_BYTE();
                 if (!isFalsy(peek(vm, 0))) {
                     ip += offset;
                 }
             } break;
             case OP_JUMP_DO_WHILE: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = READ_BYTE();
                 if (!isFalsy(peek(vm, 0))) {
                     ip -= offset;
                 }
             } break;
             case OP_LOOP: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = READ_BYTE();
                 ip -= offset;
             } break;
             case OP_CALL: {
@@ -860,8 +859,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 push(vm, OBJ_VAL(closure));
 
                 for (int i = 0; i < closure->upvalueCount; ++i) {
-                    uint8_t isLocal = READ_BYTE();
-                    uint16_t index = READ_SHORT();
+                    uint16_t isLocal = READ_BYTE();
+                    uint16_t index = READ_BYTE();
                     if (isLocal) {
                         closure->upvalues[i] = captureUpvalue(vm, frame->slots + index);
                     } else {
@@ -947,7 +946,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 push(vm,caseValue);
             } break;
             case OP_CMP_JMP: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = READ_BYTE();
                 Value a = pop(vm);
                 if (!vm->fallThrough && !valuesEqual(peek(vm,0), a)) {
                     ip += offset;
@@ -957,7 +956,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 }
             } break;
             case OP_CMP_JMP_FALL: {
-                uint16_t offset = READ_SHORT();
+                uint16_t offset = READ_BYTE();
                 Value a = pop(vm);
                 if (!vm->fallThrough && !valuesEqual(peek(vm,0), a)) {
                     ip += offset;
@@ -1480,7 +1479,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 push(vm, OBJ_VAL(file));
             } break;
             case OP_CLOSE_FILE: {
-                uint16_t slot = READ_SHORT();
+                uint16_t slot = READ_BYTE();
                 Value value = frame->slots[slot];
                 ObjFile *file = AS_FILE(value);
                 fclose(file->file);
