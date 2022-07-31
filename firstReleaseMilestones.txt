@@ -1,6 +1,6 @@
 (done) map datatype
-set datatype
-(done) shallow/deep copy for arrays 
+(done) set datatype
+(done) shallow/deep copy for arrays/maps
 (done) file IO
 HTTP lib
 SQL lib

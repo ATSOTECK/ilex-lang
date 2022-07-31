@@ -412,6 +412,7 @@ Token nextToken() {
         case ';': return makeToken(TK_SEMICOLON);
         case ',': return makeToken(TK_COMMA);
         case '.': return makeToken(TK_DOT);
+        case '#': return makeToken(TK_HASH);
         case '-': {
             if (match('-')) {
                 return makeToken(TK_DEC);
@@ -501,14 +502,6 @@ Token nextToken() {
         case '~': return makeToken(TK_BIT_NOT);
         case '"': return string('"');
         case '\'': return string('\'');
-        /*
-        case '\n': {
-            Token token = makeToken(TK_NL);
-            ++lexer.line;
-
-            return token;
-        }
-        */
         default: break;
     }
 

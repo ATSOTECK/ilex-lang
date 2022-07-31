@@ -444,7 +444,7 @@ char *setToString(ObjSet *set) {
 
     for (int i = 0; i <= set->capacity; ++i) {
         SetItem *item = &set->items[i];
-        if (IS_ERR(item->value)) {
+        if (IS_ERR(item->value) || item->deleted) {
             continue;
         }
 

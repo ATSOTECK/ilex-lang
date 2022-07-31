@@ -16,6 +16,7 @@
 #include "libs/lib_file.h"
 #include "libs/lib_map.h"
 #include "libs/lib_natives.h"
+#include "libs/lib_set.h"
 #include "libs/lib_string.h"
 
 #include <math.h>
@@ -138,6 +139,7 @@ VM *initVM(const char *path) {
     initTable(&vm->arrayFunctions);
     initTable(&vm->fileFunctions);
     initTable(&vm->mapFunctions);
+    initTable(&vm->setFunctions);
 
     vm->initString = NULL;
     vm->scriptName = NULL;
@@ -151,6 +153,7 @@ VM *initVM(const char *path) {
     defineArrayFunctions(vm);
     defineFileFunctions(vm);
     defineMapFunctions(vm);
+    defineSetFunctions(vm);
 
     return vm;
 }
@@ -163,6 +166,7 @@ void freeVM(VM *vm) {
     freeTable(vm, &vm->arrayFunctions);
     freeTable(vm, &vm->fileFunctions);
     freeTable(vm, &vm->mapFunctions);
+    freeTable(vm, &vm->setFunctions);
     vm->initString = NULL;
     vm->scriptName = NULL;
     freeObjects(vm);
@@ -376,6 +380,15 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
             }
     
             runtimeError(vm, "Map has no function %s().", name->str);
+            return false;
+        }
+        case OBJ_SET: {
+            Value value;
+            if (tableGet(&vm->setFunctions, name, &value)) {
+                return callNativeFunction(vm, value, argc);
+            }
+    
+            runtimeError(vm, "Set has no function %s().", name->str);
             return false;
         }
         default: break;

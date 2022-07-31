@@ -239,6 +239,7 @@ static void markRoots(VM *vm) {
     markTable(vm, &vm->stringFunctions);
     markTable(vm, &vm->arrayFunctions);
     markTable(vm, &vm->mapFunctions);
+    markTable(vm, &vm->setFunctions);
     markCompilerRoots(vm);
     markObject(vm, (Obj*)vm->initString);
     markObject(vm, (Obj*)vm->scriptName);

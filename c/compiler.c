@@ -590,7 +590,7 @@ static void map(Compiler *compiler, bool canAssign) {
 static void set(Compiler *compiler, bool canAssign) {
     int count = 0;
     do {
-        if (check(compiler, TK_GR)) {
+        if (check(compiler, TK_RBRACE)) {
             break;
         }
     
@@ -599,7 +599,16 @@ static void set(Compiler *compiler, bool canAssign) {
     } while (match(compiler, TK_COMMA));
     
     emitBytes(compiler, OP_NEW_SET, count);
-    eat(compiler->parser, TK_GR, "Expect closing '>'.");
+    eat(compiler->parser, TK_RBRACE, "Expect closing '}'.");
+}
+
+static void hash(Compiler *compiler, bool canAssign) {
+    if (match(compiler, TK_LBRACE)) {
+        set(compiler, canAssign);
+        return;
+    }
+    
+    error(compiler->parser, "Unexpected token '#'.");
 }
 
 static void index_(Compiler *compiler, bool canAssign) {
@@ -1034,7 +1043,7 @@ ParseRule rules[] = {
         [TK_EQ]               = {NULL,     binary,  PREC_EQUALITY},
         [TK_GR]               = {NULL,     binary,  PREC_COMPARISON},
         [TK_GREQ]             = {NULL,     binary,  PREC_COMPARISON},
-        [TK_LT]               = {set,      binary,  PREC_COMPARISON},
+        [TK_LT]               = {NULL,     binary,  PREC_COMPARISON},
         [TK_LTEQ]             = {NULL,     binary,  PREC_COMPARISON},
         [TK_BIT_AND]          = {NULL,     binary,  PREC_BIT_AND},
         [TK_BIT_OR]           = {NULL,     binary,  PREC_BIT_OR},
@@ -1073,6 +1082,7 @@ ParseRule rules[] = {
         [TK_INC]              = {NULL,     inc,     PREC_TERM},
         [TK_DEC]              = {NULL,     dec,     PREC_TERM},
         [TK_TER]              = {NULL,     ternary, PREC_ASSIGN},
+        [TK_HASH]             = {hash,     NULL,    PREC_NONE},
         [TK_USE]              = {NULL,     NULL,    PREC_NONE},
         [TK_FROM]             = {NULL,     NULL,    PREC_NONE},
         [TK_AS]               = {NULL,     NULL,    PREC_NONE},

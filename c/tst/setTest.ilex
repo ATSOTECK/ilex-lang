@@ -1,2 +1,13 @@
-set := <1, 2, 'three'>;
-println(set);
+set ::= #{1, 2, 'three'}
+assert(set.contains(1) == true)
+assert(set.contains(2) == true)
+assert(set.contains('three') == true)
+assert(set.add(12) == true)
+assert(set.contains(12) == true)
+assert(set.delete(12) == true)
+assert(set.contains(12) == false)
+assert(set.contains(1) == true)
+assert(set.contains(2) == true)
+assert(set.contains('three') == true)
+
+println("Set test \033[32mpassed\033[0m in", milliseconds(), "ms!")

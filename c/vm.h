@@ -38,6 +38,7 @@ struct VM_ {
     Table arrayFunctions;
     Table fileFunctions;
     Table mapFunctions;
+    Table setFunctions;
 
     size_t bytesAllocated;
     size_t nextGC;
