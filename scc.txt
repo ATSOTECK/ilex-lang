@@ -1,34 +1,34 @@
-http://cloc.sourceforge.net v 1.62  T=0.13 s (370.5 files/s, 73475.6 lines/s)
+http://cloc.sourceforge.net v 1.62  T=0.13 s (384.9 files/s, 79058.6 lines/s)
 ------------------------------------------------------------------------------------
 File                                  blank        comment           code
 ------------------------------------------------------------------------------------
-.\c\compiler.c                          336             14           1686
-.\c\vm.c                                197              9           1353
+.\c\compiler.c                          336             14           1687
+.\c\vm.c                                197              9           1350
+.\c\libs\lib_array.c                    184              3            719
 .\c\object.c                            176              7            684
-.\c\libs\lib_array.c                    132              3            481
-.\c\lexer.c                              65              3            441
-.\c\libs\lib_io.c                        80              6            314
+.\c\lexer.c                              65              3            445
+.\c\libs\lib_io.c                        81              6            319
 .\c\memory.c                             34              3            271
 .\c\libs\lib_file.c                      78              5            264
 .\c\libs\lib_math.c                      81             11            264
-.\c\object.h                             30              3            184
+.\c\object.h                             31              3            189
 .\c\libs\lib_env.c                       52              3            180
 .\c\debug.c                              18              3            151
 .\c\table.c                              27              3            148
 .\c\util.c                               29              3            141
+.\c\value.c                              27             13            130
 .\c\libs\lib_map.c                       35              3            127
-.\c\value.c                              26             13            123
+.\c\libs\lib_ilex.c                      36              3            121
 .\c\libs\lib_random.c                    35              3            116
-.\c\libs\lib_ilex.c                      34              3            113
-.\c\lexer.h                              10              7            100
+.\c\lexer.h                              11              8            101
 .\c\chunk.h                               6              3             99
-.\c\libs\lib_natives.c                   20              6             85
+.\c\libs\lib_natives.c                   22              6             91
 .\c\libs\lib_sys.c                       24              3             84
+.\c\libs\lib_set.c                       19              3             72
+.\c\vm.h                                 16              3             63
 .\c\libs\lib_string.c                    19              4             62
-.\c\libs\lib_set.c                       16              3             61
-.\c\vm.h                                 15              3             61
+.\c\value.h                              22              3             61
 .\c\compiler.h                           12              3             60
-.\c\value.h                              21              3             60
 .\c\main.c                                6              0             38
 .\c\common.h                             12              7             35
 .\c\chunk.c                               9              3             34
@@ -53,5 +53,5 @@ File                                  blank        comment           code
 .\c\ilex_include.h                        3              3              4
 .\build.sh                                0              0              3
 ------------------------------------------------------------------------------------
-SUM:                                   1728            200           7989
+SUM:                                   1793            201           8275
 ------------------------------------------------------------------------------------
