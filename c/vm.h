@@ -49,6 +49,9 @@ struct VM_ {
     Obj** grayStack;
     ObjString *scriptName;
 
+    int fnCount;
+    int valCount;
+
     bool envLoaded;
     bool fallThrough;
 };

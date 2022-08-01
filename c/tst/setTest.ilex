@@ -2,12 +2,23 @@ set ::= #{1, 2, 'three'}
 assert(set.contains(1) == true)
 assert(set.contains(2) == true)
 assert(set.contains('three') == true)
+assert(set.size() == 3)
+assert(set.isEmpty() == false)
+
 assert(set.add(12) == true)
 assert(set.contains(12) == true)
+assert(set.size() == 4)
+
 assert(set.delete(12) == true)
+
+assert(set.size() == 3)
 assert(set.contains(12) == false)
 assert(set.contains(1) == true)
 assert(set.contains(2) == true)
 assert(set.contains('three') == true)
+
+set2 ::= #{}
+assert(set2.size() == 0)
+assert(set2.isEmpty() == true)
 
 println("Set test \033[32mpassed\033[0m in", milliseconds(), "ms!")

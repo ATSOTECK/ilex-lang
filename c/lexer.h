@@ -100,6 +100,9 @@ typedef enum {
     TK_WHILE,
     TK_WITH,
 
+    // No character representation.
+    TK_TO_STR,
+
     TK_ERROR,
     TK_EOF
 } IlexTokenType;

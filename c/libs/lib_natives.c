@@ -8,11 +8,6 @@
 #include <string.h>
 #include "lib_natives.h"
 
-static Value flushConsole(VM *vm, int argc, Value *args) {
-    fflush(stdout);
-    return ZERO_VAL;
-}
-
 static Value println(VM *vm, int argc, Value *args) {
     for (int i = 0; i < argc; ++i) {
         printValue(args[i]);
@@ -95,8 +90,20 @@ static Value milliseconds(VM *vm, int argc, Value* args) {
 #endif
 }
 
+static Value nativeToString(VM *vm, int argc, Value *args) {
+    if (argc != 1) {
+        runtimeError(vm, "Function toString() expected 1 argument but got %d.", argc);
+        return ERROR_VAL;
+    }
+
+    char *str = valueToString(args[0]);
+    ObjString *ret = copyString(vm, str, (int)strlen(str));
+    free(str);
+
+    return OBJ_VAL(ret);
+}
+
 void defineNatives(VM *vm) {
-    defineNative(vm, "flushConsole", flushConsole, &vm->globals);
     defineNative(vm, "println", println, &vm->globals);
     defineNative(vm, "debugln", println, &vm->globals); // Same as println but more searchable.
     defineNative(vm, "ln", ln, &vm->globals);
@@ -104,6 +111,7 @@ void defineNatives(VM *vm) {
     defineNative(vm, "debug", print, &vm->globals); // Same as print but more searchable.
     defineNative(vm, "printErr", stdErr, &vm->globals);
     defineNative(vm, "typeof", typeof_, &vm->globals);
+    defineNative(vm, "toString", nativeToString, &vm->globals);
 
     // Move these into Ilex library?
     defineNative(vm, "seconds", seconds, &vm->globals);

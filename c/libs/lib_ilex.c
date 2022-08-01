@@ -122,6 +122,14 @@ static Value ilexCollectGarbage(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
+static Value ilexFunctionCount(VM *vm, int argc, Value *args) {
+    return NUMBER_VAL(vm->fnCount);
+}
+
+static Value ilexValueCount(VM *vm, int argc, Value *args) {
+    return NUMBER_VAL(vm->valCount);
+}
+
 Value useIlexLib(VM *vm) {
     ObjString *name = copyString(vm, "ilex", 4);
     push(vm, OBJ_VAL(name));
@@ -140,8 +148,10 @@ Value useIlexLib(VM *vm) {
     defineNative(vm, "nextGC", ilexNextGcAt, &lib->values);
     defineNative(vm, "gcRuns", ilexGcRuns, &lib->values);
 
-
     defineNative(vm, "collectGarbage", ilexCollectGarbage, &lib->values);
+
+    defineNative(vm, "functionCount", ilexFunctionCount, &lib->values);
+    defineNative(vm, "valueCount", ilexValueCount, &lib->values);
 
     pop(vm);
     pop(vm);

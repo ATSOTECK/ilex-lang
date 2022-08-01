@@ -106,6 +106,7 @@ void defineNative(VM *vm, const char *name, NativeFn function, Table *table) {
     tableSet(vm, table, nativeName, OBJ_VAL(nativeFunction));
     pop(vm);
     pop(vm);
+    ++vm->fnCount;
 }
 
 void defineNativeValue(VM *vm, const char *name, Value value, Table *table) {
@@ -115,6 +116,7 @@ void defineNativeValue(VM *vm, const char *name, Value value, Table *table) {
     tableSet(vm, table, valueName, value);
     pop(vm);
     pop(vm);
+    ++vm->valCount;
 }
 
 VM *initVM(const char *path) {
@@ -129,6 +131,9 @@ VM *initVM(const char *path) {
     vm->grayCapacity = 0;
     vm->grayStack = NULL;
     vm->lastScript = NULL;
+
+    vm->fnCount = 0;
+    vm->valCount = 0;
 
     initTable(&vm->globals);
     initTable(&vm->consts);
@@ -451,14 +456,6 @@ static void defineMethod(VM *vm, ObjString *name) {
     ObjClass *objClass = AS_CLASS(peek(vm, 1));
     tableSet(vm, &objClass->methods, name, method);
     pop(vm);
-}
-
-static bool isFalsy(Value value) {
-    return IS_NULL(value) ||
-          (IS_BOOL(value) && !AS_BOOL(value)) ||
-          (IS_NUMBER(value) && AS_NUMBER(value) == 0) ||
-          (IS_STRING(value) && AS_STRING(value)->len == 0) ||
-          (IS_ARRAY(value) && AS_ARRAY(value)->data.count == 0);
 }
 
 static void concat(VM *vm) {
@@ -917,7 +914,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
 
                 if (isFalsy(condition)) {
                     if (!error->str[0]) {
-                        assertError(vm, "\033[31mAssertion Failed.\033[m");
+                        assertError(vm, "\033[31mAssertion Failed with no message.\033[m");
                     } else {
                         assertError(vm, "\033[31mAssertion failed\033[m with message: %s", error->str);
                     }

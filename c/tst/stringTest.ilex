@@ -26,6 +26,12 @@ count ::= 10
 str = 'You have ${count + 2} items.'
 println(str)
 
+str = 'You have ' + toString(count + 2) + ' items.'
+println(str)
+
+str = 'You have \${count + 2} items.'
+println(str)
+
 println('hello' + ' there')
 
 println("String test passed in", milliseconds(), "ms!")

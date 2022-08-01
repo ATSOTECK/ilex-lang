@@ -81,4 +81,6 @@ char *valueType(Value value);
 char *valueToString(Value value);
 void printValue(Value value);
 
+bool isFalsy(Value value);
+
 #endif //C_VALUE_H

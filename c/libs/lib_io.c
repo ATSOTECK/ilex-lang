@@ -330,6 +330,11 @@ static Value ioFflush(VM *vm, int argc, Value *args) {
     return ERROR_VAL;
 }
 
+static Value ioFlushConsole(VM *vm, int argc, Value *args) {
+    fflush(stdout);
+    return ZERO_VAL;
+}
+
 static Value ioOpenFile(VM *vm, int argc, Value *args) {
     if (argc != 2) {
         runtimeError(vm, "Function openFile() expected 2 arguments but got '%d'.", argc);
@@ -389,6 +394,7 @@ Value useIoLib(VM *vm) {
     defineNative(vm, "openFile", ioOpenFile, &lib->values);
 
     defineNative(vm, "fflush", ioFflush, &lib->values);
+    defineNative(vm, "flushConsole", ioFlushConsole, &lib->values);
     defineNativeValue(vm, "stdin", NUMBER_VAL(0), &lib->values);
     defineNativeValue(vm, "stdout", NUMBER_VAL(1), &lib->values);
     defineNativeValue(vm, "stderr", NUMBER_VAL(2), &lib->values);

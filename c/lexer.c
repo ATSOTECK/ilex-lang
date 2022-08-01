@@ -13,6 +13,8 @@ typedef struct {
     const char *current;
     char previous;
     int line;
+    bool interpolation;
+    int interpolationDepth;
 } Lexer;
 
 Lexer lexer;
@@ -22,6 +24,8 @@ void initLexer(const char *source) {
     lexer.current = source;
     lexer.previous = '\0';
     lexer.line = 1;
+    lexer.interpolation = false;
+    lexer.interpolationDepth = 0;
 }
 
 static bool isAlpha(char c) {

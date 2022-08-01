@@ -460,6 +460,153 @@ static Value arrayCopyDeep(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
+static Value arrayAllTruthy(VM *vm, int argc, Value *args) {
+    if (argc > 2) {
+        runtimeError(vm, "Function allTruthy() expected up to 2 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    ObjArray *array = AS_ARRAY(args[0]);
+    int start = 0;
+    int stop = array->data.count;
+
+    if (argc > 0) {
+        if (!IS_NUMBER(args[1])) {
+            char *str = valueType(args[1]);
+            runtimeError(vm, "Function allTruthy() expected type 'number' for first argument but got '%s'.", str);
+            free(str);
+            return ERROR_VAL;
+        }
+
+        start = AS_NUMBER(args[1]);
+
+        if (start < 0 || start > stop) {
+            start = 0;
+        }
+    }
+
+    if (argc == 2) {
+        if (!IS_NUMBER(args[2])) {
+            char *str = valueType(args[2]);
+            runtimeError(vm, "Function allTruthy() expected type 'number' for second argument but got '%s'.", str);
+            free(str);
+            return ERROR_VAL;
+        }
+
+        stop = AS_NUMBER(args[2]);
+
+        if (stop < start || stop > array->data.count) {
+            stop = array->data.count;
+        }
+    }
+
+    for (int i = start; i < stop; ++i) {
+        if (isFalsy(array->data.values[i])) {
+            return FALSE_VAL;
+        }
+    }
+
+    return TRUE_VAL;
+}
+
+static Value arrayNoneTruthy(VM *vm, int argc, Value *args) {
+    if (argc > 2) {
+        runtimeError(vm, "Function noneTruthy() expected up to 2 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    ObjArray *array = AS_ARRAY(args[0]);
+    int start = 0;
+    int stop = array->data.count;
+
+    if (argc > 0) {
+        if (!IS_NUMBER(args[1])) {
+            char *str = valueType(args[1]);
+            runtimeError(vm, "Function noneTruthy() expected type 'number' for first argument but got '%s'.", str);
+            free(str);
+            return ERROR_VAL;
+        }
+
+        start = AS_NUMBER(args[1]);
+
+        if (start < 0 || start > stop) {
+            start = 0;
+        }
+    }
+
+    if (argc == 2) {
+        if (!IS_NUMBER(args[2])) {
+            char *str = valueType(args[2]);
+            runtimeError(vm, "Function noneTruthy() expected type 'number' for second argument but got '%s'.", str);
+            free(str);
+            return ERROR_VAL;
+        }
+
+        stop = AS_NUMBER(args[2]);
+
+        if (stop < start || stop > array->data.count) {
+            stop = array->data.count;
+        }
+    }
+
+    for (int i = start; i < stop; ++i) {
+        if (!isFalsy(array->data.values[i])) {
+            return FALSE_VAL;
+        }
+    }
+
+    return TRUE_VAL;
+}
+
+static Value arrayAnyTruthy(VM *vm, int argc, Value *args) {
+    if (argc > 2) {
+        runtimeError(vm, "Function anyTruthy() expected up to 2 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    ObjArray *array = AS_ARRAY(args[0]);
+    int start = 0;
+    int stop = array->data.count;
+
+    if (argc > 0) {
+        if (!IS_NUMBER(args[1])) {
+            char *str = valueType(args[1]);
+            runtimeError(vm, "Function anyTruthy() expected type 'number' for first argument but got '%s'.", str);
+            free(str);
+            return ERROR_VAL;
+        }
+
+        start = AS_NUMBER(args[1]);
+
+        if (start < 0 || start > stop) {
+            start = 0;
+        }
+    }
+
+    if (argc == 2) {
+        if (!IS_NUMBER(args[2])) {
+            char *str = valueType(args[2]);
+            runtimeError(vm, "Function anyTruthy() expected type 'number' for second argument but got '%s'.", str);
+            free(str);
+            return ERROR_VAL;
+        }
+
+        stop = AS_NUMBER(args[2]);
+
+        if (stop < start || stop > array->data.count) {
+            stop = array->data.count;
+        }
+    }
+
+    for (int i = start; i < stop; ++i) {
+        if (!isFalsy(array->data.values[i])) {
+            return TRUE_VAL;
+        }
+    }
+
+    return FALSE_VAL;
+}
+
 static Value arrayForEach(VM *vm, int argc, Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function forEach() expected 1 argument but got '%d'.", argc);
@@ -589,6 +736,143 @@ static Value arrayReduce(VM *vm, int argc, Value *args) {
     return accumulator;
 }
 
+#define setUpOfFunctions(name) \
+    do {\
+        if (argc == 0 || argc > 3) {\
+            runtimeError(vm, "Function %s() expected 1 to 3 arguments but got '%d'.", name, argc);\
+            return ERROR_VAL;\
+        }                      \
+        \
+        if (!IS_CLOSURE(args[1])) {\
+            char *str = valueType(args[1]);\
+            runtimeError(vm, "Function %s() expected type 'closure' for first argument but got '%s'.", name, str);\
+            free(str);\
+            return ERROR_VAL;\
+        }\
+\
+        closure = AS_CLOSURE(args[1]);\
+\
+        if (argc > 1) {\
+            if (!IS_NUMBER(args[2])) {\
+                char *str = valueType(args[2]);\
+                runtimeError(vm, "Function %s() expected type 'number' for second argument but got '%s'.", name, str);\
+                free(str);\
+                return ERROR_VAL;\
+            }\
+\
+            start = AS_NUMBER(args[2]);\
+\
+            if (start < 0 || start > stop) {\
+                start = 0;\
+            }\
+        }\
+\
+        if (argc == 3) {\
+            if (!IS_NUMBER(args[3])) {\
+                char *str = valueType(args[3]);\
+                runtimeError(vm, "Function %s() expected type 'number' for third argument but got '%s'.", name, str);\
+                free(str);\
+                return ERROR_VAL;\
+            }\
+\
+            stop = AS_NUMBER(args[3]);\
+\
+            if (stop < start || stop > array->data.count) {\
+                stop = array->data.count;\
+            }\
+        }\
+    } while (false)
+
+static Value arrayAllOf(VM *vm, int argc, Value *args) {
+    ObjArray *array = AS_ARRAY(args[0]);
+    int start = 0;
+    int stop = array->data.count;
+    ObjClosure *closure;
+
+    setUpOfFunctions("allOf");
+
+    for (int i = start; i < stop; ++i) {
+        Value value = callFromScript(vm, closure, 1, &array->data.values[i]);
+
+        if (IS_ERR(value)) {
+            return ERROR_VAL;
+        }
+
+        if (!IS_BOOL(value)) {
+            char *type = valueType(value);
+            runtimeError(vm, "Function allOf() expected return type 'bool' but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        if (!AS_BOOL(value)) {
+            return FALSE_VAL;
+        }
+    }
+
+    return TRUE_VAL;
+}
+
+static Value arrayNoneOf(VM *vm, int argc, Value *args) {
+    ObjArray *array = AS_ARRAY(args[0]);
+    int start = 0;
+    int stop = array->data.count;
+    ObjClosure *closure;
+
+    setUpOfFunctions("noneOf");
+
+    for (int i = start; i < stop; ++i) {
+        Value value = callFromScript(vm, closure, 1, &array->data.values[i]);
+
+        if (IS_ERR(value)) {
+            return ERROR_VAL;
+        }
+
+        if (!IS_BOOL(value)) {
+            char *type = valueType(value);
+            runtimeError(vm, "Function noneOf() expected return type 'bool' but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        if (AS_BOOL(value)) {
+            return FALSE_VAL;
+        }
+    }
+
+    return TRUE_VAL;
+}
+
+static Value arrayAnyOf(VM *vm, int argc, Value *args) {
+    ObjArray *array = AS_ARRAY(args[0]);
+    int start = 0;
+    int stop = array->data.count;
+    ObjClosure *closure;
+
+    setUpOfFunctions("anyOf");
+
+    for (int i = start; i < stop; ++i) {
+        Value value = callFromScript(vm, closure, 1, &array->data.values[i]);
+
+        if (IS_ERR(value)) {
+            return ERROR_VAL;
+        }
+
+        if (!IS_BOOL(value)) {
+            char *type = valueType(value);
+            runtimeError(vm, "Function anyOf() expected return type 'bool' but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        if (AS_BOOL(value)) {
+            return TRUE_VAL;
+        }
+    }
+
+    return FALSE_VAL;
+}
+
 void defineArrayFunctions(VM *vm) {
     defineNative(vm, "len", arrayLen, &vm->arrayFunctions);
     defineNative(vm, "toString", arrayToStringLib, &vm->arrayFunctions);
@@ -608,9 +892,15 @@ void defineArrayFunctions(VM *vm) {
     defineNative(vm, "isEmpty", arrayIsEmpty, &vm->arrayFunctions);
     defineNative(vm, "shallowCopy", arrayCopy, &vm->arrayFunctions);
     defineNative(vm, "deepCopy", arrayCopyDeep, &vm->arrayFunctions);
+    defineNative(vm, "allTruthy", arrayAllTruthy, &vm->arrayFunctions);
+    defineNative(vm, "noneTruthy", arrayNoneTruthy, &vm->arrayFunctions);
+    defineNative(vm, "anyTruthy", arrayAnyTruthy, &vm->arrayFunctions);
 
     defineNative(vm, "forEach", arrayForEach, &vm->arrayFunctions);
     defineNative(vm, "map", arrayMap, &vm->arrayFunctions);
     defineNative(vm, "filter", arrayFilter, &vm->arrayFunctions);
     defineNative(vm, "reduce", arrayReduce, &vm->arrayFunctions);
+    defineNative(vm, "allOf", arrayAllOf, &vm->arrayFunctions);
+    defineNative(vm, "noneOf", arrayNoneOf, &vm->arrayFunctions);
+    defineNative(vm, "anyOf", arrayAnyOf, &vm->arrayFunctions);
 }

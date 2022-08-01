@@ -6,6 +6,8 @@
 
 #include "../util.h"
 
+#include <stdlib.h>
+
 static Value setToStringLib(VM *vm, int argc, Value *args) {
     char *str = setToString(AS_SET(args[0]));
     ObjString *ret = copyString(vm, str, (int)strlen(str));
@@ -14,9 +16,14 @@ static Value setToStringLib(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value setLen(VM *vm, int argc, Value *args) {
+static Value setSize(VM *vm, int argc, Value *args) {
     ObjSet *set = AS_SET(args[0]);
     return NUMBER_VAL(set->count);
+}
+
+static Value setMaxSize(VM *vm, int argc, Value *args) {
+    ObjSet *set = AS_SET(args[0]);
+    return NUMBER_VAL(set->capacity + 1);
 }
 
 static Value setAddLib(VM *vm, int argc, Value *args) {
@@ -71,10 +78,17 @@ static Value setDeleteLib(VM *vm, int argc, Value *args) {
     return setDelete(vm, set, args[1]) ? TRUE_VAL : FALSE_VAL;
 }
 
+static Value setIsEmpty(VM *vm, int argc, Value *args) {
+    ObjSet *set = AS_SET(args[0]);
+    return set->count == 0 ? TRUE_VAL : FALSE_VAL;
+}
+
 void defineSetFunctions(VM *vm) {
     defineNative(vm, "toString", setToStringLib, &vm->setFunctions);
-    defineNative(vm, "len", setLen, &vm->setFunctions);
+    defineNative(vm, "size", setSize, &vm->setFunctions);
+    defineNative(vm, "maxSize", setMaxSize, &vm->setFunctions);
     defineNative(vm, "add", setAddLib, &vm->setFunctions);
     defineNative(vm, "contains", setContains, &vm->setFunctions);
     defineNative(vm, "delete", setDeleteLib, &vm->setFunctions);
+    defineNative(vm, "isEmpty", setIsEmpty, &vm->setFunctions);
 }

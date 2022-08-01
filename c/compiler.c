@@ -511,6 +511,7 @@ int parseEscapeSequences(char *str, int len) {
                 case 'r':  str[i + 1] = '\r'; break;
                 case 'v':  str[i + 1] = '\v'; break;
                 case '\\': str[i + 1] = '\\'; break;
+                case '$':  str[i + 1] = '$';  break;
                 case '\'':
                 case '"': break;
                 case '0': {
@@ -560,8 +561,8 @@ static void array(Compiler *compiler, bool canAssign) {
         }
         
         expression(compiler);
-        if (++count > 255) {
-            error(compiler->parser, "Can't have more than 255 items in an array initializer.");
+        if (++count > UINT16_MAX) {
+            error(compiler->parser, "Can't have more than 65535 items in an array initializer.");
         }
     } while (match(compiler, TK_COMMA));
     
@@ -1507,7 +1508,7 @@ static void forStatement(Compiler *compiler) {
 static void assertStatement(Compiler *compiler) {
     eat(compiler->parser, TK_LPAREN, "Expect '(' after 'assert'.");
 
-    int constant = addConstant(compiler->parser->vm, currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, "no msg", 6)));
+    int constant = addConstant(compiler->parser->vm, currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, "\0", 0)));
 
     expression(compiler);
 

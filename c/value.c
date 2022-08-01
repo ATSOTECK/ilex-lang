@@ -160,3 +160,11 @@ void printValue(Value value) {
     printf("%s", str);
     free(str);
 }
+
+bool isFalsy(Value value) {
+    return IS_NULL(value) ||
+           (IS_BOOL(value) && !AS_BOOL(value)) ||
+           (IS_NUMBER(value) && AS_NUMBER(value) == 0) ||
+           (IS_STRING(value) && AS_STRING(value)->len == 0) ||
+           (IS_ARRAY(value) && AS_ARRAY(value)->data.count == 0);
+}
