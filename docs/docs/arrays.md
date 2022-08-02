@@ -132,6 +132,8 @@ array.remove(7) // [5, 6, 8, 9]
 
 ### array.contains(value): bool
 
+Returns whether or not the array contains the specified value.
+
 ```ts
 array := ['abc', '123']
 array.contains('123') // true
@@ -160,7 +162,7 @@ array.reverse() // [3, 2, 1]
 
 ### array.sort(ascending: bool (optional))
 
-Sorts the array. The array must be all numbers. The optional bool `ascending` specifies if it is sorted in ascending or descending order. By default it sorts ascending. This .function is likely to change.
+Sorts the array. The array must be all numbers. The optional bool `ascending` specifies if it is sorted in ascending or descending order. By default it sorts ascending. This function is likely to change.
 
 ```ts
 array := [6, 3, 7, 2]
