@@ -141,3 +141,13 @@ Creates a shallow copy of the map an returns it.
 
 Created a deep copy of the map and returns it.
 
+### map.forEach(callback: function)
+
+Calls `callback` on each item in the array. The callback function expects two arguments which will be the current key and value. This function will change in the future (adding optional index arg).
+
+```go
+map0 := { "key1": 1, "key2": 12, "key3": "yeet" }
+map0.forEach(fn |key, value| -> {
+    println(key, value)
+})
+```

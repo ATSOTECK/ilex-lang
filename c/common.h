@@ -22,7 +22,7 @@
 #define ILEX_VERSION_MINOR 0
 #define ILEX_VERSION_BUILD 60
 #define ILEX_VERSION "0.0.60"
-#define ILEX_DATE "31 - July - 2022"
+#define ILEX_DATE "8 - August - 2022"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN

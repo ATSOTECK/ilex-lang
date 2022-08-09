@@ -18,4 +18,9 @@ map2 ::= {}
 assert(map2.size() == 0)
 assert(map2.isEmpty() == true)
 
+map3 ::= { 'key1': 1, 'key2': 12, 'key3': 'yeet' }
+map3.forEach(fn |key, value| -> {
+    println(key, value)
+})
+
 println("Map test \033[32mpassed\033[0m in", milliseconds(), "ms!")

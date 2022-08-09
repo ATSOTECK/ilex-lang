@@ -150,6 +150,43 @@ static Value mapCopyDeep(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
+static Value mapForEach(VM *vm, int argc, Value *args) {
+    if (argc > 1) {
+        runtimeError(vm, "Function forEach() expected 1 argument but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    if (!IS_CLOSURE(args[1])) {
+        char *str = valueType(args[1]);
+        runtimeError(vm, "Function forEach() expected type 'closure' for first argument but got '%s'.", str);
+        free(str);
+        return ERROR_VAL;
+    }
+
+    ObjMap *map = AS_MAP(args[0]);
+    ObjClosure *closure = AS_CLOSURE(args[1]);
+    Value *fnArgs = (Value*)malloc(sizeof(Value) * 2);
+
+    for (int i = 0; i < map->capacity + 1; ++i) {
+        if (IS_ERR(map->items[i].key)) {
+            continue;
+        }
+
+        fnArgs[0] = map->items[i].key;
+        fnArgs[1] = map->items[i].value;
+
+        Value ret = callFromScript(vm, closure, 2, fnArgs);
+
+        if (IS_ERR(ret)) {
+            return ERROR_VAL;
+        }
+    }
+
+    free(fnArgs);
+
+    return ZERO_VAL;
+}
+
 void defineMapFunctions(VM *vm) {
     defineNative(vm, "size", mapSize, &vm->mapFunctions);
     defineNative(vm, "maxSize", mapMaxSize, &vm->mapFunctions);
@@ -162,4 +199,6 @@ void defineMapFunctions(VM *vm) {
     defineNative(vm, "isEmpty", mapIsEmpty, &vm->mapFunctions);
     defineNative(vm, "shallowCopy", mapCopyShallow, &vm->mapFunctions);
     defineNative(vm, "deepCopy", mapCopyDeep, &vm->mapFunctions);
+
+    defineNative(vm, "forEach", mapForEach, &vm->mapFunctions);
 }
