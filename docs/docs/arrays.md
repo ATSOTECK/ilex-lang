@@ -4,7 +4,7 @@ title: Arrays
 nav_order: 7
 ---
 
-# Control Flow
+# Arrays
 {: .no_toc }
 
 ## Table of contents
@@ -332,7 +332,7 @@ array.reduce(fn |accumulator, item| accumulator + item) // 34
 array.reduce(fn |accumulator, item| accumulator + item, 100) // 134
 ```
 
-### array.allOf(): bool
+### array.allOf(callback: funnction): bool
 
 Calls `callback` on each item in the array. The callback function expects one argument which will be the current value. This function returns true if all of the values passed to the callback function return true.
 
@@ -343,7 +343,7 @@ array[0] = 1
 array.allOf(fn |n| n % 2 == 0) // false
 ```
 
-### array.noneOf(): bool
+### array.noneOf(callback: function): bool
 
 Calls `callback` on each item in the array. The callback function expects one argument which will be the current value. This function returns true if all of the values passed to the callback function return false.
 
@@ -354,7 +354,7 @@ array[0] = 2
 array.noneOf(fn |n| n % 2 == 0) // false
 ```
 
-### array.anyOf(): bool
+### array.anyOf(callback: function): bool
 
 Calls `callback` on each item in the array. The callback function expects one argument which will be the current value. This function returns true if any of the values passed to the callback function return true.
 
