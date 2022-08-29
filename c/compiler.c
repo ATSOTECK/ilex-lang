@@ -1737,6 +1737,11 @@ static void useStatement(Compiler *compiler, bool isFrom) {
         emitByte(compiler, OP_POP);
         
         if (match(compiler, TK_AS)) {
+            if (isFrom) {
+                error(compiler->parser, "Can't have 'as' in a use from statement.");
+                return;
+            }
+
             uint16_t useName = parseVariable(compiler, "Expect use name.");
             emitByte(compiler, OP_USE_VAR);
             defineVariable(compiler, useName, false); // TODO(Skyler): Should this be true?
@@ -1830,9 +1835,11 @@ static void useStatement(Compiler *compiler, bool isFrom) {
             }
         }
     }
-    
-    emitByte(compiler, OP_USE_END);
-    match(compiler, TK_SEMICOLON);
+
+    if (!isFrom) {
+        emitByte(compiler, OP_USE_END);
+        match(compiler, TK_SEMICOLON);
+    }
 }
 
 static void continueStatement(Compiler *compiler) {
