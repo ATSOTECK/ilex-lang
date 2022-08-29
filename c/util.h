@@ -5,7 +5,7 @@
 #ifndef __C_UTIL_H__
 #define __C_UTIL_H__
 
-#include "common.h"
+#include "ilex.h"
 #include "object.h"
 #include "vm.h"
 

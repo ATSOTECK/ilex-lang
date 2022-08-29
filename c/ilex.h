@@ -2,8 +2,8 @@
 // Created by Skyler on 11/12/21.
 //
 
-#ifndef C_COMMON_H
-#define C_COMMON_H
+#ifndef C_ILEX_H
+#define C_ILEX_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -22,7 +22,7 @@
 #define ILEX_VERSION_MINOR 0
 #define ILEX_VERSION_BUILD 60
 #define ILEX_VERSION "0.0.60"
-#define ILEX_DATE "8 - August - 2022"
+#define ILEX_DATE "29 - August - 2022"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN
@@ -51,4 +51,26 @@
 
 #define I_MAX_PATH 4096
 
-#endif //C_COMMON_H
+typedef struct VM_ VM;
+
+typedef enum {
+    INTERPRET_GOOD          = (int)0x0B00B135,
+    INTERPRET_COMPILE_ERROR = (int)0xBAADF00D,
+    INTERPRET_RUNTIME_ERROR = (int)0xDEADDEAD,
+    INTERPRET_ASSERT_ERROR  = (int)0xBAADC0DE,
+    INTERPRET_PANIC_ERROR   = (int)0xBAAAAAAD
+} InterpretResult;
+
+#if defined(__cplusplus)
+extern "C" {            // Prevents name mangling of functions
+#endif
+
+VM *initVM(const char *path);
+void freeVM(VM *vm);
+void runFile(VM *vm, const char *path);
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif //C_ILEX_H

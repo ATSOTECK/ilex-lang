@@ -5,7 +5,7 @@
 #ifndef C_MEMORY_H
 #define C_MEMORY_H
 
-#include "common.h"
+#include "ilex.h"
 #include "object.h"
 
 #define ALLOCATE(vm, type, count) (type*)reallocate(vm, NULL, 0, sizeof(type) * (count))

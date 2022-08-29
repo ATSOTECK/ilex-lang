@@ -5,9 +5,7 @@
 #ifndef C_VALUE_H
 #define C_VALUE_H
 
-#include "common.h"
-
-#include "ilex_include.h"
+#include "ilex.h"
 
 #include <string.h>
 

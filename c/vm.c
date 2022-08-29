@@ -4,7 +4,7 @@
 
 #include "vm.h"
 
-#include "common.h"
+#include "ilex.h"
 #include "compiler.h"
 #include "debug.h"
 #include "object.h"
@@ -1553,4 +1553,19 @@ InterpretResult interpret(VM *vm, const char *scriptName, const char *source) {
     call(vm, closure, 0);
 
     return run(vm, -1, NULL);
+}
+
+void runFile(VM *vm, const char *path) {
+    char *source = readFile(path);
+    InterpretResult res = interpret(vm, path, source);
+    free(source);
+    
+    switch (res) {
+        case INTERPRET_COMPILE_ERROR: exit(99);
+        case INTERPRET_RUNTIME_ERROR: exit(114);
+        case INTERPRET_ASSERT_ERROR:  exit(97);
+        case INTERPRET_PANIC_ERROR:   exit(112);
+        case INTERPRET_GOOD:
+        default: break;
+    }
 }

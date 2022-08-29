@@ -5,9 +5,8 @@
 #ifndef __C_OBJECT_H__
 #define __C_OBJECT_H__
 
-#include "ilex_include.h"
+#include "ilex.h"
 #include "chunk.h"
-#include "common.h"
 #include "table.h"
 #include "value.h"
 

@@ -5,7 +5,7 @@
 #ifndef __C_TABLE_H__
 #define __C_TABLE_H__
 
-#include "common.h"
+#include "ilex.h"
 #include "value.h"
 
 #define TABLE_MAX_LOAD 0.75

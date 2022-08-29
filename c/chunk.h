@@ -5,9 +5,8 @@
 #ifndef C_CHUNK_H
 #define C_CHUNK_H
 
-#include "common.h"
+#include "ilex.h"
 #include "value.h"
-#include "ilex_include.h"
 
 typedef enum {
     OP_CONSTANT,
