@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "libs/lib_builtIn.h"
-#include "common.h"
+#include "ilex.h"
 #include "compiler.h"
 #include "memory.h"
 #include "vm.h"
