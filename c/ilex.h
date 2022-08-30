@@ -20,9 +20,9 @@
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION_BUILD 60
-#define ILEX_VERSION "0.0.60"
-#define ILEX_DATE "29 - August - 2022"
+#define ILEX_VERSION_BUILD 61
+#define ILEX_VERSION "0.0.61"
+#define ILEX_DATE "30 - August - 2022"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN
@@ -110,7 +110,7 @@ typedef struct {
 } ObjScript;
 
 #if defined(__cplusplus)
-extern "C" {            // Prevents name mangling of functions
+extern "C" {
 #endif
 
 VM *initVM(const char *path);
