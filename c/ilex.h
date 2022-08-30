@@ -52,6 +52,7 @@
 #define I_MAX_PATH 4096
 
 typedef struct VM_ VM;
+typedef uint64_t Value;
 
 typedef enum {
     INTERPRET_GOOD          = (int)0x0B00B135,
@@ -61,6 +62,53 @@ typedef enum {
     INTERPRET_PANIC_ERROR   = (int)0xBAAAAAAD
 } InterpretResult;
 
+typedef Value (*NativeFn)(VM *vm, int argCount, Value *args);
+typedef Value (*BuiltInLib)(VM *vm);
+
+typedef struct Obj Obj;
+typedef struct ObjString ObjString;
+
+typedef struct {
+    ObjString *key;
+    Value value;
+} Entry;
+
+typedef struct {
+    int count;
+    int capacity;
+    Entry *entries;
+} Table;
+
+typedef enum {
+    OBJ_BOUND_METHOD,
+    OBJ_CLASS,
+    OBJ_CLOSURE,
+    OBJ_FUNCTION,
+    OBJ_INSTANCE,
+    OBJ_SCRIPT,
+    OBJ_NATIVE,
+    OBJ_STRING,
+    OBJ_UPVALUE,
+    OBJ_ENUM,
+    OBJ_ARRAY,
+    OBJ_FILE,
+    OBJ_MAP,
+    OBJ_SET,
+} ObjType;
+
+struct Obj {
+    ObjType type;
+    bool isMarked;
+    struct Obj *next;
+};
+
+typedef struct {
+    Obj obj;
+    ObjString *name;
+    ObjString *path;
+    Table values;
+} ObjScript;
+
 #if defined(__cplusplus)
 extern "C" {            // Prevents name mangling of functions
 #endif
@@ -68,6 +116,19 @@ extern "C" {            // Prevents name mangling of functions
 VM *initVM(const char *path);
 void freeVM(VM *vm);
 void runFile(VM *vm, const char *path);
+
+ObjScript *newScript(VM *vm, ObjString* name);
+ObjString *copyString(VM *vm, const char* chars, int length);
+
+void registerGlobalFunction(VM *vm, const char *name, NativeFn function);
+void registerGlobalValue(VM *vm, const char *name, Value value);
+
+void registerLibrary(VM *vm, const char *name, BuiltInLib lib);
+
+//void registerType(VM *vm, const char *name); //Struct and conversion function
+//void registerTypeFunction(VM *vm, const char *type, const char *name, NativeFn function);
+//void registerTypeValue(VM *vm, const char *type, const char *name, Value value);
+//TODO: Require function to free the type?
 
 #if defined(__cplusplus)
 }

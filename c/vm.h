@@ -20,6 +20,11 @@ typedef struct {
     Value *slots;
 } CallFrame;
 
+typedef struct {
+    char *name;
+    BuiltInLib lib;
+} BuiltInLibs;
+
 struct VM_ {
     Compiler *compiler;
     CallFrame frames[FRAMES_MAX];
@@ -54,6 +59,10 @@ struct VM_ {
 
     bool envLoaded;
     bool fallThrough;
+
+    BuiltInLibs *libs;
+    int libCount;
+    int libCapacity;
 };
 
 void runtimeError(VM *vm, const char *format, ...);

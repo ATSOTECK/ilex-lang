@@ -11,17 +11,6 @@
 #define TABLE_MAX_LOAD 0.75
 #define TABLE_MIN_LOAD 0.25
 
-typedef struct {
-    ObjString *key;
-    Value value;
-} Entry;
-
-typedef struct {
-    int count;
-    int capacity;
-    Entry *entries;
-} Table;
-
 void initTable(Table *table);
 void freeTable(VM *vm, Table *table);
 bool tableGet(Table *table, ObjString *key, Value *value);

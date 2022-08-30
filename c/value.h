@@ -9,9 +9,6 @@
 
 #include <string.h>
 
-typedef struct Obj Obj;
-typedef struct ObjString ObjString;
-
 #define SIGN_BIT ((uint64_t)0x8000000000000000)
 #define QNAN     ((uint64_t)0x7ffc000000000000)
 
@@ -19,8 +16,6 @@ typedef struct ObjString ObjString;
 #define TAG_FALSE 2 // 10.
 #define TAG_TRUE  3 // 11.
 #define TAG_ERR   4 // 10.
-
-typedef uint64_t Value;
 
 #define IS_BOOL(value)      (((value) | 1u) == TRUE_VAL)
 #define IS_NULL(value)      ((value) == NULL_VAL)

@@ -109,6 +109,10 @@ void defineNative(VM *vm, const char *name, NativeFn function, Table *table) {
     ++vm->fnCount;
 }
 
+void registerGlobalFunction(VM *vm, const char *name, NativeFn function) {
+    defineNative(vm, name, function, &vm->globals);
+}
+
 void defineNativeValue(VM *vm, const char *name, Value value, Table *table) {
     ObjString *valueName = copyString(vm, name, (int)strlen(name));
     push(vm, OBJ_VAL(valueName));
@@ -117,6 +121,21 @@ void defineNativeValue(VM *vm, const char *name, Value value, Table *table) {
     pop(vm);
     pop(vm);
     ++vm->valCount;
+}
+
+void registerGlobalValue(VM *vm, const char *name, Value value) {
+    defineNativeValue(vm, name, value, &vm->globals);
+}
+
+void registerLibrary(VM *vm, const char *name, BuiltInLib lib) {
+    BuiltInLibs newLib = makeLib(vm, name, lib);
+    if (vm->libCapacity < vm->libCount + 1) {
+        int oldCapacity = vm->libCapacity;
+        vm->libCapacity = GROW_CAPACITY(oldCapacity);
+        vm->libs = GROW_ARRAY(vm, BuiltInLibs, vm->libs, oldCapacity, vm->libCapacity);
+    }
+
+    vm->libs[vm->libCount++] = newLib;
 }
 
 VM *initVM(const char *path) {
@@ -160,6 +179,8 @@ VM *initVM(const char *path) {
     defineMapFunctions(vm);
     defineSetFunctions(vm);
 
+    initBuiltInLibs(vm);
+
     return vm;
 }
 
@@ -172,6 +193,10 @@ void freeVM(VM *vm) {
     freeTable(vm, &vm->fileFunctions);
     freeTable(vm, &vm->mapFunctions);
     freeTable(vm, &vm->setFunctions);
+    for (int i = 0; i < vm->libCount; ++i) {
+        FREE(vm, char, vm->libs[i].name);
+    }
+    FREE(vm, BuiltInLibs, vm->libs);
     vm->initString = NULL;
     vm->scriptName = NULL;
     freeObjects(vm);

@@ -44,36 +44,6 @@
 #define AS_MAP(value)          ((ObjMap*)AS_OBJ(value))
 #define AS_SET(value)          ((ObjSet*)AS_OBJ(value))
 
-typedef enum {
-    OBJ_BOUND_METHOD,
-    OBJ_CLASS,
-    OBJ_CLOSURE,
-    OBJ_FUNCTION,
-    OBJ_INSTANCE,
-    OBJ_SCRIPT,
-    OBJ_NATIVE,
-    OBJ_STRING,
-    OBJ_UPVALUE,
-    OBJ_ENUM,
-    OBJ_ARRAY,
-    OBJ_FILE,
-    OBJ_MAP,
-    OBJ_SET,
-} ObjType;
-
-struct Obj {
-    ObjType type;
-    bool isMarked;
-    struct Obj *next;
-};
-
-typedef struct {
-    Obj obj;
-    ObjString *name;
-    ObjString *path;
-    Table values;
-} ObjScript;
-
 typedef struct {
     Obj obj;
     int arity;
@@ -82,8 +52,6 @@ typedef struct {
     ObjString *name;
     ObjScript *script;
 } ObjFunction;
-
-typedef Value (*NativeFn)(VM *vm, int argCount, Value *args);
 
 typedef struct {
     Obj obj;
@@ -182,12 +150,10 @@ ObjClass *newClass(VM *vm, ObjString *name);
 ObjClosure *newClosure(VM *vm, ObjFunction *function);
 ObjFunction *newFunction(VM *vm, ObjScript *script);
 ObjInstance *newInstance(VM *vm, ObjClass *objClass);
-ObjScript *newScript(VM *vm, ObjString* name);
 ObjNative *newNative(VM *vm, NativeFn function);
 char *newCString(const char *str);
 char *newCStringLen(const char *str, int len);
 ObjString *takeString(VM *vm, char *str, int len);
-ObjString *copyString(VM *vm, const char* chars, int length);
 ObjUpvalue *newUpvalue(VM *vm, Value *slot);
 ObjEnum *newEnum(VM *vm, ObjString *name);
 ObjArray *newArray(VM *vm);

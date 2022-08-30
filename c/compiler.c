@@ -1697,7 +1697,7 @@ static void useStatement(Compiler *compiler, bool isFrom) {
     if (match(compiler, TK_LT)) {
         eat(compiler->parser, TK_IDENT, "Expect library name after '<'.");
 
-        int idx = findBuiltInLib((char*)compiler->parser->previous.start, compiler->parser->previous.len);
+        int idx = findBuiltInLib(compiler->parser->vm, (char*)compiler->parser->previous.start, compiler->parser->previous.len);
         if (idx == -1) {
             error(compiler->parser, "Unknown library.");
             return;
