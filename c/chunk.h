@@ -91,14 +91,6 @@ typedef enum {
     OP_NEW_SET,
 } OpCode;
 
-typedef struct {
-    int count;
-    int capacity;
-    uint8_t *code;
-    int *lines;
-    ValueArray constants;
-} Chunk;
-
 void initChunk(Chunk *chunk);
 void freeChunk(VM *vm, Chunk *chunk);
 void writeChunk(VM *vm, Chunk *chunk, uint8_t byte, int line);

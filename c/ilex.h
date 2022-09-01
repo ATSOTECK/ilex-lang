@@ -5,9 +5,17 @@
 #ifndef C_ILEX_H
 #define C_ILEX_H
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#ifndef __cplusplus
+#   include <stdbool.h>
+#   include <stddef.h>
+#   include <stdint.h>
+#   include <time.h>
+#else
+#   include <cstdint>
+#   include <ctime>
+#endif
+
+#include <stdio.h>
 
 //#define DEBUG_PRINT_CODE
 //#define DEBUG_TRACE_EXECUTION
@@ -95,6 +103,37 @@ typedef void (*ErrorCallback)(const char *msg);
 #define ZERO_VAL        numToValue(0)
 #define OBJ_VAL(obj)    (Value)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
 
+#define OBJ_TYPE(value)        (AS_OBJ(value)->type)
+
+#define IS_BOUND_METHOD(value) isObjType(value, OBJ_BOUND_METHOD)
+#define IS_CLASS(value)        isObjType(value, OBJ_CLASS)
+#define IS_CLOSURE(value)      isObjType(value, OBJ_CLOSURE)
+#define IS_FUNCTION(value)     isObjType(value, OBJ_FUNCTION)
+#define IS_INSTANCE(value)     isObjType(value, OBJ_INSTANCE)
+#define IS_SCRIPT(value)       isObjType(value, OBJ_SCRIPT)
+#define IS_NATIVE(value)       isObjType(value, OBJ_NATIVE)
+#define IS_STRING(value)       isObjType(value, OBJ_STRING)
+#define IS_ENUM(value)         isObjType(value, OBJ_ENUM)
+#define IS_ARRAY(value)        isObjType(value, OBJ_ARRAY)
+#define IS_FILE(value)         isObjType(value, OBJ_FILE)
+#define IS_MAP(value)          isObjType(value, OBJ_MAP)
+#define IS_SET(value)          isObjType(value, OBJ_SET)
+
+#define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
+#define AS_CLASS(value)        ((ObjClass*)AS_OBJ(value))
+#define AS_CLOSURE(value)      ((ObjClosure*)AS_OBJ(value))
+#define AS_FUNCTION(value)     ((ObjFunction*)AS_OBJ(value))
+#define AS_INSTANCE(value)     ((ObjInstance*)AS_OBJ(value))
+#define AS_SCRIPT(value)       ((ObjScript*)AS_OBJ(value))
+#define AS_NATIVE(value)       (((ObjNative*)AS_OBJ(value))->function)
+#define AS_STRING(value)       ((ObjString*)AS_OBJ(value))
+#define AS_CSTRING(value)      (((ObjString*)AS_OBJ(value))->str)
+#define AS_ENUM(value)         ((ObjEnum*)AS_OBJ(value))
+#define AS_ARRAY(value)        ((ObjArray*)AS_OBJ(value))
+#define AS_FILE(value)         ((ObjFile*)AS_OBJ(value))
+#define AS_MAP(value)          ((ObjMap*)AS_OBJ(value))
+#define AS_SET(value)          ((ObjSet*)AS_OBJ(value))
+
 typedef union {
     uint64_t bits64;
     uint32_t bits32[2];
@@ -113,20 +152,6 @@ static inline Value numToValue(double num) {
     return data.bits64;
 }
 
-typedef struct Obj Obj;
-typedef struct ObjString ObjString;
-
-typedef struct {
-    ObjString *key;
-    Value value;
-} Entry;
-
-typedef struct {
-    int count;
-    int capacity;
-    Entry *entries;
-} Table;
-
 typedef enum {
     OBJ_BOUND_METHOD,
     OBJ_CLASS,
@@ -144,11 +169,45 @@ typedef enum {
     OBJ_SET,
 } ObjType;
 
+typedef struct {
+    int capacity;
+    int count;
+    Value *values;
+} ValueArray;
+
+typedef struct {
+    int count;
+    int capacity;
+    uint8_t *code;
+    int *lines;
+    ValueArray constants;
+} Chunk;
+
+typedef struct Obj Obj;
+
 struct Obj {
     ObjType type;
     bool isMarked;
-    struct Obj *next;
+    Obj *next;
 };
+
+typedef struct {
+    Obj obj;
+    int len;
+    char *str;
+    uint32_t hash;
+} ObjString;
+
+typedef struct {
+    ObjString *key;
+    Value value;
+} Entry;
+
+typedef struct {
+    int count;
+    int capacity;
+    Entry *entries;
+} Table;
 
 typedef struct {
     Obj obj;
@@ -157,7 +216,101 @@ typedef struct {
     Table values;
 } ObjScript;
 
-#if defined(__cplusplus)
+typedef struct {
+    Obj obj;
+    int arity;
+    int upvalueCount;
+    Chunk chunk;
+    ObjString *name;
+    ObjScript *script;
+} ObjFunction;
+
+typedef struct {
+    Obj obj;
+    NativeFn function;
+} ObjNative;
+
+typedef struct ObjUpvalue {
+    Obj obj;
+    Value *location;
+    Value closed;
+    struct ObjUpvalue *next;
+} ObjUpvalue;
+
+typedef struct {
+    Obj obj;
+    ObjFunction *function;
+    ObjUpvalue **upvalues;
+    int upvalueCount;
+} ObjClosure;
+
+typedef struct {
+    Obj obj;
+    ObjString *name;
+    Table methods;
+} ObjClass;
+
+typedef struct {
+    Obj obj;
+    ObjClass *objClass;
+    Table fields;
+} ObjInstance;
+
+typedef struct {
+    Obj obj;
+    Value receiver;
+    ObjClosure *method;
+} ObjBoundMethod;
+
+typedef struct {
+    Obj obj;
+    ObjString *name;
+    Table values;
+} ObjEnum;
+
+typedef struct {
+    Obj obj;
+    ValueArray data;
+} ObjArray;
+
+typedef struct {
+    Obj obj;
+    FILE *file;
+    char *path;
+    char *flags;
+} ObjFile;
+
+typedef struct {
+    Value key;
+    Value value;
+    uint32_t psl;
+} MapItem;
+
+typedef struct {
+    Obj obj;
+    int count;
+    int capacity;
+    MapItem *items;
+} ObjMap;
+
+typedef struct {
+    Value value;
+    bool deleted;
+} SetItem;
+
+typedef struct {
+    Obj obj;
+    int count;
+    int capacity;
+    SetItem *items;
+} ObjSet;
+
+typedef struct {
+    Obj obj;
+    struct tm time;
+} ObjDateTime;
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -173,6 +326,15 @@ void setPanicErrorCallback(VM *vm, ErrorCallback panicCallback);
 
 ObjScript *newScript(VM *vm, ObjString* name);
 ObjString *copyString(VM *vm, const char* chars, int length);
+char *valueType(Value value);
+
+static inline bool isObjType(Value value, ObjType type) {
+    return IS_OBJ(value) && AS_OBJ(value)->type == type;
+}
+
+static inline ObjType getObjType(Value value) {
+    return AS_OBJ(value)->type;
+}
 
 void registerGlobalFunction(VM *vm, const char *name, NativeFn function);
 void registerGlobalValue(VM *vm, const char *name, Value value);
@@ -185,7 +347,7 @@ void registerLibrary(VM *vm, const char *name, BuiltInLib lib);
 //void registerTypeValue(VM *vm, const char *type, const char *name, Value value);
 //TODO: Require function to free the type?
 
-#if defined(__cplusplus)
+#ifdef __cplusplus
 }
 #endif
 
