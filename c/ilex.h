@@ -22,7 +22,7 @@
 #define ILEX_VERSION_MINOR 0
 #define ILEX_VERSION_BUILD 61
 #define ILEX_VERSION "0.0.61"
-#define ILEX_DATE "30 - August - 2022"
+#define ILEX_DATE "31 - August - 2022"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN
@@ -50,6 +50,7 @@
 #endif
 
 #define I_MAX_PATH 4096
+#define I_ERR_MSG_SIZE 8192
 
 typedef struct VM_ VM;
 typedef uint64_t Value;
@@ -64,6 +65,53 @@ typedef enum {
 
 typedef Value (*NativeFn)(VM *vm, int argCount, Value *args);
 typedef Value (*BuiltInLib)(VM *vm);
+typedef void (*ErrorCallback)(const char *msg);
+
+#define SIGN_BIT ((uint64_t)0x8000000000000000)
+#define QNAN     ((uint64_t)0x7ffc000000000000)
+
+#define TAG_NULL  1 // 01.
+#define TAG_FALSE 2 // 10.
+#define TAG_TRUE  3 // 11.
+#define TAG_ERR   4 // 10.
+
+#define IS_BOOL(value)      (((value) | 1u) == TRUE_VAL)
+#define IS_NULL(value)      ((value) == NULL_VAL)
+#define IS_NUMBER(value)    (((value) & QNAN) != QNAN)
+#define IS_ERR(value)       ((value) == ERROR_VAL)
+#define IS_OBJ(value)       (((value) & (QNAN | SIGN_BIT)) == (QNAN | SIGN_BIT))
+
+#define AS_BOOL(value)      ((value) == TRUE_VAL)
+#define AS_NUMBER(value)    valueToNum(value)
+#define AS_OBJ(value)       ((Obj*)(uintptr_t)((value) & ~(SIGN_BIT | QNAN)))
+
+
+#define BOOL_VAL(b)     ((b) ? TRUE_VAL : FALSE_VAL)
+#define FALSE_VAL       ((Value)(uint64_t)(QNAN | TAG_FALSE))
+#define TRUE_VAL        ((Value)(uint64_t)(QNAN | TAG_TRUE))
+#define NULL_VAL        ((Value)(uint64_t)(QNAN | TAG_NULL))
+#define ERROR_VAL       ((Value)(uint64_t)(QNAN | TAG_ERR))
+#define NUMBER_VAL(num) numToValue(num)
+#define ZERO_VAL        numToValue(0)
+#define OBJ_VAL(obj)    (Value)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
+
+typedef union {
+    uint64_t bits64;
+    uint32_t bits32[2];
+    double num;
+} IlexDouble;
+
+static inline double valueToNum(Value value) {
+    IlexDouble data;
+    data.bits64 = value;
+    return data.num;
+}
+
+static inline Value numToValue(double num) {
+    IlexDouble data;
+    data.num = num;
+    return data.bits64;
+}
 
 typedef struct Obj Obj;
 typedef struct ObjString ObjString;
@@ -117,12 +165,19 @@ VM *initVM(const char *path);
 void freeVM(VM *vm);
 void runFile(VM *vm, const char *path);
 
+void runtimeError(VM *vm, const char *format, ...);
+
+void setRuntimeErrorCallback(VM *vm, ErrorCallback runtimeCallback);
+void setAssertErrorCallback(VM *vm, ErrorCallback assertCallback);
+void setPanicErrorCallback(VM *vm, ErrorCallback panicCallback);
+
 ObjScript *newScript(VM *vm, ObjString* name);
 ObjString *copyString(VM *vm, const char* chars, int length);
 
 void registerGlobalFunction(VM *vm, const char *name, NativeFn function);
 void registerGlobalValue(VM *vm, const char *name, Value value);
 
+void registerLibraryFunction(VM *vm, const char *name, NativeFn function, Table *table);
 void registerLibrary(VM *vm, const char *name, BuiltInLib lib);
 
 //void registerType(VM *vm, const char *name); //Struct and conversion function

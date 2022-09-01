@@ -10,3 +10,4 @@ use user made scripts
 (done) annonomys functions
 fix GC bugs
 (done) readPassword function for io
+(done) runtime/assert/panic error function pointer for external api

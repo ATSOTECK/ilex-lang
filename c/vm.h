@@ -63,9 +63,12 @@ struct VM_ {
     BuiltInLibs *libs;
     int libCount;
     int libCapacity;
+    
+    ErrorCallback runtimeCallback;
+    ErrorCallback assertCallback;
+    ErrorCallback panicCallback;
 };
 
-void runtimeError(VM *vm, const char *format, ...);
 InterpretResult interpret(VM *vm, const char *scriptName, const char *source);
 void defineNative(VM *vm, const char *name, NativeFn function, Table *table);
 void defineNativeValue(VM *vm, const char *name, Value value, Table *table);

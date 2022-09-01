@@ -31,70 +31,117 @@ static void resetStack(VM *vm) {
     vm->openUpvalues = NULL;
 }
 
-void runtimeError(VM *vm, const char *format, ...) {
-    fprintf(stderr, "\033[31mRuntime Error:\033[m ");
+void setRuntimeErrorCallback(VM *vm, ErrorCallback runtimeCallback) {
+    vm->runtimeCallback = runtimeCallback;
+}
 
+void setAssertErrorCallback(VM *vm, ErrorCallback assertCallback) {
+    vm->assertCallback = assertCallback;
+}
+
+void setPanicErrorCallback(VM *vm, ErrorCallback panicCallback) {
+    vm->panicCallback = panicCallback;
+}
+
+void runtimeError(VM *vm, const char *format, ...) {
+    char *msg = (char*)malloc(sizeof(char) * I_ERR_MSG_SIZE);
+    int len;
+    if (vm->runtimeCallback != NULL) {
+        len = snprintf(msg, I_ERR_MSG_SIZE, "Runtime Error: ");
+    } else {
+        len = snprintf(msg, I_ERR_MSG_SIZE, "\033[31mRuntime Error:\033[m ");
+    }
+    
     va_list args;
     va_start(args, format);
-    vfprintf(stderr, format, args);
+    len += vsnprintf(msg + len, I_ERR_MSG_SIZE, format, args);
     va_end(args);
-    fputs("\n", stderr);
+    msg[len++] = '\n';
 
     for (int i = vm->frameCount - 1; i >= 0; i--) {
         CallFrame *frame = &vm->frames[i];
         ObjFunction *function = frame->closure->function;
         size_t instruction = frame->ip - function->chunk.code - 1;
         int line = function->chunk.lines[instruction];
-        fprintf(stderr, "[line %d] in ", line);
+        len += snprintf(msg + len, I_ERR_MSG_SIZE, "[line %d] in ", line);
         if (function->name == NULL) {
-            fprintf(stderr, "script %s\n", vm->scriptName->str);
+            len += snprintf(msg + len, I_ERR_MSG_SIZE, "script %s\n", vm->scriptName->str);
         } else {
-            fprintf(stderr, "function %s()\n", function->name->str);
+            len += snprintf(msg + len, I_ERR_MSG_SIZE, "function %s()\n", function->name->str);
         }
     }
-
+    
+    msg[len] = '\0';
+    if (vm->runtimeCallback != NULL) {
+        vm->runtimeCallback(msg);
+    } else {
+        fprintf(stderr, "%s", msg);
+    }
+    
+    free(msg);
     resetStack(vm);
 }
 
 void assertError(VM *vm, const char *format, ...) {
+    char *msg = (char*)malloc(sizeof(char) * I_ERR_MSG_SIZE);
     va_list args;
     va_start(args, format);
-    vfprintf(stderr, format, args);
+    int len = vsnprintf(msg, I_ERR_MSG_SIZE, format, args);
     va_end(args);
-    fputs("\n", stderr);
+    msg[len++] = '\n';
 
     for (int i = vm->frameCount - 1; i >= 0; i--) {
         CallFrame *frame = &vm->frames[i];
         ObjFunction *function = frame->closure->function;
         size_t instruction = frame->ip - function->chunk.code - 1;
         int line = function->chunk.lines[instruction];
-        fprintf(stderr, "[line %d] in ", line);
+        len += snprintf(msg + len, I_ERR_MSG_SIZE, "[line %d] in ", line);
         if (function->name == NULL) {
-            fprintf(stderr, "script %s\n", vm->scriptName->str);
+            len += snprintf(msg + len, I_ERR_MSG_SIZE, "script %s\n", vm->scriptName->str);
         } else {
-            fprintf(stderr, "function %s()\n", function->name->str);
+            len += snprintf(msg + len, I_ERR_MSG_SIZE, "function %s()\n", function->name->str);
         }
     }
+    
+    if (vm->assertCallback != NULL) {
+        vm->assertCallback(msg);
+    } else {
+        fprintf(stderr, "%s", msg);
+    }
 
+    free(msg);
     resetStack(vm);
 }
 
-void panicError(VM *vm, const char *msg) {
-    printf("\033[31mPanic!\033[m %s\n", msg);
+void panicError(VM *vm, const char *panicMsg) {
+    char *msg = (char*)malloc(sizeof(char) * I_ERR_MSG_SIZE);
+    int len;
+    if (vm->panicCallback != NULL) {
+        len = snprintf(msg, I_ERR_MSG_SIZE, "Panic! %s\n", panicMsg);
+    } else {
+        len = snprintf(msg, I_ERR_MSG_SIZE, "\033[31mPanic!\033[m %s\n", panicMsg);
+    }
 
     for (int i = vm->frameCount - 1; i >= 0; i--) {
         CallFrame *frame = &vm->frames[i];
         ObjFunction *function = frame->closure->function;
         size_t instruction = frame->ip - function->chunk.code - 1;
         int line = function->chunk.lines[instruction];
-        fprintf(stderr, "[line %d] in ", line);
+        len += snprintf(msg + len, I_ERR_MSG_SIZE, "[line %d] in ", line);
         if (function->name == NULL) {
-            fprintf(stderr, "script %s\n", vm->scriptName->str);
+            len += snprintf(msg + len, I_ERR_MSG_SIZE, "script %s\n", vm->scriptName->str);
         } else {
-            fprintf(stderr, "function %s()\n", function->name->str);
+            len += snprintf(msg + len, I_ERR_MSG_SIZE, "function %s()\n", function->name->str);
         }
     }
+    
+    if (vm->panicCallback != NULL) {
+        vm->panicCallback(msg);
+    } else {
+        fprintf(stderr, "%s", msg);
+    }
 
+    free(msg);
     resetStack(vm);
 }
 
@@ -127,6 +174,10 @@ void registerGlobalValue(VM *vm, const char *name, Value value) {
     defineNativeValue(vm, name, value, &vm->globals);
 }
 
+void registerLibraryFunction(VM *vm, const char *name, NativeFn function, Table *table) {
+    defineNative(vm, name, function, table);
+}
+
 void registerLibrary(VM *vm, const char *name, BuiltInLib lib) {
     BuiltInLibs newLib = makeLib(vm, name, lib);
     if (vm->libCapacity < vm->libCount + 1) {
@@ -150,6 +201,9 @@ VM *initVM(const char *path) {
     vm->grayCapacity = 0;
     vm->grayStack = NULL;
     vm->lastScript = NULL;
+    vm->runtimeCallback = NULL;
+    vm->assertCallback = NULL;
+    vm->panicCallback = NULL;
 
     vm->fnCount = 0;
     vm->valCount = 0;

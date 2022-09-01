@@ -48,6 +48,7 @@ static Value sysExit(VM *vm, int argc, Value *args) {
         char *type = valueType(args[0]);
         runtimeError(vm, "Function sleep() expected type 'number' but got '%s'.", type);
         free(type);
+        return ERROR_VAL;
     }
 
     exit((int)AS_NUMBER(args[0]));
@@ -85,6 +86,7 @@ static Value sysCD(VM *vm, int argc, Value *args) {
         char *type = valueType(args[0]);
         runtimeError(vm, "Function cd() expected type 'string' but got '%s'.", type);
         free(type);
+        return ERROR_VAL;
     }
 
     char *dir = AS_CSTRING(args[0]);
