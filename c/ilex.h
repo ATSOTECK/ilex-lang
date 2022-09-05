@@ -169,6 +169,27 @@ typedef enum {
     OBJ_SET,
 } ObjType;
 
+typedef enum {
+    CLASS_DEFAULT,
+    CLASS_ABSTRACT,
+    CLASS_BEHAVIOR,
+} ClassType;
+
+typedef enum {
+    ACCESS_PUBLIC,
+    ACCESS_PRIVATE,
+} AccessLevel;
+
+typedef enum {
+    TYPE_FUNCTION,
+    TYPE_ANON_FUNCTION,
+    TYPE_CONSTRUCTOR,
+    TYPE_METHOD,
+    TYPE_STATIC,
+    TYPE_ABSTRACT,
+    TYPE_TOP_LEVEL,
+} FunctionType;
+
 typedef struct {
     int capacity;
     int count;
@@ -244,10 +265,16 @@ typedef struct {
     int upvalueCount;
 } ObjClosure;
 
-typedef struct {
+typedef struct ObjClass {
     Obj obj;
     ObjString *name;
+    struct ObjClass *superClass;
     Table methods;
+    Table privateMethods;
+    Table abstractMethods;
+    Table vars;
+    Table consts;
+    ClassType type;
 } ObjClass;
 
 typedef struct {

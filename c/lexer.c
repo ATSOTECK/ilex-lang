@@ -214,7 +214,13 @@ static IlexTokenType identType() {
                     case 'r': return checkKeyword(2, 2, "om", TK_FROM);
                 }
             }
-        case 'i': return checkKeyword(1, 1, "f", TK_IF);
+        case 'i':
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'f': return TK_IF;
+                    case 'n': return checkKeyword(2, 6, "herits", TK_INHERITS);
+                }
+            }
         case 'n':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
@@ -223,20 +229,27 @@ static IlexTokenType identType() {
                 }
             }
         case 'o': return checkKeyword(1, 1, "r", TK_OR);
-        case 'p': {
-            int tk = checkKeyword(1, 4, "anic", TK_PANIC);
-            if (tk == TK_PANIC && match('!')) {
-                return tk;
-            } else {
-                return TK_IDENT;
+        case 'p':
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 'a': {
+                        int tk = checkKeyword(2, 3, "nic", TK_PANIC);
+                        if (tk == TK_PANIC && match('!')) {
+                            return tk;
+                        } else {
+                            return TK_IDENT;
+                        }
+                    }
+                    case 'r': return checkKeyword(2, 5, "ivate", TK_PRIVATE);
+                }
             }
-        }
         case 'r': return checkKeyword(1, 5, "eturn", TK_RETURN);
         case 's':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'u': return checkKeyword(2, 3, "per", TK_SUPER);
                     case 'w': return checkKeyword(2, 4, "itch", TK_SWITCH);
+                    case 't': return checkKeyword(2, 4, "atic", TK_STATIC);
                 }
             }
         case 't':

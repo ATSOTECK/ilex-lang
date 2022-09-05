@@ -53,3 +53,29 @@ class Oops {
 
 var oops = Oops();
 oops.field();
+
+class Person {
+    var name
+    age := 0
+    var id
+    
+    private var ssn
+    const type = 'person'
+    other ::= 'yeet'
+    
+    init(name, age, foo) {
+        .name = name
+        .age = age
+        id = foo
+    }
+    
+    private someFunc() {
+        
+    }
+}
+
+class Dude < Person {
+    init(name, age, foo, stuff) {
+        super.init(name, age, foo)
+    }
+}

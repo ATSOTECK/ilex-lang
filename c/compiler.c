@@ -35,7 +35,7 @@ typedef enum {
     PREC_UNARY,       // ! -
     PREC_EXPONENT,    // **
     PREC_CALL,        // . () []
-    PREC_PRIMARY
+    PREC_PRIMARY,
 } Precedence;
 
 typedef void (*ParseFn)(Compiler *compiler, bool canAssign);
@@ -229,6 +229,7 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     compiler->function = newFunction(parser->vm, parser->script);
     compiler->currentLibName = 0;
     compiler->currentScript = NULL;
+    compiler->class = NULL;
     compiler->loop = NULL;
     compiler->locals = NULL;
     compiler->upvalues = NULL;
@@ -815,10 +816,25 @@ static void super_(Compiler *compiler, bool canAssign) {
 static void this_(Compiler *compiler, bool canAssign) {
     if (compiler->class == NULL) {
         error(compiler->parser, "Can't use 'this' outside of a class.");
-        return;
+    } else if (compiler->class->staticMethod) {
+        error(compiler->parser, "Can't use 'this' in a static method.");
+    } else {
+        variable(compiler, false);
     }
+}
 
-    variable(compiler, false);
+static void private_(Compiler *compiler, bool canAssign) {
+    if (compiler->class == NULL) {
+        error(compiler->parser, "Can't use 'private' outside of a class.");
+    } else if (compiler->class->abstractClass) {
+        error(compiler->parser, "Can't use 'private' inside an abstract class.");
+    }
+}
+
+static void static_(Compiler *compiler, bool canAssign) {
+    if (compiler->class == NULL) {
+        error(compiler->parser, "Can't use 'static' outside of a class.");
+    }
 }
 
 static void binary(Compiler *compiler, bool canAssign) {
@@ -1067,6 +1083,8 @@ ParseRule rules[] = {
         [TK_RETURN]           = {NULL,     NULL,    PREC_NONE},
         [TK_SUPER]            = {super_,   NULL,    PREC_NONE},
         [TK_THIS]             = {this_,    NULL,    PREC_NONE},
+        [TK_PRIVATE]          = {private_, NULL,    PREC_NONE},
+        [TK_STATIC]           = {static_,  NULL,    PREC_NONE},
         [TK_TRUE]             = {literal,  NULL,    PREC_NONE},
         [TK_VAR]              = {NULL,     NULL,    PREC_NONE},
         [TK_CONST]            = {NULL,     NULL,    PREC_NONE},
