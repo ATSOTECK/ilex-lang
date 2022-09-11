@@ -12,7 +12,8 @@ println(cat.name);
 var sayHi = cat.sayHi;
 
 sayHi("Skyler");
-
+cat.sayHi('yeet')
+/*
 class Nested {
     method() {
         fn function() {
@@ -79,3 +80,4 @@ class Dude < Person {
         super.init(name, age, foo)
     }
 }
+*/

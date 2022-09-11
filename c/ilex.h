@@ -243,6 +243,8 @@ typedef struct {
     int upvalueCount;
     Chunk chunk;
     ObjString *name;
+    FunctionType type;
+    AccessLevel accessLevel;
     ObjScript *script;
 } ObjFunction;
 
@@ -272,8 +274,8 @@ typedef struct ObjClass {
     Table methods;
     Table privateMethods;
     Table abstractMethods;
-    Table vars;
-    Table consts;
+    Table staticVars;
+    Table staticConsts;
     ClassType type;
 } ObjClass;
 
@@ -281,6 +283,7 @@ typedef struct {
     Obj obj;
     ObjClass *objClass;
     Table fields;
+    Table privateFields;
 } ObjInstance;
 
 typedef struct {

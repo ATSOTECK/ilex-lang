@@ -57,11 +57,13 @@ ObjClosure *newClosure(VM *vm, ObjFunction *function) {
     return closure;
 }
 
-ObjFunction *newFunction(VM *vm, ObjScript *script) {
+ObjFunction *newFunction(VM *vm, FunctionType type, AccessLevel level, ObjScript *script) {
     ObjFunction* function = ALLOCATE_OBJ(vm, ObjFunction, OBJ_FUNCTION);
     function->arity = 0;
     function->upvalueCount = 0;
     function->name = NULL;
+    function->type = type;
+    function->accessLevel = level;
     function->script = script;
     initChunk(&function->chunk);
 

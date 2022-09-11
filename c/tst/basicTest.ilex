@@ -4,6 +4,14 @@ breakfast = "beignets with " + beverage
 
 println(breakfast);
 
+/-
+TODO: All of these need error messages.
+const tstYeet
+tstYeet :=
+tstYeet ::= 
+println('tstYeet', tstYeet)
+-/
+
 var a = true;
 if (a) {
     var yeet = "yeet";

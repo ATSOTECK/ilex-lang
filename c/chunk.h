@@ -27,7 +27,8 @@ typedef enum {
     OP_SET_GLOBAL,
     OP_SET_UPVALUE,
     OP_SET_PROPERTY,
-    OP_SET_PRIVATE_PROPERTY,
+    OP_SET_PRIVATE_PROPERTY, //
+    OP_SET_CLASS_STATIC_VAR, //
     OP_EQ,
     OP_NOTEQ,
     OP_GR,
@@ -57,7 +58,8 @@ typedef enum {
     OP_LOOP,
     OP_CALL,
     OP_INVOKE,
-    OP_SUPER_INVOKE,
+    OP_INVOKE_SUPER,
+    OP_INVOKE_THIS,
     OP_CLOSURE,
     OP_CLOSE_UPVALUE,
     OP_RETURN,

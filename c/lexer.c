@@ -161,6 +161,7 @@ static IlexTokenType identType() {
         case 'a':
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
+                    case 'b': return checkKeyword(2, 6, "stract", TK_ABSTRACT);
                     case 'n': return checkKeyword(2, 1, "d", TK_AND);
                     case 's':
                         if (lexer.start[2] == 's') {

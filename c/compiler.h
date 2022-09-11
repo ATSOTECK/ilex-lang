@@ -30,14 +30,6 @@ typedef struct {
     bool isLocal;
 } Upvalue;
 
-typedef enum {
-    TYPE_FUNCTION,
-    TYPE_INITIALIZER,
-    TYPE_METHOD,
-    TYPE_SCRIPT,
-    TYPE_ANON,
-} FunctionType;
-
 typedef struct Loop {
     struct Loop *enclosing;
     int start;
@@ -48,6 +40,7 @@ typedef struct Loop {
 
 typedef struct ClassCompiler {
     struct ClassCompiler *enclosing;
+    Token name;
     bool hasSuperclass;
     bool staticMethod;
     bool abstractClass;
@@ -61,9 +54,9 @@ typedef struct Compiler {
     ObjFunction *function;
     FunctionType type;
 
-    Local *locals; //TODO(Skyler): Gow this.
+    Local *locals; //TODO(Skyler): Grow this.
     int localCount;
-    Upvalue *upvalues; //TODO(Skyler): Gow this.
+    Upvalue *upvalues; //TODO(Skyler): Grow this.
     int scopeDepth;
     uint16_t currentLibName;
     ObjScript *currentScript;

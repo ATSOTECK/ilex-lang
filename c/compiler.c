@@ -38,11 +38,12 @@ typedef enum {
     PREC_PRIMARY,
 } Precedence;
 
-typedef void (*ParseFn)(Compiler *compiler, bool canAssign);
+typedef void (*ParsePrefixFn)(Compiler *compiler, bool canAssign);
+typedef void (*ParseInfixFn)(Compiler *compiler, Token prev, bool canAssign);
 
 typedef struct {
-    ParseFn prefix;
-    ParseFn infix;
+    ParsePrefixFn prefix;
+    ParseInfixFn infix;
     Precedence precedence;
 } ParseRule;
 
@@ -185,8 +186,8 @@ static int emitJump(Compiler *compiler, uint8_t instruction) {
 }
 
 static void emitReturn(Compiler *compiler) {
-    if (compiler->type == TYPE_INITIALIZER) {
-        emitByteShort(compiler, OP_GET_LOCAL, 0);  // this
+    if (compiler->type == TYPE_CONSTRUCTOR) {
+        emitByteShort(compiler, OP_GET_LOCAL, 0); // this
     } else {
         emitByte(compiler, OP_NULL);
     }
@@ -219,14 +220,14 @@ static void patchJump(Compiler *compiler, int offset) {
     currentChunk(compiler)->code[offset + 1] = jump & 0xff;
 }
 
-static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, FunctionType type) {
+static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, FunctionType type, AccessLevel level) {
     compiler->parser = parser;
     compiler->enclosing = parent;
     compiler->function = NULL;
     compiler->type = type;
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
-    compiler->function = newFunction(parser->vm, parser->script);
+    compiler->function = newFunction(parser->vm, type, level, parser->script);
     compiler->currentLibName = 0;
     compiler->currentScript = NULL;
     compiler->class = NULL;
@@ -246,9 +247,9 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
 
     parser->vm->compiler = compiler;
 
-    if (type == TYPE_ANON) {
+    if (type == TYPE_ANON_FUNCTION) {
         compiler->function->name = copyString(parser->vm, "<anonymous>", 11);
-    } else if (type != TYPE_SCRIPT) {
+    } else if (type != TYPE_TOP_LEVEL) {
         compiler->function->name = copyString(parser->vm, parser->previous.start, parser->previous.len);
     } else {
         compiler->function->name = NULL;
@@ -257,7 +258,7 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     Local *local = &compiler->locals[compiler->localCount++];
     local->depth = 0;
     local->isCaptured = false;
-    if (type == TYPE_METHOD || type == TYPE_INITIALIZER) {
+    if (type == TYPE_METHOD || type == TYPE_CONSTRUCTOR) {
         local->name.start = "this";
         local->name.len = 4;
     } else {
@@ -462,7 +463,7 @@ static Value parseNumber(Compiler *compiler) {
     *ptr = '\0';
     double num;
     if (isOct(compiler->parser->previous)) {
-        num = strtol(buf + 2, NULL, 8); // + 2 to skip the octal indicator.
+        num = (double)strtol(buf + 2, NULL, 8); // + 2 to skip the octal indicator.
     } else {
         num = strtod(buf, NULL);
     }
@@ -475,7 +476,7 @@ static void number(Compiler *compiler, bool canAssign) {
     emitConstant(compiler, parseNumber(compiler));
 }
 
-static void and_(Compiler *compiler, bool canAssign) {
+static void and_(Compiler *compiler, Token prev, bool canAssign) {
     int endJump = emitJump(compiler, OP_JUMP_IF_FALSE);
 
     emitByte(compiler, OP_POP);
@@ -484,7 +485,7 @@ static void and_(Compiler *compiler, bool canAssign) {
     patchJump(compiler, endJump);
 }
 
-static void or_(Compiler *compiler, bool canAssign) {
+static void or_(Compiler *compiler, Token prev, bool canAssign) {
     int endJump = emitJump(compiler, OP_JUMP_IF_TRUE);
 
     emitByte(compiler, OP_POP);
@@ -493,7 +494,7 @@ static void or_(Compiler *compiler, bool canAssign) {
     patchJump(compiler, endJump);
 }
 
-static void orr(Compiler *compiler, bool canAssgin) {
+static void orr(Compiler *compiler, Token prev, bool canAssgin) {
     // This means it is being used like x = val || otherVal
     IlexTokenType operatorType = compiler->parser->previous.type;
     ParseRule *rule = getRule(operatorType);
@@ -613,7 +614,7 @@ static void hash(Compiler *compiler, bool canAssign) {
     error(compiler->parser, "Unexpected token '#'.");
 }
 
-static void index_(Compiler *compiler, bool canAssign) {
+static void index_(Compiler *compiler, Token prev, bool canAssign) {
     if (match(compiler, TK_COLON)) {
         emitByte(compiler, OP_EMPTY);
         expression(compiler);
@@ -805,7 +806,7 @@ static void super_(Compiler *compiler, bool canAssign) {
     if (match(compiler, TK_LPAREN)) {
         uint8_t argc = argumentList(compiler);
         namedVariable(compiler, syntheticToken("super"), false);
-        emitByteShort(compiler, OP_SUPER_INVOKE, name);
+        emitByteShort(compiler, OP_INVOKE_SUPER, name);
         emitByte(compiler, argc);
     } else {
         namedVariable(compiler, syntheticToken("super"), false);
@@ -837,7 +838,7 @@ static void static_(Compiler *compiler, bool canAssign) {
     }
 }
 
-static void binary(Compiler *compiler, bool canAssign) {
+static void binary(Compiler *compiler, Token prev, bool canAssign) {
     IlexTokenType operatorType = compiler->parser->previous.type;
     ParseRule *rule = getRule(operatorType);
     parsePrecedence(compiler, (Precedence)(rule->precedence + 1));
@@ -865,7 +866,7 @@ static void binary(Compiler *compiler, bool canAssign) {
     }
 }
 
-static void ternary(Compiler *compiler, bool canAssign) {
+static void ternary(Compiler *compiler, Token prev, bool canAssign) {
     int elseJump = emitJump(compiler, OP_JUMP_IF_FALSE);
     
     emitByte(compiler, OP_POP);
@@ -882,14 +883,37 @@ static void ternary(Compiler *compiler, bool canAssign) {
     patchJump(compiler, endJump);
 }
 
-static void call(Compiler *compiler, bool canAssign) {
+static void call(Compiler *compiler, Token prev, bool canAssign) {
     uint8_t argCount = argumentList(compiler);
     emitBytes(compiler, OP_CALL, argCount);
 }
 
-static void dot(Compiler *compiler, bool canAssign) {
+static bool privateVarExists(Compiler *compiler, Token name) {
+    if (compiler->class == NULL) {
+        return false;
+    }
+
+    ObjString *str = copyString(compiler->parser->vm, name.start, name.len);
+    Value unused;
+
+    return tableGet(&compiler->class->privateVariables, str, &unused);
+}
+
+static void dot(Compiler *compiler, Token prev, bool canAssign) {
     eat(compiler->parser, TK_IDENT, "Expect property name after '.'.");
     uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
+
+    Token ident = compiler->parser->previous;
+    if (match(compiler, TK_LPAREN)) {
+        uint8_t argc = argumentList(compiler);
+        if (compiler->class != NULL && (prev.type == TK_THIS || identifiersEqual(&prev, &compiler->class->name))) {
+            emitByteShort(compiler, OP_INVOKE_THIS, name);
+        } else {
+            emitByteShort(compiler, OP_INVOKE, name);
+        }
+        emitByte(compiler, argc);
+        return;
+    }
 
 #define EMIT_OP_EQ(token) do { \
                               emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name); \
@@ -897,50 +921,92 @@ static void dot(Compiler *compiler, bool canAssign) {
                               emitByte(compiler, token); \
                               emitByteShort(compiler, OP_SET_PROPERTY, name); \
                           } while (false) \
-    
-    if (canAssign && match(compiler, TK_ASSIGN)) {
-        expression(compiler);
-        emitByteShort(compiler, OP_SET_PROPERTY, name);
-    } else if (canAssign && match(compiler, TK_PLUSEQ)) {
-        EMIT_OP_EQ(OP_ADD);
-    }  else if (canAssign && match(compiler, TK_MINUSEQ)) {
-        EMIT_OP_EQ(OP_SUB);
-    }  else if (canAssign && match(compiler, TK_MULEQ)) {
-        EMIT_OP_EQ(OP_MUL);
-    } else if (canAssign && match(compiler, TK_DIVEQ)) {
-        EMIT_OP_EQ(OP_DIV);
-    } else if (canAssign && match(compiler, TK_POWEQ)) {
-        EMIT_OP_EQ(OP_POW);
-    } else if (canAssign && match(compiler, TK_MODEQ)) {
-        EMIT_OP_EQ(OP_MOD);
-    } else if (canAssign && match(compiler, TK_BIT_ANDEQ)) {
-        EMIT_OP_EQ(OP_BIT_AND);
-    } else if (canAssign && match(compiler, TK_BIT_OREQ)) {
-        EMIT_OP_EQ(OP_BIT_OR);
-    } else if (canAssign && match(compiler, TK_BIT_XOREQ)) {
-        EMIT_OP_EQ(OP_BIT_XOR);
-    } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
-        EMIT_OP_EQ(OP_NULL_COALESCE);
-    } else if (canAssign && match(compiler, TK_INC)) {
-        emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name);
-        emitByte(compiler, OP_INC);
-        emitByteShort(compiler, OP_SET_PROPERTY, name);
-    } else if (canAssign && match(compiler, TK_DEC)) {
-        emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name);
-        emitByte(compiler, OP_DEC);
-        emitByteShort(compiler, OP_SET_PROPERTY, name);
-    } else if (match(compiler, TK_LPAREN)) {
-            uint8_t argc = argumentList(compiler);
-            emitByteShort(compiler, OP_INVOKE, name);
-            emitByte(compiler, argc);
+
+#define EMIT_OP_EQ_PRIV(token) do { \
+                              emitByteShort(compiler, OP_GET_PRIVATE_PROPERTY_NO_POP, name); \
+                              expression(compiler); \
+                              emitByte(compiler, token); \
+                              emitByteShort(compiler, OP_SET_PRIVATE_PROPERTY, name); \
+                          } while (false) \
+
+    bool privExists = privateVarExists(compiler, ident);
+    if (compiler->class != NULL && ((privExists) || (prev.type == TK_THIS && privExists))) {
+        if (canAssign && match(compiler, TK_ASSIGN)) {
+            expression(compiler);
+            emitByteShort(compiler, OP_SET_PRIVATE_PROPERTY, name);
+        } else if (canAssign && match(compiler, TK_PLUSEQ)) {
+            EMIT_OP_EQ_PRIV(OP_ADD);
+        } else if (canAssign && match(compiler, TK_MINUSEQ)) {
+            EMIT_OP_EQ_PRIV(OP_SUB);
+        } else if (canAssign && match(compiler, TK_MULEQ)) {
+            EMIT_OP_EQ_PRIV(OP_MUL);
+        } else if (canAssign && match(compiler, TK_DIVEQ)) {
+            EMIT_OP_EQ_PRIV(OP_DIV);
+        } else if (canAssign && match(compiler, TK_POWEQ)) {
+            EMIT_OP_EQ_PRIV(OP_POW);
+        } else if (canAssign && match(compiler, TK_MODEQ)) {
+            EMIT_OP_EQ_PRIV(OP_MOD);
+        } else if (canAssign && match(compiler, TK_BIT_ANDEQ)) {
+            EMIT_OP_EQ_PRIV(OP_BIT_AND);
+        } else if (canAssign && match(compiler, TK_BIT_OREQ)) {
+            EMIT_OP_EQ_PRIV(OP_BIT_OR);
+        } else if (canAssign && match(compiler, TK_BIT_XOREQ)) {
+            EMIT_OP_EQ_PRIV(OP_BIT_XOR);
+        } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
+            EMIT_OP_EQ_PRIV(OP_NULL_COALESCE);
+        } else if (canAssign && match(compiler, TK_INC)) {
+            emitByteShort(compiler, OP_GET_PRIVATE_PROPERTY_NO_POP, name);
+            emitByte(compiler, OP_INC);
+            emitByteShort(compiler, OP_SET_PRIVATE_PROPERTY, name);
+        } else if (canAssign && match(compiler, TK_DEC)) {
+            emitByteShort(compiler, OP_GET_PRIVATE_PROPERTY_NO_POP, name);
+            emitByte(compiler, OP_DEC);
+            emitByteShort(compiler, OP_SET_PRIVATE_PROPERTY, name);
+        } else {
+            emitByteShort(compiler, OP_GET_PRIVATE_PROPERTY, name);
+        }
     } else {
-        emitByteShort(compiler, OP_GET_PROPERTY, name);
+        if (canAssign && match(compiler, TK_ASSIGN)) {
+            expression(compiler);
+            emitByteShort(compiler, OP_SET_PROPERTY, name);
+        } else if (canAssign && match(compiler, TK_PLUSEQ)) {
+            EMIT_OP_EQ(OP_ADD);
+        } else if (canAssign && match(compiler, TK_MINUSEQ)) {
+            EMIT_OP_EQ(OP_SUB);
+        } else if (canAssign && match(compiler, TK_MULEQ)) {
+            EMIT_OP_EQ(OP_MUL);
+        } else if (canAssign && match(compiler, TK_DIVEQ)) {
+            EMIT_OP_EQ(OP_DIV);
+        } else if (canAssign && match(compiler, TK_POWEQ)) {
+            EMIT_OP_EQ(OP_POW);
+        } else if (canAssign && match(compiler, TK_MODEQ)) {
+            EMIT_OP_EQ(OP_MOD);
+        } else if (canAssign && match(compiler, TK_BIT_ANDEQ)) {
+            EMIT_OP_EQ(OP_BIT_AND);
+        } else if (canAssign && match(compiler, TK_BIT_OREQ)) {
+            EMIT_OP_EQ(OP_BIT_OR);
+        } else if (canAssign && match(compiler, TK_BIT_XOREQ)) {
+            EMIT_OP_EQ(OP_BIT_XOR);
+        } else if (canAssign && match(compiler, TK_NULL_COALESCE_EQ)) {
+            EMIT_OP_EQ(OP_NULL_COALESCE);
+        } else if (canAssign && match(compiler, TK_INC)) {
+            emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name);
+            emitByte(compiler, OP_INC);
+            emitByteShort(compiler, OP_SET_PROPERTY, name);
+        } else if (canAssign && match(compiler, TK_DEC)) {
+            emitByteShort(compiler, OP_GET_PROPERTY_NO_POP, name);
+            emitByte(compiler, OP_DEC);
+            emitByteShort(compiler, OP_SET_PROPERTY, name);
+        } else {
+            emitByteShort(compiler, OP_GET_PROPERTY, name);
+        }
     }
 
 #undef EMIT_OP_EQ
+#undef EMIT_OP_EQ_PRIV
 }
 
-static void scope(Compiler *compiler, bool canAssign) {
+static void scope(Compiler *compiler, Token prev, bool canAssign) {
     eat(compiler->parser, TK_IDENT, "Expect property name after '::'.");
     uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
 
@@ -975,17 +1041,17 @@ static void unary(Compiler *compiler, bool canAssign) {
     }
 }
 
-static void inc(Compiler *compiler, bool canAssign) {
+static void inc(Compiler *compiler, Token prev, bool canAssign) {
     emitByte(compiler, OP_INC);
 }
 
-static void dec(Compiler *compiler, bool canAssign) {
+static void dec(Compiler *compiler, Token prev, bool canAssign) {
     emitByte(compiler, OP_DEC);
 }
 
 static void anon(Compiler *compiler, bool canAssign) {
     Compiler functionCompiler;
-    initCompiler(compiler->parser, &functionCompiler, compiler, TYPE_ANON);
+    initCompiler(compiler->parser, &functionCompiler, compiler, TYPE_ANON_FUNCTION, ACCESS_PUBLIC);
     beginScope(&functionCompiler);
     
     if (match(&functionCompiler, TK_ARROW)) {
@@ -1115,7 +1181,7 @@ static void parsePrecedence(Compiler *compiler, Precedence precedence) {
     Parser *parser = compiler->parser;
     advance(parser);
 
-    ParseFn prefixRule = getRule(parser->previous.type)->prefix;
+    ParsePrefixFn prefixRule = getRule(parser->previous.type)->prefix;
     
     if (prefixRule == NULL) {
         error(parser, "Expect expression.");
@@ -1130,15 +1196,16 @@ static void parsePrecedence(Compiler *compiler, Precedence precedence) {
         if (parser->current.type == TK_OR && precedence == PREC_ASSIGN) {
             setInfixToOrr = true;
         }
-        
+
+        Token prev = compiler->parser->previous;
         advance(parser);
         
-        ParseFn infixRule = getRule(parser->previous.type)->infix;
+        ParseInfixFn infixRule = getRule(parser->previous.type)->infix;
         if (setInfixToOrr) {
             infixRule = orr;
         }
         
-        infixRule(compiler, canAssign);
+        infixRule(compiler, prev, canAssign);
     }
 
     if (canAssign && match(compiler, TK_ASSIGN)) {
@@ -1197,9 +1264,9 @@ static void block(Compiler *compiler) {
     eat(compiler->parser, TK_RBRACE, "Expect '}' after block.");
 }
 
-static void function(Compiler *compiler, FunctionType type) {
+static void function(Compiler *compiler, FunctionType type, AccessLevel level) {
     Compiler functionCompiler;
-    initCompiler(compiler->parser, &functionCompiler, compiler, type);
+    initCompiler(compiler->parser, &functionCompiler, compiler, type, level);
     beginScope(&functionCompiler);
 
     eat(functionCompiler.parser, TK_LPAREN, "Expect '(' after function name.");
@@ -1227,17 +1294,91 @@ static void function(Compiler *compiler, FunctionType type) {
     }
 }
 
-static void method(Compiler *compiler) {
-    eat(compiler->parser, TK_IDENT, "Expect method name.");
+static void method(Compiler *compiler, bool private, Token *ident) {
+    AccessLevel level = ACCESS_PUBLIC;
+    FunctionType type = TYPE_METHOD;
+
+    if (match(compiler, TK_PRIVATE) || private) {
+        if (compiler->class->abstractClass) {
+            error(compiler->parser, "Private methods can't be in abstract classes.");
+            return;
+        }
+
+        level = ACCESS_PRIVATE;
+    }
+
+    if (match(compiler, TK_STATIC)) {
+        type = TYPE_STATIC;
+        compiler->class->staticMethod = true;
+    } else if (match(compiler, TK_ABSTRACT)) {
+        if (!compiler->class->abstractClass) {
+            error(compiler->parser, "Abstract methods can only be in abstract classes.");
+            return;
+        }
+
+        type = TYPE_ABSTRACT;
+    }
+
+    if (ident == NULL) {
+        eat(compiler->parser, TK_IDENT, "Expect method name.");
+        ident = &compiler->parser->previous;
+    }
     uint16_t constant = identifierConstant(compiler, &compiler->parser->previous);
 
-    FunctionType type = TYPE_METHOD;
     if (compiler->parser->previous.len == 4 &&
         memcmp(compiler->parser->previous.start, "init", 4) == 0) {
-        type = TYPE_INITIALIZER;
+        type = TYPE_CONSTRUCTOR;
     }
-    function(compiler, type);
+
+    if (type != TYPE_ABSTRACT) {
+        function(compiler, type, level);
+    } else {
+        Compiler fnCompiler;
+
+        //TODO: beginFunction(compiler, &fnCompiler, TYPE_ABSTRACT, ACCESS_PUBLIC);
+        endCompiler(&fnCompiler);
+
+        if (check(compiler, TK_LBRACE)) {
+            error(compiler->parser, "Abstract methods can't have implementations.");
+            return;
+        }
+    }
+
     emitByteShort(compiler, OP_METHOD, constant);
+}
+
+// TODO: Support := and ::=
+static void parseClassBody(Compiler *compiler) {
+    while (!check(compiler, TK_RBRACE) && !check(compiler, TK_EOF)) {
+        if (match(compiler, TK_DOES)) {
+            // doesStatement(compiler); TODO
+        } else if (match(compiler, TK_VAR)) {
+            eat(compiler->parser, TK_IDENT, "Expect variable name.");
+            uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
+
+            if (match(compiler, TK_ASSIGN)) {
+                expression(compiler);
+            } else {
+                emitByte(compiler, OP_NULL);
+            }
+            emitByteShort(compiler, OP_SET_CLASS_STATIC_VAR, name);
+            emitByte(compiler, false); // not constant
+
+            match(compiler, TK_SEMICOLON);
+        } else if (match(compiler, TK_CONST)) {
+            eat(compiler->parser, TK_IDENT, "Expect constant name."); // TODO: Better error message for ::=
+            uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
+
+            eat(compiler->parser, TK_ASSIGN, "Expect '=' after identifier.");
+            expression(compiler);
+            emitBytes(compiler, OP_SET_CLASS_STATIC_VAR, name);
+            emitByte(compiler, true); // is constant
+
+            match(compiler, TK_SEMICOLON);
+        } else if (match(compiler, TK_PRIVATE)) {
+
+        }
+    }
 }
 
 static void classDeclaration(Compiler *compiler) {
@@ -1296,6 +1437,7 @@ static void varDeclaration(Compiler *compiler, bool isConst) {
     do {
         uint16_t global = parseVariable(compiler, "Expect variable name.");
 
+        // TODO: Error message for const when '=' is not present.
         if (match(compiler, TK_ASSIGN) || isConst) {
             expression(compiler);
         } else {
@@ -1954,7 +2096,7 @@ static void checkWithFile(Compiler *compiler) {
 }
 
 static void returnStatement(Compiler *compiler) {
-    if (compiler->type == TYPE_SCRIPT) {
+    if (compiler->type == TYPE_TOP_LEVEL) {
         error(compiler->parser, "Can't return from top-level code.");
     }
     
@@ -1962,8 +2104,8 @@ static void returnStatement(Compiler *compiler) {
         checkWithFile(compiler);
         emitReturn(compiler);
     } else {
-        if (compiler->type == TYPE_INITIALIZER) {
-            error(compiler->parser, "Can't return a value from an initializer.");
+        if (compiler->type == TYPE_CONSTRUCTOR) {
+            error(compiler->parser, "Can't return a value from a constructor.");
         }
         
         expression(compiler);
@@ -2040,7 +2182,7 @@ ObjFunction *compile(VM *vm, ObjScript *script,  const char *source) {
 
     initLexer(source);
     Compiler compiler;
-    initCompiler(&parser, &compiler, NULL, TYPE_SCRIPT);
+    initCompiler(&parser, &compiler, NULL, TYPE_TOP_LEVEL, ACCESS_PUBLIC);
     firstAdvance(&compiler);
 
     advance(compiler.parser);

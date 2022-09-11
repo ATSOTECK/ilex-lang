@@ -13,7 +13,7 @@
 ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
 ObjClass *newClass(VM *vm, ObjString *name);
 ObjClosure *newClosure(VM *vm, ObjFunction *function);
-ObjFunction *newFunction(VM *vm, ObjScript *script);
+ObjFunction *newFunction(VM *vm, FunctionType type, AccessLevel level, ObjScript *script);
 ObjInstance *newInstance(VM *vm, ObjClass *objClass);
 ObjNative *newNative(VM *vm, NativeFn function);
 char *newCString(const char *str);

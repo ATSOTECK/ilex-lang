@@ -125,7 +125,7 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_LOOP: return jumpInstruction("OP_LOOP", -1, chunk, offset);
         case OP_CALL: return byteInstruction("OP_CALL", chunk, offset);
         case OP_INVOKE: return invokeInstruction("OP_INVOKE", chunk, offset);
-        case OP_SUPER_INVOKE: return invokeInstruction("OP_SUPER_INVOKE", chunk, offset);
+        case OP_INVOKE_SUPER: return invokeInstruction("OP_SUPER_INVOKE", chunk, offset);
         case OP_CLOSURE: {
             offset++;
             uint16_t constant = (uint16_t)(chunk->code[offset] << 8);

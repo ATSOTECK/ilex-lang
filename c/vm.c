@@ -365,9 +365,7 @@ static bool callValue(VM *vm, Value callee, int argc) {
     return false;
 }
 
-static bool callNativeFunction(VM *vm, Value function, int argc) {
-    NativeFn native = AS_NATIVE(function);
-
+static bool callNativeFunction(VM *vm, NativeFn native, int argc) {
     Value res = native(vm, argc, vm->stackTop - argc - 1);
     if (IS_ERR(res)) {
         return false;
@@ -378,14 +376,87 @@ static bool callNativeFunction(VM *vm, Value function, int argc) {
     return true;
 }
 
-static bool invokeFromClass(VM *vm, ObjClass *objClass, ObjString *name, int argCount) {
+static bool invokeFromClass(VM *vm, ObjClass *objClass, ObjString *name, int argc) {
     Value method;
     if (!tableGet(&objClass->methods, name, &method)) {
         runtimeError(vm, "Undefined property '%s'.", name->str);
         return false;
     }
 
-    return call(vm, AS_CLOSURE(method), argCount);
+    return call(vm, AS_CLOSURE(method), argc);
+}
+
+static bool invokeFromThis(VM *vm, ObjString *name, int argc) {
+    Value receiver = peek(vm, argc);
+
+    if (IS_INSTANCE(receiver)) {
+        ObjInstance *instance = AS_INSTANCE(receiver);
+
+        Value value;
+        if (tableGet(&instance->objClass->privateMethods, name, &value)) {
+            return call(vm, AS_CLOSURE(value), argc);
+        }
+
+        if (tableGet(&instance->objClass->methods, name, &value)) {
+            return call(vm , AS_CLOSURE(value), argc);
+        }
+
+        // TODO: Instance methods.
+        /*
+        if (tableGet(vm->instanceMethods, name, &value)) {
+            return callNativeFunction(vm , AS_NATIVE(value), argc);
+        }
+        */
+
+        if (tableGet(&instance->objClass->staticVars, name, &value)) {
+            vm->stackTop[-argc - 1] = value;
+            return callValue(vm, value, argc);
+        }
+    } else if (IS_CLASS(receiver)) {
+        ObjClass *instance = AS_CLASS(receiver);
+        Value value;
+        if (tableGet(&instance->privateMethods, name, &value)) {
+            if (AS_CLOSURE(value)->function->type != TYPE_STATIC) {
+                // TODO
+                /*
+                if (tableGet(&vm->classMethods, name, &value)) {
+                    return callNativeFunction(vm, AS_NATIVE(value), argc);
+                }
+                */
+
+                runtimeError(vm, "'%s', is not static. Only static methods can be invoked from a class.", name->str);
+                return false;
+            }
+
+            return callValue(vm, value, argc);
+        }
+
+        if (tableGet(&instance->methods, name, &value)) {
+            if (AS_CLOSURE(value)->function->type != TYPE_STATIC) {
+                // TODO
+                /*
+                if (tableGet(&vm->classMethods, name, &value)) {
+                    return callNativeFunction(vm, AS_NATIVE(value), argc);
+                }
+                */
+
+                runtimeError(vm, "'%s', is not static. Only static methods can be invoked from a class.", name->str);
+                return false;
+            }
+
+            return callValue(vm, value, argc);
+        }
+
+        // TODO
+        /*
+        if (tableGet(&vm->classMethods, name, &value)) {
+            callNativeFunction(vm, AS_NATIVE(value), argc);
+        }
+        */
+    }
+
+    runtimeError(vm, "Undefined property '%s'.", name->str);
+    return false;
 }
 
 static bool invoke(VM *vm, ObjString *name, int argc) {
@@ -411,7 +482,7 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
         case OBJ_STRING: {
             Value value;
             if (tableGet(&vm->stringFunctions, name, &value)) {
-                return callNativeFunction(vm, value, argc);
+                return callNativeFunction(vm, AS_NATIVE(value), argc);
             }
 
             runtimeError(vm, "String has no function %s().", name->str);
@@ -442,7 +513,7 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
         case OBJ_ARRAY: {
             Value value;
             if (tableGet(&vm->arrayFunctions, name, &value)) {
-                return callNativeFunction(vm, value, argc);
+                return callNativeFunction(vm, AS_NATIVE(value), argc);
             }
     
             runtimeError(vm, "Array has no function %s().", name->str);
@@ -451,7 +522,7 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
         case OBJ_FILE: {
             Value value;
             if (tableGet(&vm->fileFunctions, name, &value)) {
-                return callNativeFunction(vm, value, argc);
+                return callNativeFunction(vm, AS_NATIVE(value), argc);
             }
     
             runtimeError(vm, "File has no function %s().", name->str);
@@ -460,7 +531,7 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
         case OBJ_MAP: {
             Value value;
             if (tableGet(&vm->mapFunctions, name, &value)) {
-                return callNativeFunction(vm, value, argc);
+                return callNativeFunction(vm, AS_NATIVE(value), argc);
             }
     
             runtimeError(vm, "Map has no function %s().", name->str);
@@ -469,7 +540,7 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
         case OBJ_SET: {
             Value value;
             if (tableGet(&vm->setFunctions, name, &value)) {
-                return callNativeFunction(vm, value, argc);
+                return callNativeFunction(vm, AS_NATIVE(value), argc);
             }
     
             runtimeError(vm, "Set has no function %s().", name->str);
@@ -643,10 +714,18 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             break;
                         }
 
-                        if (!bindMethod(vm, instance->objClass, name)) {
+                        if (bindMethod(vm, instance->objClass, name)) {
+                            break;
+                        }
+
+                        if (tableGet(&instance->privateFields, name, &value)) {
+                            runtimeError(vm, "Can't access private property '%s' on '%s' instance.", name->str, instance->objClass->name->str);
                             return INTERPRET_RUNTIME_ERROR;
                         }
-                    } break;
+
+                        runtimeError(vm, "'%s' instance does not have property: '%s'.", instance->objClass->name->str, name->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
                     case OBJ_ENUM: {
                         ObjEnum *enumObj = AS_ENUM(receiver);
                         ObjString *name = READ_STRING();
@@ -697,10 +776,74 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     break;
                 }
     
-                if (!bindMethod(vm, instance->objClass, name)) {
+                if (bindMethod(vm, instance->objClass, name)) {
+                    break;
+                }
+
+                if (tableGet(&instance->privateFields, name, &value)) {
+                    runtimeError(vm, "Can't access private property '%s' on '%s' instance.", name->str, instance->objClass->name->str);
                     return INTERPRET_RUNTIME_ERROR;
                 }
-            } break;
+
+                runtimeError(vm, "'%s' instance does not have property: '%s'.", instance->objClass->name->str, name->str);
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            case OP_GET_PRIVATE_PROPERTY: {
+                if (!IS_INSTANCE(peek(vm, 0))) {
+                    runtimeError(vm, "Only instances have properties.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                ObjInstance *instance = AS_INSTANCE(peek(vm, 0));
+                ObjString *name = READ_STRING();
+                Value value;
+
+                if (tableGet(&instance->privateFields, name, &value)) {
+                    pop(vm); // Instance.
+                    push(vm, value);
+                    break;
+                }
+
+                if (tableGet(&instance->fields, name, &value)) {
+                    pop(vm); // Instance.
+                    push(vm, value);
+                    break;
+                }
+
+                if (bindMethod(vm, instance->objClass, name)) {
+                    break;
+                }
+
+                runtimeError(vm, "'%s' instance does not have property: '%s'.", instance->objClass->name->str, name->str);
+                return INTERPRET_RUNTIME_ERROR;
+            }
+            case OP_GET_PRIVATE_PROPERTY_NO_POP: {
+                if (!IS_INSTANCE(peek(vm, 0))) {
+                    runtimeError(vm, "Only instances have properties.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                ObjInstance *instance = AS_INSTANCE(peek(vm, 0));
+                ObjString *name = READ_STRING();
+                Value value;
+
+                if (tableGet(&instance->privateFields, name, &value)) {
+                    push(vm, value);
+                    break;
+                }
+
+                if (tableGet(&instance->fields, name, &value)) {
+                    push(vm, value);
+                    break;
+                }
+
+                if (bindMethod(vm, instance->objClass, name)) {
+                    break;
+                }
+
+                runtimeError(vm, "'%s' instance does not have property: '%s'.", instance->objClass->name->str, name->str);
+                return INTERPRET_RUNTIME_ERROR;
+            }
             case OP_GET_SUPER: {
                 ObjString *name = READ_STRING();
                 ObjClass *superclass = AS_CLASS(pop(vm));
@@ -747,25 +890,27 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (IS_SCRIPT(peek(vm, 1))) {
                     ObjScript *script = AS_SCRIPT(peek(vm, 1));
                     ObjString *name = READ_STRING();
-                    Value _;
+                    Value unused;
                     
-                    if (tableGet(&vm->consts, name, &_)) {
+                    if (tableGet(&vm->consts, name, &unused)) {
                         runtimeError(vm, "Cannot assign to const variable '%s'.", name->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     
                     tableSet(vm, &script->values, name, peek(vm, 0));
                     Value value = pop(vm);
-                    pop(vm);  // Script.
+                    pop(vm); // Script.
                     push(vm, value);
                 } else if (IS_INSTANCE(peek(vm, 1))) {
                     ObjInstance *instance = AS_INSTANCE(peek(vm, 1));
                     tableSet(vm, &instance->fields, READ_STRING(), peek(vm, 0));
                     Value value = pop(vm);
-                    pop(vm);  // Instance.
+                    pop(vm); // Instance.
                     push(vm, value);
                 } else {
-                    runtimeError(vm, "Only instances have fields.");
+                    char *type = valueType(peek(vm, 1));
+                    runtimeError(vm, "Can't set property on type '%s'.", type);
+                    free(type);
                     return INTERPRET_RUNTIME_ERROR;
                 }
             } break;
@@ -918,12 +1063,23 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 frame = &vm->frames[vm->frameCount - 1];
                 ip = frame->ip;
             } break;
-            case OP_SUPER_INVOKE: {
+            case OP_INVOKE_SUPER: {
                 ObjString *method = READ_STRING();
                 int argc = READ_BYTE();
                 frame->ip = ip;
                 ObjClass *superclass = AS_CLASS(pop(vm));
                 if (!invokeFromClass(vm, superclass, method, argc)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                frame = &vm->frames[vm->frameCount - 1];
+                ip = frame->ip;
+            } break;
+            case OP_INVOKE_THIS: {
+                ObjString *method = READ_STRING();
+                int argc = READ_BYTE();
+                frame->ip = ip;
+                if (!invokeFromThis(vm, method, argc)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 

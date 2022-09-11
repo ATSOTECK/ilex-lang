@@ -67,9 +67,11 @@ typedef enum {
     TK_NUMBER,
 
     // Keywords.
+    TK_ABSTRACT,
     TK_AND,
     TK_AS,
     TK_ASSERT,
+    TK_BEHAVIOR,
     TK_BREAK,
     TK_CASE,
     TK_CLASS,
@@ -82,6 +84,7 @@ typedef enum {
     TK_ELSE,
     TK_ENUM,
     TK_FALSE,
+    TK_FINAL,
     TK_FN,
     TK_FOR,
     TK_FROM,
@@ -108,7 +111,7 @@ typedef enum {
     TK_TO_STR,
 
     TK_ERROR,
-    TK_EOF
+    TK_EOF,
 } IlexTokenType;
 
 typedef struct {
