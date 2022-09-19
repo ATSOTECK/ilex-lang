@@ -35,10 +35,16 @@ ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method) {
     return bound;
 }
 
-ObjClass *newClass(VM *vm, ObjString *name) {
+ObjClass *newClass(VM *vm, ObjString *name, ObjClass *superClass, ClassType type) {
     ObjClass* objClass = ALLOCATE_OBJ(vm, ObjClass, OBJ_CLASS);
     objClass->name = name;
+    objClass->superClass = superClass;
+    objClass->type = type;
     initTable(&objClass->methods);
+    initTable(&objClass->privateMethods);
+    initTable(&objClass->abstractMethods);
+    initTable(&objClass->staticVars);
+    initTable(&objClass->staticConsts);
 
     return objClass;
 }
@@ -74,6 +80,14 @@ ObjInstance *newInstance(VM *vm, ObjClass *objClass) {
     ObjInstance *instance = ALLOCATE_OBJ(vm, ObjInstance, OBJ_INSTANCE);
     instance->objClass = objClass;
     initTable(&instance->fields);
+    initTable(&instance->privateFields);
+
+    push(vm, OBJ_VAL(instance));
+    ObjString *classStr = copyString(vm, "_class", 6);
+    push(vm, OBJ_VAL(classStr));
+    tableSet(vm, &instance->fields, classStr, OBJ_VAL(objClass));
+    pop(vm);
+    pop(vm);
 
     return instance;
 }

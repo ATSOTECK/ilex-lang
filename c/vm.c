@@ -61,6 +61,7 @@ void runtimeError(VM *vm, const char *format, ...) {
     for (int i = vm->frameCount - 1; i >= 0; i--) {
         CallFrame *frame = &vm->frames[i];
         ObjFunction *function = frame->closure->function;
+        // TODO: Find a better way to store line numbers.
         size_t instruction = frame->ip - function->chunk.code - 1;
         int line = function->chunk.lines[instruction];
         len += snprintf(msg + len, I_ERR_MSG_SIZE, "[line %d] in ", line);
@@ -296,6 +297,22 @@ Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
     run(vm, currentFrameIndex, &value);
 
     return value;
+}
+
+static void printStack(VM *vm) {
+    printf("Stack:\n");
+    Value *st = &vm->stackTop[-1];
+    for (;;) {
+        char *type = valueType(*st);
+        char *str = valueToString(*st);
+        printf("\t%s: %s\n", str, type);
+        free(str);
+        free(type);
+
+        if (st-- == vm->stack) {
+            return;
+        }
+    }
 }
 
 static bool call(VM *vm, ObjClosure *closure, int argc) {
@@ -604,8 +621,29 @@ static void closeUpvalues(VM *vm, Value *last) {
 static void defineMethod(VM *vm, ObjString *name) {
     Value method = peek(vm, 0);
     ObjClass *objClass = AS_CLASS(peek(vm, 1));
-    tableSet(vm, &objClass->methods, name, method);
+    ObjFunction *function = AS_CLOSURE(method)->function;
+
+    if (function->accessLevel == ACCESS_PRIVATE) {
+        tableSet(vm, &objClass->privateMethods, name, method);
+    } else {
+        if (function->type == TYPE_ABSTRACT) {
+            tableSet(vm, &objClass->abstractMethods, name, method);
+        } else {
+            tableSet(vm, &objClass->methods, name, method);
+        }
+    }
+
     pop(vm);
+}
+
+static void createClass(VM *vm, ObjString *name, ObjClass *superClass, ClassType type) {
+    ObjClass *objClass = newClass(vm, name, superClass, type);
+    push(vm, OBJ_VAL(objClass));
+
+    if (superClass != NULL) {
+        tableAddAll(vm, &superClass->methods, &objClass->methods);
+        tableAddAll(vm, &superClass->abstractMethods, &objClass->abstractMethods);
+    }
 }
 
 static void concat(VM *vm) {
@@ -914,6 +952,28 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
             } break;
+            case OP_SET_PRIVATE_PROPERTY: {
+                if (IS_INSTANCE(peek(vm, 1))) {
+                    ObjInstance *instance = AS_INSTANCE(peek(vm, 1));
+                    tableSet(vm, &instance->privateFields, READ_STRING(), peek(vm, 0));
+                    pop(vm);
+                    pop(vm);
+                    push(vm, NULL_VAL);
+                }
+            } break;
+            case OP_SET_CLASS_STATIC_VAR: {
+                ObjClass *objClass = AS_CLASS(peek(vm, 1));
+                ObjString *key = READ_STRING();
+                bool isConst = READ_BYTE();
+
+                if (isConst) {
+                    tableSet(vm, &objClass->staticConsts, key, peek(vm, 0));
+                } else {
+                    tableSet(vm, &objClass->staticVars, key, peek(vm, 0));
+                }
+
+                pop(vm);
+            } break;
             case OP_EQ: {
                 Value a = pop(vm);
                 Value b = pop(vm);
@@ -1127,18 +1187,36 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 ip = frame->ip;
             } break;
             case OP_CLASS: {
-                push(vm, OBJ_VAL(newClass(vm, READ_STRING())));
+                ClassType type = READ_BYTE();
+                createClass(vm, READ_STRING(), NULL, type);
             } break;
             case OP_INHERIT: {
-                Value superclass = peek(vm, 1);
-                if (!IS_CLASS(superclass)) {
-                    runtimeError(vm, "Superclass must be a class.");
+                ClassType type = READ_BYTE();
+                printStack(vm);
+                Value superClass = peek(vm, 0); // vm->stackTop[0];
+                if (!IS_CLASS(superClass)) {
+                    char *vt = valueType(superClass);
+                    runtimeError(vm, "Superclass must be a class, got a '%s' instead.", vt);
+                    free(vt);
                     return INTERPRET_RUNTIME_ERROR;
                 }
+                createClass(vm, READ_STRING(), AS_CLASS(superClass), type);
+            } break;
+            // TODO: Can this be moved to the compiler?
+            case OP_CHECK_ABSTRACT: {
+                ObjClass *objClass = AS_CLASS(peek(vm, 0));
 
-                ObjClass *subclass = AS_CLASS(peek(vm, 0));
-                tableAddAll(vm, &AS_CLASS(superclass)->methods, &subclass->methods);
-                pop(vm); // Subclass.
+                for ( int i = 0; i < objClass->abstractMethods.capacity + 1; ++i) {
+                    if (objClass->abstractMethods.entries[i].key == NULL) {
+                        continue;
+                    }
+
+                    Value unused;
+                    if (!tableGet(&objClass->methods, objClass->abstractMethods.entries[i].key, &unused)) {
+                        runtimeError(vm, "Class '%s' doesn't implement abstract method '%s'.", objClass->name->str, objClass->abstractMethods.entries[i].key->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                }
             } break;
             case OP_METHOD: {
                 defineMethod(vm, READ_STRING());

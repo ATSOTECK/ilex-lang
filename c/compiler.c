@@ -256,7 +256,7 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
     }
 
     Local *local = &compiler->locals[compiler->localCount++];
-    local->depth = 0;
+    local->depth = compiler->scopeDepth;
     local->isCaptured = false;
     if (type == TYPE_METHOD || type == TYPE_CONSTRUCTOR) {
         local->name.start = "this";
@@ -343,6 +343,7 @@ static void addLocal(Compiler *compiler, Token name) {
     local->name = name;
     local->depth = -1;
     local->isCaptured = false;
+    local->isConst = false;
 }
 
 static void declareVariable(Compiler *compiler) {
@@ -416,6 +417,15 @@ static ObjFunction *endCompiler(Compiler *compiler) {
         disassembleChunk(currentChunk(compiler), function->name != NULL ? function->name->str : function->script->name->str);
     }
 #endif
+
+    if (compiler->enclosing != NULL) {
+        emitByteShort(compiler, OP_CLOSURE, makeConstant(compiler->enclosing, OBJ_VAL(function)));
+
+        for (int i = 0; i < function->upvalueCount; ++i) {
+            emitByte(compiler->enclosing, compiler->upvalues[i].isLocal ? 1 : 0);
+            emitShort(compiler->enclosing, compiler->upvalues[i].index);
+        }
+    }
 
     compiler->parser->vm->compiler = compiler->enclosing;
     return function;
@@ -1138,6 +1148,7 @@ ParseRule rules[] = {
         [TK_NUMBER]           = {number,   NULL,    PREC_NONE},
         [TK_AND]              = {NULL,     and_,    PREC_AND},
         [TK_CLASS]            = {NULL,     NULL,    PREC_NONE},
+        [TK_ABSTRACT]         = {NULL,     NULL,    PREC_NONE},
         [TK_ELSE]             = {NULL,     NULL,    PREC_NONE},
         [TK_FALSE]            = {literal,  NULL,    PREC_NONE},
         [TK_FOR]              = {NULL,     NULL,    PREC_NONE},
@@ -1264,24 +1275,29 @@ static void block(Compiler *compiler) {
     eat(compiler->parser, TK_RBRACE, "Expect '}' after block.");
 }
 
-static void function(Compiler *compiler, FunctionType type, AccessLevel level) {
-    Compiler functionCompiler;
-    initCompiler(compiler->parser, &functionCompiler, compiler, type, level);
-    beginScope(&functionCompiler);
+static void functionPrototype(Compiler *compiler, Compiler *functionCompiler, FunctionType type, AccessLevel level) {
+    initCompiler(compiler->parser, functionCompiler, compiler, type, level);
+    beginScope(functionCompiler);
 
-    eat(functionCompiler.parser, TK_LPAREN, "Expect '(' after function name.");
-    if (!check(&functionCompiler, TK_RPAREN)) {
+    eat(functionCompiler->parser, TK_LPAREN, "Expect '(' after function name.");
+    if (!check(functionCompiler, TK_RPAREN)) {
         do {
-            functionCompiler.function->arity++;
-            if (functionCompiler.function->arity > 255) {
-                errorAtCurrent(functionCompiler.parser, "Can't have more than 255 parameters.");
+            functionCompiler->function->arity++;
+            if (functionCompiler->function->arity > 255) {
+                errorAtCurrent(functionCompiler->parser, "Can't have more than 255 parameters.");
             }
 
-            uint16_t constant = parseVariable(&functionCompiler, "Expect parameter name.");
-            defineVariable(&functionCompiler, constant, false); // TODO: Should this be true?
-        } while (match(&functionCompiler, TK_COMMA));
+            uint16_t constant = parseVariable(functionCompiler, "Expect parameter name.");
+            defineVariable(functionCompiler, constant, false); // TODO: Should this be true?
+        } while (match(functionCompiler, TK_COMMA));
     }
-    eat(functionCompiler.parser, TK_RPAREN, "Expect ')' after parameters.");
+    eat(functionCompiler->parser, TK_RPAREN, "Expect ')' after parameters.");
+}
+
+static void function(Compiler *compiler, FunctionType type, AccessLevel level) {
+    Compiler functionCompiler;
+    functionPrototype(compiler, &functionCompiler, type, level);
+
     eat(functionCompiler.parser, TK_LBRACE, "Expect '{' before function body.");
     block(&functionCompiler);
 
@@ -1294,29 +1310,11 @@ static void function(Compiler *compiler, FunctionType type, AccessLevel level) {
     }
 }
 
-static void method(Compiler *compiler, bool private, Token *ident) {
-    AccessLevel level = ACCESS_PUBLIC;
-    FunctionType type = TYPE_METHOD;
+static void method(Compiler *compiler, bool private, FunctionType type, Token *ident) {
+    AccessLevel level = private ? ACCESS_PRIVATE : ACCESS_PUBLIC;
 
-    if (match(compiler, TK_PRIVATE) || private) {
-        if (compiler->class->abstractClass) {
-            error(compiler->parser, "Private methods can't be in abstract classes.");
-            return;
-        }
-
-        level = ACCESS_PRIVATE;
-    }
-
-    if (match(compiler, TK_STATIC)) {
-        type = TYPE_STATIC;
+    if (type == TYPE_STATIC) {
         compiler->class->staticMethod = true;
-    } else if (match(compiler, TK_ABSTRACT)) {
-        if (!compiler->class->abstractClass) {
-            error(compiler->parser, "Abstract methods can only be in abstract classes.");
-            return;
-        }
-
-        type = TYPE_ABSTRACT;
     }
 
     if (ident == NULL) {
@@ -1335,7 +1333,7 @@ static void method(Compiler *compiler, bool private, Token *ident) {
     } else {
         Compiler fnCompiler;
 
-        //TODO: beginFunction(compiler, &fnCompiler, TYPE_ABSTRACT, ACCESS_PUBLIC);
+        functionPrototype(compiler, &fnCompiler, TYPE_ABSTRACT, ACCESS_PUBLIC);
         endCompiler(&fnCompiler);
 
         if (check(compiler, TK_LBRACE)) {
@@ -1361,8 +1359,7 @@ static void parseClassBody(Compiler *compiler) {
             } else {
                 emitByte(compiler, OP_NULL);
             }
-            emitByteShort(compiler, OP_SET_CLASS_STATIC_VAR, name);
-            emitByte(compiler, false); // not constant
+            emitByteShort(compiler, OP_SET_PROPERTY, name);
 
             match(compiler, TK_SEMICOLON);
         } else if (match(compiler, TK_CONST)) {
@@ -1371,33 +1368,66 @@ static void parseClassBody(Compiler *compiler) {
 
             eat(compiler->parser, TK_ASSIGN, "Expect '=' after identifier.");
             expression(compiler);
-            emitBytes(compiler, OP_SET_CLASS_STATIC_VAR, name);
+            emitBytes(compiler, OP_SET_CLASS_STATIC_VAR, name); // const is implicitly static here.
             emitByte(compiler, true); // is constant
 
             match(compiler, TK_SEMICOLON);
         } else if (match(compiler, TK_PRIVATE)) {
-
+            if (match(compiler, TK_FN) && match(compiler, TK_IDENT)) {
+                if (compiler->class->abstractClass) {
+                    error(compiler->parser, "Private methods can't be in abstract classes.");
+                    return;
+                }
+                method(compiler, true, TYPE_METHOD, &compiler->parser->previous);
+            } else if (match(compiler, TK_VAR) && match(compiler, TK_IDENT)) {
+                // TODO
+            }
+        } else if (match(compiler, TK_FN) && match(compiler, TK_IDENT)) {
+            method(compiler, false, TYPE_METHOD, &compiler->parser->previous);
+        } else if (match(compiler, TK_ABSTRACT) && match(compiler, TK_FN) && match(compiler, TK_IDENT)) {
+            if (!compiler->class->abstractClass) {
+                error(compiler->parser, "Abstract methods can only be in abstract classes.");
+                return;
+            }
+            method(compiler, false, TYPE_ABSTRACT, &compiler->parser->previous);
+        } else {
+            char *msg = newCStringLen(compiler->parser->current.start, compiler->parser->current.len);
+            error(compiler->parser, "Unexpected token '%s'.", msg);
+            free(msg);
+            synchronize(compiler->parser);
+            return;
         }
     }
 }
 
+static void initClassCompiler(Compiler *compiler, ClassCompiler *classCompiler, bool isAbstract) {
+    classCompiler->name = compiler->parser->previous;
+    classCompiler->hasSuperclass = false;
+    classCompiler->enclosing = compiler->class;
+    classCompiler->staticMethod = false;
+    classCompiler->abstractClass = isAbstract;
+    initTable(&classCompiler->privateVariables);
+    compiler->class = classCompiler;
+}
+
+static void endClassCompiler(Compiler *compiler, ClassCompiler *classCompiler) {
+    freeTable(compiler->parser->vm, &classCompiler->privateVariables);
+    compiler->class = compiler->class->enclosing;
+}
+
 static void classDeclaration(Compiler *compiler) {
-    eat(compiler->parser, TK_IDENT, "Expect class name.");
+    eat(compiler->parser, TK_IDENT, "Expect class name after token 'class'.");
     Token className = compiler->parser->previous;
     uint16_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
     declareVariable(compiler);
 
-    emitByteShort(compiler, OP_CLASS, nameConstant);
-    defineVariable(compiler, nameConstant, false);
-
     ClassCompiler classCompiler;
-    classCompiler.enclosing = compiler->class;
-    classCompiler.hasSuperclass = false;
-    compiler->class = &classCompiler;
+    initClassCompiler(compiler, &classCompiler, false);
 
     if (match(compiler, TK_LT)) {
         eat(compiler->parser, TK_IDENT, "Expect superclass name.");
         variable(compiler, false);
+        classCompiler.hasSuperclass = true;
 
         if (identifiersEqual(&className, &compiler->parser->previous)) {
             error(compiler->parser, "A class can't inherit from itself.");
@@ -1405,31 +1435,71 @@ static void classDeclaration(Compiler *compiler) {
 
         beginScope(compiler);
         addLocal(compiler, syntheticToken("super"));
-        defineVariable(compiler, 0, false);
+//        defineVariable(compiler, 0, false);
 
-        namedVariable(compiler, className, false);
-        emitByte(compiler, OP_INHERIT);
-        classCompiler.hasSuperclass = true;
+//        namedVariable(compiler, className, false);
+        emitBytes(compiler, OP_INHERIT, CLASS_DEFAULT);
+    } else {
+        emitBytes(compiler, OP_CLASS, CLASS_DEFAULT);
     }
 
-    namedVariable(compiler, className, false);
+    emitShort(compiler, nameConstant);
     eat(compiler->parser, TK_LBRACE, "Expect '{' before class body.");
-    while (!check(compiler, TK_RBRACE) && !check(compiler, TK_EOF)) {
-        method(compiler);
-    }
+    parseClassBody(compiler);
     eat(compiler->parser, TK_RBRACE, "Expect '}' after class body.");
-    emitByte(compiler, OP_POP);
+
+    if (classCompiler.hasSuperclass) {
+        endScope(compiler);
+        emitByte(compiler, OP_CHECK_ABSTRACT);
+    }
+
+    defineVariable(compiler, nameConstant, false);
+    endClassCompiler(compiler, &classCompiler);
+}
+
+static void abstractClassDeclaration(Compiler *compiler) {
+    eat(compiler->parser, TK_CLASS, "Expect 'class' keyword after token 'abstract'.");
+    eat(compiler->parser, TK_IDENT, "Expect class name after token 'class'.");
+
+    Token className = compiler->parser->previous;
+    uint16_t nameConstant = identifierConstant(compiler, &compiler->parser->previous);
+    declareVariable(compiler);
+
+    ClassCompiler classCompiler;
+    initClassCompiler(compiler, &classCompiler, true);
+
+    if (match(compiler, TK_LT)) {
+        eat(compiler->parser, TK_IDENT, "Expect superclass name.");
+        variable(compiler, false);
+        classCompiler.hasSuperclass = true;
+
+        if (identifiersEqual(&className, &compiler->parser->previous)) {
+            error(compiler->parser, "A class can't inherit from itself.");
+        }
+
+        beginScope(compiler);
+        addLocal(compiler, syntheticToken("super"));
+        emitBytes(compiler, OP_INHERIT, CLASS_ABSTRACT);
+    } else {
+        emitBytes(compiler, OP_CLASS, CLASS_ABSTRACT);
+    }
+
+    emitShort(compiler, nameConstant);
+    eat(compiler->parser, TK_LBRACE, "Expect '{' before class body.");
+    parseClassBody(compiler);
+    eat(compiler->parser, TK_RBRACE, "Expect '}' after class body.");
 
     if (classCompiler.hasSuperclass) {
         endScope(compiler);
     }
 
-    compiler->class = compiler->class->enclosing;
+    defineVariable(compiler, nameConstant, false);
+    endClassCompiler(compiler, &classCompiler);
 }
 
 static void fnDeclaration(Compiler *compiler) {
     uint16_t global = parseVariable(compiler, "Expect function name after 'fn'.");
-    function(compiler, TYPE_FUNCTION);
+    function(compiler, TYPE_FUNCTION, ACCESS_PUBLIC);
     defineVariable(compiler, global, false);
 }
 
@@ -1530,6 +1600,7 @@ static int getArgCount(const uint8_t *code, const ValueArray constants, int ip) 
         case OP_RETURN:
         case OP_BREAK:
         case OP_OPEN_FILE:
+        case OP_CHECK_ABSTRACT:
             return 0;
 
         case OP_CONSTANT:
@@ -1557,7 +1628,10 @@ static int getArgCount(const uint8_t *code, const ValueArray constants, int ip) 
         case OP_JUMP_IF_FALSE:
         case OP_LOOP:
         case OP_INVOKE:
+        case OP_INVOKE_THIS:
+        case OP_INVOKE_SUPER:
         case OP_CLASS:
+        case OP_INHERIT:
         case OP_USE_BUILTIN:
             return 2;
 
@@ -2118,6 +2192,8 @@ static void returnStatement(Compiler *compiler) {
 static void declaration(Compiler *compiler) {
     if (match(compiler, TK_CLASS)) {
         classDeclaration(compiler);
+    } else if (match(compiler, TK_ABSTRACT)) {
+        abstractClassDeclaration(compiler);
     } else if (match(compiler, TK_FN)) {
         fnDeclaration(compiler);
     } else if (match(compiler, TK_VAR)) {
@@ -2198,6 +2274,13 @@ void markCompilerRoots(VM *vm) {
     Compiler *compiler = vm->compiler;
 
     while (compiler != NULL) {
+        ClassCompiler *classCompiler = vm->compiler->class;
+
+        while (classCompiler != NULL) {
+            markTable(vm, &classCompiler->privateVariables);
+            classCompiler = classCompiler->enclosing;
+        }
+
         markObject(vm, (Obj*)compiler->function);
         compiler = compiler->enclosing;
     }

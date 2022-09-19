@@ -13,7 +13,7 @@
 
 void initTable(Table *table) {
     table->count = 0;
-    table->capacity = 0;
+    table->capacity = -1;
     table->entries = NULL;
 }
 
@@ -70,7 +70,7 @@ static void adjustCapacity(VM *vm, Table* table, int capacity) {
 }
 
 bool tableGet(Table *table, ObjString *key, Value *value) {
-    if (table->capacity == 0) {
+    if (table->count == 0) {
         return false;
     }
 

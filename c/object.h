@@ -11,7 +11,7 @@
 #include "value.h"
 
 ObjBoundMethod *newBoundMethod(VM *vm, Value receiver, ObjClosure *method);
-ObjClass *newClass(VM *vm, ObjString *name);
+ObjClass *newClass(VM *vm, ObjString *name, ObjClass *superclass, ClassType type);
 ObjClosure *newClosure(VM *vm, ObjFunction *function);
 ObjFunction *newFunction(VM *vm, FunctionType type, AccessLevel level, ObjScript *script);
 ObjInstance *newInstance(VM *vm, ObjClass *objClass);

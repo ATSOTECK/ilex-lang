@@ -1,5 +1,9 @@
-class Cat {
-    sayHi(name) {
+abstract class Animal {
+    abstract fn sayHi(name)
+}
+
+class Cat < Animal {
+    fn sayHi(name) {
         println("hi " + name);
     }
 }
