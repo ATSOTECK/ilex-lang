@@ -1412,7 +1412,7 @@ static void classDeclaration(Compiler *compiler) {
     ClassCompiler classCompiler;
     initClassCompiler(compiler, &classCompiler, false);
 
-    if (match(compiler, TK_LT)) {
+    if (match(compiler, TK_COLON)) {
         eat(compiler->parser, TK_IDENT, "Expect superclass name.");
         variable(compiler, false);
         classCompiler.hasSuperclass = true;
@@ -1456,7 +1456,7 @@ static void abstractClassDeclaration(Compiler *compiler) {
     ClassCompiler classCompiler;
     initClassCompiler(compiler, &classCompiler, true);
 
-    if (match(compiler, TK_LT)) {
+    if (match(compiler, TK_COLON)) {
         eat(compiler->parser, TK_IDENT, "Expect superclass name.");
         variable(compiler, false);
         classCompiler.hasSuperclass = true;
