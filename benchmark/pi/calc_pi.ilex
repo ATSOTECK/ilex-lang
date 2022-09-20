@@ -1,0 +1,40 @@
+use <random>
+
+fn estimatePi(numPoints) {
+    randomNumber ::= random::number
+    randMax      ::= random::RAND_MAX
+
+    var x = 0, y = 0, rSquared = 0, pi = 0, withinCircle = 0
+    for (i := 0; i < numPoints; i++) {
+        x = randomNumber() / randMax
+        y = randomNumber() / randMax
+
+        rSquared = x * x + y * y
+        if (rSquared <= 1) {
+            withinCircle++
+        }
+    }
+
+    pi = withinCircle / numPoints * 4
+    return pi
+}
+
+fn main() {
+    N_POINTS  ::= 10_000_000
+    N_REPEATS ::= 10
+    avgTime    := 0
+
+    for (i := 0; i < N_REPEATS; i++) {
+        start ::= seconds()
+        pi    ::= estimatePi(N_POINTS)
+        stop  ::= seconds()
+        time  ::= stop - start
+        avgTime += time
+
+        println('Pi is approx', pi, 'and took', time, 'seconds to compute.')
+    }
+
+    println('On average pi took', avgTime / N_REPEATS, 'seconds to compute.')
+}
+
+main()
