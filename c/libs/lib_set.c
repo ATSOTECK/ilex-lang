@@ -57,7 +57,7 @@ static Value setContains(VM *vm, int argc, Value *args) {
     }
     
     ObjSet *set = AS_SET(args[0]);
-    return setGet(vm, set, args[1]) ? TRUE_VAL : FALSE_VAL;
+    return setGet(set, args[1]) ? TRUE_VAL : FALSE_VAL;
 }
 
 

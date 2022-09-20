@@ -14,6 +14,10 @@ static bool arraysEqual(ObjArray *a, ObjArray *b) {
     if (a->data.count != b->data.count) {
         return false;
     }
+
+    if (a->data.count == 0) {
+        return true;
+    }
     
     for (int i = 0; i < a->data.count; ++i) {
         if (!valuesEqual(a->data.values[i], b->data.values[i])) {
@@ -21,6 +25,57 @@ static bool arraysEqual(ObjArray *a, ObjArray *b) {
         }
     }
     
+    return true;
+}
+
+static bool mapsEqual(ObjMap *a, ObjMap *b) {
+    if (a->count != b->count) {
+        return false;
+    }
+
+    if (a->count == 0) {
+        return true;
+    }
+
+    for (int i = 0; i <= a->capacity; ++i) {
+        MapItem *item = &a->items[i];
+        if (IS_ERR(item->key)) {
+            continue;
+        }
+
+        Value value;
+        if (!mapGet(b, item->key, &value)) {
+            return false;
+        }
+
+        if (!valuesEqual(item->value, value)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool setsEqual(ObjSet *a, ObjSet *b) {
+    if (a->count != b->count) {
+        return false;
+    }
+
+    if (a->count == 0) {
+        return true;
+    }
+
+    for (int i = 0; i <= a->capacity; ++i) {
+        SetItem *item = &a->items[i];
+        if (IS_ERR(item->value) || item->deleted) {
+            continue;
+        }
+
+        if (!setGet(b, item->value)) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -40,6 +95,8 @@ bool valuesEqual(Value a, Value b) {
         
         switch (aObj->type) {
             case OBJ_ARRAY: return arraysEqual(AS_ARRAY(a), AS_ARRAY(b));
+            case OBJ_MAP: return mapsEqual(AS_MAP(a), AS_MAP(b));
+            case OBJ_SET: return setsEqual(AS_SET(a), AS_SET(b));
             default: break;
         }
     }
@@ -135,7 +192,6 @@ char *valueType(Value value) {
 }
 
 char *valueToString(Value value) {
-    //TODO(Skyler): Don't use GC.
     if (IS_BOOL(value)) {
         return newCString(AS_BOOL(value) ? "true" : "false");
     } else if (IS_NULL(value)) {

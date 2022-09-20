@@ -1,4 +1,11 @@
+assert({} == {})
+
 map ::= { 'key1' : 'yeet', 'key2' : 12 }
+mapSame ::= { 'key1' : 'yeet', 'key2' : 12 }
+mapDifferentOrder ::= { 'key2' : 12, 'key1' : 'yeet' }
+
+assert(map == mapSame)
+assert(map == mapDifferentOrder)
 
 assert(map['key1'] == 'yeet')
 assert(map['key2'] == 12)
@@ -15,6 +22,8 @@ assert(map.size() == 3)
 assert(map.keys().len() == 3)
 
 map2 ::= {}
+assert(map2 == {})
+assert({} == map2)
 assert(map2.size() == 0)
 assert(map2.isEmpty() == true)
 

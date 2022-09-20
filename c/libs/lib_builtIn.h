@@ -11,6 +11,7 @@
 #include "lib_env.h"
 #include "lib_ilex.h"
 #include "lib_io.h"
+#include "lib_json.h"
 #include "lib_math.h"
 #include "lib_random.h"
 #include "lib_sys.h"

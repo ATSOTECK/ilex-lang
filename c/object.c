@@ -746,7 +746,7 @@ bool setAdd(VM *vm, ObjSet *set, Value value) {
     return isNewValue;
 }
 
-bool setGet(VM *vm, ObjSet *set, Value value) {
+bool setGet(ObjSet *set, Value value) {
     if (set->count == 0) {
         return false;
     }

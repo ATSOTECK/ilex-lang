@@ -1,6 +1,8 @@
 use <random>
 use <math>
 
+assert([] == [])
+
 arr := [1, 'two', 3]
 println(arr[1])
 println(arr[1][1])

@@ -50,7 +50,15 @@ set(sources
         libs/lib_sys.h
         libs/lib_sys.c
         libs/lib_set.h
-        libs/lib_set.c)
+        libs/lib_set.c
+        libs/json/json.h
+        libs/json/json.c
+        libs/json/json-builder.h
+        libs/json/json-builder.c
+        libs/lib_json.h
+        libs/lib_json.c
+        libs/lib_time.h
+        libs/lib_time.c)
 
 add_executable(ilex main.c ${sources})
 

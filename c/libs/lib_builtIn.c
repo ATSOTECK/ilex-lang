@@ -21,7 +21,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libCapacity = 0;
     vm->libCapacity = GROW_CAPACITY(vm->libCapacity);
 
-    vm->libCount = 6;
+    vm->libCount = 7;
     vm->libs = ALLOCATE(vm, BuiltInLibs, vm->libCapacity);
     vm->libs[0] = makeLib(vm, "math",   &useMathLib);
     vm->libs[1] = makeLib(vm, "ilex",   &useIlexLib);
@@ -29,6 +29,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libs[3] = makeLib(vm, "random", &useRandomLib);
     vm->libs[4] = makeLib(vm, "env",    &useEnvLib);
     vm->libs[5] = makeLib(vm, "sys",    &useSysLib);
+    vm->libs[6] = makeLib(vm, "json",   &useJsonLib);
 }
 
 Value useBuiltInLib(VM *vm, int idx) {

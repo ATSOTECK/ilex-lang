@@ -1,0 +1,72 @@
+use <json>
+
+assert(json::parse('true') == true)
+assert(json::parse('false') == false)
+assert(json::parse('null') == null)
+assert(json::parse('12') == 12)
+assert(json::parse('12.12') == 12.12)
+assert(json::parse('{}') == {})
+assert(json::parse('[]') == [])
+
+assert(json::parse('[true]') == [true])
+assert(json::parse('[false]') == [false])
+assert(json::parse('[null]') == [null])
+assert(json::parse('[12]') == [12])
+assert(json::parse('[12.12]') == [12.12])
+assert(json::parse('[{}]') == [{}])
+assert(json::parse('[[]]') == [[]])
+assert(json::parse('[1, 2, 3]') == [1, 2, 3])
+
+assert(json::parse('{ "tst": true }') == { "tst": true })
+assert(json::parse('{ "tst": false }') == { "tst": false })
+assert(json::parse('{ "tst": null }') == { "tst": null })
+assert(json::parse('{ "tst": 12 }') == { "tst": 12 })
+assert(json::parse('{ "tst": 12.12 }') == { "tst": 12.12 })
+assert(json::parse('{ "tst": {} }') == { "tst": {} })
+assert(json::parse('{ "tst": [] }') == { "tst": [] })
+
+assert(json::stringify(true) == 'true')
+assert(json::stringify(false) == 'false')
+assert(json::stringify(null) == 'null')
+assert(json::stringify(12) == '12')
+assert(json::stringify(12.12) == '12.12')
+assert(json::stringify({}) == '{}')
+assert(json::stringify([]) == '[]')
+
+assert(json::stringify([true]) == '[true]')
+assert(json::stringify([false]) == '[false]')
+assert(json::stringify([null]) == '[null]')
+assert(json::stringify([12]) == '[12]')
+assert(json::stringify([12.12]) == '[12.12]')
+assert(json::stringify([{}]) == '[{}]')
+assert(json::stringify([[]]) == '[[]]')
+assert(json::stringify([1, 2, 3]) == '[1, 2, 3]')
+
+assert(json::stringify({ "tst": true }) == '{"tst": true}')
+assert(json::stringify({ "tst": false }) == '{"tst": false}')
+assert(json::stringify({ "tst": null }) == '{"tst": null}')
+assert(json::stringify({ "tst": 12 }) == '{"tst": 12}')
+assert(json::stringify({ "tst": 12.12 }) == '{"tst": 12.12}')
+assert(json::stringify({ "tst": {} }) == '{"tst": {}}')
+assert(json::stringify({ "tst": [] }) == '{"tst": []}')
+
+twoSpace := '[\n' +
+    '  1,\n' +
+    '  2\n' +
+    ']';
+
+threeSpace := '[\n' +
+    '   1,\n' +
+    '   2\n' +
+    ']';
+
+fourSpace := '[\n' +
+    '    1,\n' +
+    '    2\n' +
+    ']';
+
+assert(json::stringify([1, 2], 2) == twoSpace);
+assert(json::stringify([1, 2], 3) == threeSpace);
+assert(json::stringify([1, 2], 4) == fourSpace);
+
+println('Passed!')
