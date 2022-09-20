@@ -1192,8 +1192,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             } break;
             case OP_INHERIT: {
                 ClassType type = READ_BYTE();
-                printStack(vm);
-                Value superClass = peek(vm, 0); // vm->stackTop[0];
+                Value superClass = peek(vm, 0);
                 if (!IS_CLASS(superClass)) {
                     char *vt = valueType(superClass);
                     runtimeError(vm, "Superclass must be a class, got a '%s' instead.", vt);

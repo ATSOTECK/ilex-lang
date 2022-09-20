@@ -419,7 +419,7 @@ static ObjFunction *endCompiler(Compiler *compiler) {
 #endif
 
     if (compiler->enclosing != NULL) {
-        emitByteShort(compiler, OP_CLOSURE, makeConstant(compiler->enclosing, OBJ_VAL(function)));
+        emitByteShort(compiler->enclosing, OP_CLOSURE, makeConstant(compiler->enclosing, OBJ_VAL(function)));
 
         for (int i = 0; i < function->upvalueCount; ++i) {
             emitByte(compiler->enclosing, compiler->upvalues[i].isLocal ? 1 : 0);
@@ -1094,13 +1094,7 @@ static void anon(Compiler *compiler, bool canAssign) {
         }
     }
     
-    ObjFunction *function = endCompiler(&functionCompiler);
-    emitByteShort(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
-    
-    for (int i = 0; i < function->upvalueCount; ++i) {
-        emitByte(compiler, functionCompiler.upvalues[i].isLocal ? 1 : 0);
-        emitShort(compiler, functionCompiler.upvalues[i].index);
-    }
+    endCompiler(&functionCompiler);
 }
 
 //                              prefix, infix, precedence
@@ -1301,13 +1295,7 @@ static void function(Compiler *compiler, FunctionType type, AccessLevel level) {
     eat(functionCompiler.parser, TK_LBRACE, "Expect '{' before function body.");
     block(&functionCompiler);
 
-    ObjFunction *function = endCompiler(&functionCompiler);
-    emitByteShort(compiler, OP_CLOSURE, makeConstant(compiler, OBJ_VAL(function)));
-
-    for (int i = 0; i < function->upvalueCount; ++i) {
-        emitByte(compiler, functionCompiler.upvalues[i].isLocal ? 1 : 0);
-        emitShort(compiler, functionCompiler.upvalues[i].index);
-    }
+    endCompiler(&functionCompiler);
 }
 
 static void method(Compiler *compiler, bool private, FunctionType type, Token *ident) {

@@ -96,7 +96,12 @@ static void blackenObject(VM *vm, Obj *obj) {
         case OBJ_CLASS: {
             ObjClass *objClass = (ObjClass*)obj;
             markTable(vm, &objClass->methods);
+            markTable(vm, &objClass->privateMethods);
+            markTable(vm, &objClass->abstractMethods);
+            markTable(vm, &objClass->staticVars);
+            markTable(vm, &objClass->staticConsts);
             markObject(vm, (Obj*)objClass->name);
+            markObject(vm, (Obj*)objClass->superClass);
         } break;
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure*)obj;
@@ -114,6 +119,7 @@ static void blackenObject(VM *vm, Obj *obj) {
             ObjInstance *instance = (ObjInstance*)obj;
             markObject(vm, (Obj*)instance->objClass);
             markTable(vm, &instance->fields);
+            markTable(vm, &instance->privateFields);
         } break;
         case OBJ_UPVALUE: {
             markValue(vm, ((ObjUpvalue*)obj)->closed);
