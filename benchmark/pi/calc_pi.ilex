@@ -1,12 +1,12 @@
 use <random>
 
 fn estimatePi(numPoints) {
-    randomNumber ::= random::number
+    rand ::= random::rand
 
-    var x = 0, y = 0, rSquared = 0, pi = 0, withinCircle = 0
+    var x = 0, y = 0, rSquared = 0, withinCircle = 0
     for (i := 0; i < numPoints; i++) {
-        x = randomNumber()
-        y = randomNumber()
+        x = rand()
+        y = rand()
 
         rSquared = x * x + y * y
         if (rSquared <= 1) {
@@ -14,7 +14,7 @@ fn estimatePi(numPoints) {
         }
     }
 
-    pi = withinCircle / numPoints * 4
+    pi := withinCircle / numPoints * 4
     return pi
 }
 

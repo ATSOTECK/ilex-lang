@@ -59,9 +59,13 @@ static Value randomGetSeed(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(randomLibSeed);
 }
 
+static Value randomRand(VM *vm, int argc, Value *args) {
+    return NUMBER_VAL((double)rand() / RAND_MAX);
+}
+
 static Value randomRandom(VM *vm, int argc, Value *args) {
     if (argc == 0) {
-        return NUMBER_VAL(rand() / RAND_MAX);
+        return NUMBER_VAL((double)rand());
     }
 
     if (!IS_NUMBER(args[0])) {
@@ -136,6 +140,7 @@ Value useRandomLib(VM *vm) {
     defineNative(vm, "seed", randomSeed, &lib->values);
     defineNative(vm, "randomSeed", randomRandomSeed, &lib->values);
     defineNative(vm, "getSeed", randomGetSeed, &lib->values);
+    defineNative(vm, "rand", randomRand, &lib->values);
     defineNative(vm, "number", randomRandom, &lib->values);
     defineNative(vm, "numberRange", randomRandomRange, &lib->values);
     defineNative(vm, "int", randomRandomI, &lib->values);
