@@ -61,7 +61,7 @@ static Value randomGetSeed(VM *vm, int argc, Value *args) {
 
 static Value randomRandom(VM *vm, int argc, Value *args) {
     if (argc == 0) {
-        return NUMBER_VAL(rand());
+        return NUMBER_VAL(rand() / RAND_MAX);
     }
 
     if (!IS_NUMBER(args[0])) {

@@ -2,12 +2,11 @@ use <random>
 
 fn estimatePi(numPoints) {
     randomNumber ::= random::number
-    randMax      ::= random::RAND_MAX
 
     var x = 0, y = 0, rSquared = 0, pi = 0, withinCircle = 0
     for (i := 0; i < numPoints; i++) {
-        x = randomNumber() / randMax
-        y = randomNumber() / randMax
+        x = randomNumber()
+        y = randomNumber()
 
         rSquared = x * x + y * y
         if (rSquared <= 1) {
