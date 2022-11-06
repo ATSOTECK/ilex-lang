@@ -121,6 +121,8 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_SET_UPVALUE: return shortInstruction("OP_SET_UPVALUE", chunk, offset);
         case OP_SET_PROPERTY: return constantInstruction("OP_SET_PROPERTY", chunk, offset);
         case OP_SET_SCRIPT: return constantInstruction("OP_SET_SCRIPT", chunk, offset);
+        case OP_SET_PRIVATE_PROPERTY: return constantInstruction("OP_SET_PRIVATE_PROPERTY", chunk, offset);
+        case OP_SET_CLASS_STATIC_VAR: return constantInstruction("OP_SET_CLASS_STATIC_VAR", chunk, offset);
         case OP_EQ: return simpleInstruction("OP_EQ", offset);
         case OP_NOTEQ: return simpleInstruction("OP_NOTEQ", offset);
         case OP_GR: return simpleInstruction("OP_GR", offset);

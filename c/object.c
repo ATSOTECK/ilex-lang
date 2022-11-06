@@ -260,8 +260,56 @@ static char *functionToString(ObjFunction *function) {
 }
 
 static char *instanceToString(ObjInstance *instance) {
-    char *ret = (char*)malloc(sizeof(char) * instance->objClass->name->len + 10);
-    snprintf(ret, instance->objClass->name->len + 10, "%s instance", instance->objClass->name->str);
+    int len = 0, cap = 1024, written = 0;
+    char *ret = (char *) malloc(sizeof(char) * cap);
+    
+    snprintf(ret, instance->objClass->name->len + 6, "<%s> { ", instance->objClass->name->str);
+    len += instance->objClass->name->len + 5;
+    written += len;
+
+#define printVars(table)                                                \
+    do {                                                                \
+        idx = tableGetKeyValue(table, &key, &value, idx);               \
+        if (idx == 0) {                                                 \
+            done = true;                                                \
+            break;                                                      \
+        }                                                               \
+                                                                        \
+        int keyLen = (int) strlen(key);                                 \
+        char *valStr = valueToString(value);                            \
+        int valLen = (int) strlen(valStr);                              \
+                                                                        \
+        int size = keyLen + valLen + 4;                                 \
+        len += size;                                                    \
+        if (len + 10 >= cap) {                                          \
+            ret = (char *) realloc(ret, cap + (sizeof(char) * 1024));   \
+        }                                                               \
+                                                                        \
+        snprintf(ret + written, size + 1, "%s: %s, ", key, valStr);     \
+        free(valStr);                                                   \
+        written += size;                                                \
+    } while(false);
+    
+    int idx = 0;
+    char *key = NULL;
+    bool done = false;
+    Value value;
+    while (!done) {
+        printVars(&instance->fields);
+    }
+    
+    snprintf(ret + written, 3, "| ");
+    len += 2;
+    written += 2;
+    done = false;
+    
+    while (!done) {
+        printVars(&instance->privateFields);
+    }
+
+#undef printVars
+    
+    snprintf(ret + written, 2, "}");
     
     return ret;
 }

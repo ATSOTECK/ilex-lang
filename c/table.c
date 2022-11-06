@@ -83,6 +83,28 @@ bool tableGet(Table *table, ObjString *key, Value *value) {
     return true;
 }
 
+int tableGetKeyValue(Table *table, char **key, Value *value, int startIndex) {
+    if (table->count == 0 || startIndex >= table->capacity) {
+        return 0;
+    }
+    
+    bool found = false;
+    int idx;
+    for (idx = startIndex; idx < table->capacity; ++idx) {
+        Entry entry = table->entries[idx];
+        if (entry.key == NULL) {
+            continue;
+        }
+        
+        found = true;
+        *key = entry.key->str;
+        *value = entry.value;
+        break;
+    }
+    
+    return found ? idx + 1 : 0;
+}
+
 bool tableSet(VM *vm, Table *table, ObjString *key, Value value) {
     if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
         int capacity = GROW_CAPACITY(table->capacity);

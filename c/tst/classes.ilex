@@ -8,6 +8,7 @@ abstract class Animal {
 class Cat : Animal {
     const type = "cat"
     var name
+    var size = 10
     // age := 0
     
     fn init(thing) {
@@ -25,6 +26,14 @@ class Cat : Animal {
     fn getName() {
         return this.name
     }
+    
+    fn getSize() {
+        return this.size
+    }
+    
+    fn setSize(size) {
+        this.size = size
+    }
 }
 
 var cat = Cat('yort')
@@ -38,6 +47,9 @@ sayHi("Skyler");
 cat.sayHi('yeet')
 
 println('Cat type is:', Cat.type)
+
+println(cat)
+// println(cat.getSize())
 
 /*
 
