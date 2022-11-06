@@ -1,23 +1,72 @@
+var thingy
+println(thingy)
+
 abstract class Animal {
     abstract fn sayHi(name)
 }
 
 class Cat : Animal {
-    fn sayHi(name) {
-        println("hi " + name);
+    const type = "cat"
+    var name
+    // age := 0
+    
+    fn init(thing) {
+        println('yo from init', thing)
+    }
+    
+    fn sayHi(to) {
+        println("hi " + to)
+    }
+    
+    fn setName(newName) {
+        this.name = newName
+    }
+    
+    fn getName() {
+        return this.name
     }
 }
 
-var cat = Cat();
-cat.name = "Kiikii";
-
-println(cat.name);
+var cat = Cat('yort')
+// cat.name = "Kiikii";
+cat.setName('Kiikii')
+println('the name of the cat is:', cat.getName())
 
 var sayHi = cat.sayHi;
 
 sayHi("Skyler");
 cat.sayHi('yeet')
+
+println('Cat type is:', Cat.type)
+
 /*
+
+class Person {
+    var name
+    age := 0
+    var id
+    
+    private var ssn
+    const type = 'person'
+    other ::= 'yeet'
+    
+    init(name, age, foo) {
+        .name = name
+        .age = age
+        id = foo
+    }
+    
+    private someFunc() {
+        
+    }
+}
+
+class Dude < Person {
+    init(name, age, foo, stuff) {
+        super.init(name, age, foo)
+    }
+}
+
 class Nested {
     method() {
         fn function() {
@@ -58,30 +107,4 @@ class Oops {
 
 var oops = Oops();
 oops.field();
-
-class Person {
-    var name
-    age := 0
-    var id
-    
-    private var ssn
-    const type = 'person'
-    other ::= 'yeet'
-    
-    init(name, age, foo) {
-        .name = name
-        .age = age
-        id = foo
-    }
-    
-    private someFunc() {
-        
-    }
-}
-
-class Dude < Person {
-    init(name, age, foo, stuff) {
-        super.init(name, age, foo)
-    }
-}
 */

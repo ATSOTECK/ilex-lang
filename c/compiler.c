@@ -1347,7 +1347,7 @@ static void parseClassBody(Compiler *compiler) {
             } else {
                 emitByte(compiler, OP_NULL);
             }
-            emitByteShort(compiler, OP_SET_PROPERTY, name);
+            emitByteShort(compiler, OP_SET_PRIVATE_PROPERTY, name);
 
             match(compiler, TK_SEMICOLON);
         } else if (match(compiler, TK_CONST)) {
@@ -1356,7 +1356,7 @@ static void parseClassBody(Compiler *compiler) {
 
             eat(compiler->parser, TK_ASSIGN, "Expect '=' after identifier.");
             expression(compiler);
-            emitBytes(compiler, OP_SET_CLASS_STATIC_VAR, name); // const is implicitly static here.
+            emitByteShort(compiler, OP_SET_CLASS_STATIC_VAR, name); // const is implicitly static here.
             emitByte(compiler, true); // is constant
 
             match(compiler, TK_SEMICOLON);

@@ -45,6 +45,8 @@ ObjClass *newClass(VM *vm, ObjString *name, ObjClass *superClass, ClassType type
     initTable(&objClass->abstractMethods);
     initTable(&objClass->staticVars);
     initTable(&objClass->staticConsts);
+    initTable(&objClass->fields);
+    initTable(&objClass->privateFields);
 
     return objClass;
 }
@@ -86,6 +88,10 @@ ObjInstance *newInstance(VM *vm, ObjClass *objClass) {
     ObjString *classStr = copyString(vm, "_class", 6);
     push(vm, OBJ_VAL(classStr));
     tableSet(vm, &instance->fields, classStr, OBJ_VAL(objClass));
+    
+    tableAddAll(vm, &objClass->fields, &instance->fields);
+    tableAddAll(vm, &objClass->privateFields, &instance->privateFields);
+    
     pop(vm);
     pop(vm);
 

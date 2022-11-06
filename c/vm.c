@@ -343,6 +343,10 @@ static bool callValue(VM *vm, Value callee, int argc) {
                 return call(vm, bound->method, argc);
             }
             case OBJ_CLASS: {
+                if (!(IS_DEFAULT_CLASS(callee))) {
+                    break;
+                }
+                
                 ObjClass *objClass = AS_CLASS(callee);
                 vm->stackTop[-argc - 1] = OBJ_VAL(newInstance(vm, objClass));
 
@@ -643,6 +647,9 @@ static void createClass(VM *vm, ObjString *name, ObjClass *superClass, ClassType
     if (superClass != NULL) {
         tableAddAll(vm, &superClass->methods, &objClass->methods);
         tableAddAll(vm, &superClass->abstractMethods, &objClass->abstractMethods);
+    
+        tableAddAll(vm, &superClass->fields, &objClass->fields);
+        tableAddAll(vm, &superClass->privateFields, &objClass->privateFields);
     }
 }
 
@@ -750,15 +757,13 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             pop(vm); // Instance.
                             push(vm, value);
                             break;
-                        }
-
-                        if (bindMethod(vm, instance->objClass, name)) {
-                            break;
-                        }
-
-                        if (tableGet(&instance->privateFields, name, &value)) {
+                        } else if (tableGet(&instance->privateFields, name, &value)) {
                             runtimeError(vm, "Can't access private property '%s' on '%s' instance.", name->str, instance->objClass->name->str);
                             return INTERPRET_RUNTIME_ERROR;
+                        }
+                        
+                        if (bindMethod(vm, instance->objClass, name)) {
+                            break;
                         }
 
                         runtimeError(vm, "'%s' instance does not have property: '%s'.", instance->objClass->name->str, name->str);
@@ -791,6 +796,36 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         runtimeError(vm, "'%s' does not have property: '%s'.", script->name->str, name->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
+                    case OBJ_CLASS: {
+                        ObjClass *objClass = AS_CLASS(receiver);
+                        ObjClass *checkingClass = objClass;
+                        ObjString *name = READ_STRING();
+                        
+                        bool found = false;
+                        Value value;
+                        while (objClass != NULL) {
+                            if (tableGet(&objClass->staticConsts, name, &value)) {
+                                pop(vm); // Class.
+                                push(vm, value);
+                                found = true;
+                                break;
+                            }
+                            
+                            if (tableGet(&objClass->staticVars, name, &value)) {
+                                pop(vm);
+                                push(vm, value);
+                                found = true;
+                                break;
+                            }
+                            
+                            objClass = objClass->superClass;
+                        }
+    
+                        if (!found) {
+                            runtimeError(vm, "'%s' does not have property '%s'.", checkingClass->name->str, name->str);
+                            return INTERPRET_RUNTIME_ERROR;
+                        }
+                    } break;
                     default: {
                         char *type = valueType(receiver);
                         runtimeError(vm, "Type '%s' has no properties.", type);
@@ -945,6 +980,11 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     Value value = pop(vm);
                     pop(vm); // Instance.
                     push(vm, value);
+                } else if (IS_CLASS(peek(vm, 1))) {
+                    ObjClass *objClass = AS_CLASS(peek(vm, 1));
+                    tableSet(vm, &objClass->fields, READ_STRING(), peek(vm, 0));
+                    pop(vm); // Value.
+                    pop(vm); // Class.
                 } else {
                     char *type = valueType(peek(vm, 1));
                     runtimeError(vm, "Can't set property on type '%s'.", type);
@@ -959,6 +999,11 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     pop(vm);
                     pop(vm);
                     push(vm, NULL_VAL);
+                } else if (IS_CLASS(peek(vm, 1))) {
+                    ObjClass *objClass = AS_CLASS(peek(vm, 1));
+                    tableSet(vm, &objClass->privateFields, READ_STRING(), peek(vm, 0));
+                    pop(vm); // Value.
+//                    pop(vm); // Class.
                 }
             } break;
             case OP_SET_CLASS_STATIC_VAR: {
