@@ -116,7 +116,7 @@ bool tableDelete(Table *table, ObjString *key) {
 }
 
 void tableAddAll(VM *vm, Table *from, Table *to) {
-    for (int i = 0; i < from->capacity; i++) {
+    for (int i = 0; i < from->capacity; ++i) {
         Entry *entry = &from->entries[i];
         if (entry->key != NULL) {
             tableSet(vm, to, entry->key, entry->value);

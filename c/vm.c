@@ -1205,13 +1205,14 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             case OP_CHECK_ABSTRACT: {
                 ObjClass *objClass = AS_CLASS(peek(vm, 0));
 
-                for ( int i = 0; i < objClass->abstractMethods.capacity + 1; ++i) {
-                    if (objClass->abstractMethods.entries[i].key == NULL) {
+                for ( int i = 0; i < objClass->abstractMethods.capacity; ++i) {
+                    ObjString *key = objClass->abstractMethods.entries[i].key;
+                    if (key == NULL) {
                         continue;
                     }
 
                     Value unused;
-                    if (!tableGet(&objClass->methods, objClass->abstractMethods.entries[i].key, &unused)) {
+                    if (!tableGet(&objClass->methods, key, &unused)) {
                         runtimeError(vm, "Class '%s' doesn't implement abstract method '%s'.", objClass->name->str, objClass->abstractMethods.entries[i].key->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
