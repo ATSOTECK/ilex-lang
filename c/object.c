@@ -893,8 +893,8 @@ ObjMap *copyMap(VM *vm, ObjMap *map, bool isShallow) {
 
 char *objectType(Value value) {
     switch (OBJ_TYPE(value)) {
-        case OBJ_BOUND_METHOD:
-        case OBJ_FUNCTION:
+        case OBJ_BOUND_METHOD: return newCString("boundMethod");
+        case OBJ_FUNCTION: return newCString("function");
         case OBJ_CLOSURE: return newCString("closure");
         case OBJ_CLASS: return newCString("class");
         case OBJ_INSTANCE: {
@@ -902,7 +902,7 @@ char *objectType(Value value) {
             return newCString(instance->objClass->name->str);
         }
         case OBJ_SCRIPT: return newCString("script");
-        case OBJ_NATIVE: return newCString("cFunction");
+        case OBJ_NATIVE: return newCString("nativeFunction");
         case OBJ_STRING: return newCString("string");
         case OBJ_UPVALUE: return newCString("upvalue");
         case OBJ_ENUM: return newCString("enum");

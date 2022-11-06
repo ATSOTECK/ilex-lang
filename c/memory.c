@@ -100,6 +100,8 @@ static void blackenObject(VM *vm, Obj *obj) {
             markTable(vm, &objClass->abstractMethods);
             markTable(vm, &objClass->staticVars);
             markTable(vm, &objClass->staticConsts);
+            markTable(vm, &objClass->fields);
+            markTable(vm, &objClass->privateFields);
             markObject(vm, (Obj*)objClass->name);
             markObject(vm, (Obj*)objClass->superClass);
         } break;
@@ -167,6 +169,12 @@ static void freeObject(VM *vm, Obj *obj) {
         case OBJ_CLASS: {
             ObjClass *objClass = (ObjClass*)obj;
             freeTable(vm, &objClass->methods);
+            freeTable(vm, &objClass->privateMethods);
+            freeTable(vm, &objClass->abstractMethods);
+            freeTable(vm, &objClass->staticVars);
+            freeTable(vm, &objClass->staticConsts);
+            freeTable(vm, &objClass->fields);
+            freeTable(vm, &objClass->privateFields);
             FREE(vm, ObjClass, obj);
         } break;
         case OBJ_CLOSURE: {

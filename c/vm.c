@@ -454,7 +454,7 @@ static bool invokeFromThis(VM *vm, ObjString *name, int argc) {
 
         if (tableGet(&instance->methods, name, &value)) {
             if (AS_CLOSURE(value)->function->type != TYPE_STATIC) {
-                // TODO
+                // TODO: Static methods.
                 /*
                 if (tableGet(&vm->classMethods, name, &value)) {
                     return callNativeFunction(vm, AS_NATIVE(value), argc);
@@ -468,7 +468,7 @@ static bool invokeFromThis(VM *vm, ObjString *name, int argc) {
             return callValue(vm, value, argc);
         }
 
-        // TODO
+        // TODO: Static methods.
         /*
         if (tableGet(&vm->classMethods, name, &value)) {
             callNativeFunction(vm, AS_NATIVE(value), argc);
