@@ -37,7 +37,7 @@ class Cat : Animal {
 }
 
 var cat = Cat('yort')
-// cat.name = "Kiikii";
+// cat.name = "Kiikii"; // TODO: This should cause an error.
 cat.setName('Kiikii')
 println('the name of the cat is:', cat.getName())
 
@@ -49,7 +49,7 @@ cat.sayHi('yeet')
 println('Cat type is:', Cat.type)
 
 println(cat)
-// println(cat.getSize())
+println(cat.getSize())
 
 /*
 

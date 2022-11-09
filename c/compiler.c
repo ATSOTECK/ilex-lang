@@ -1341,6 +1341,8 @@ static void parseClassBody(Compiler *compiler) {
         } else if (match(compiler, TK_VAR)) {
             eat(compiler->parser, TK_IDENT, "Expect variable name.");
             uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
+            tableSet(compiler->parser->vm, &compiler->class->privateVariables,
+                     AS_STRING(currentChunk(compiler)->constants.values[name]), NULL_VAL);
 
             if (match(compiler, TK_ASSIGN)) {
                 expression(compiler);
