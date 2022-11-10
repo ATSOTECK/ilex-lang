@@ -238,6 +238,15 @@ ObjSet *newSet(VM *vm) {
     return set;
 }
 
+ObjAbstract *newAbstract(VM *vm, AbstractFreeFn freeFn) {
+    ObjAbstract *abstract = ALLOCATE_OBJ(vm, ObjAbstract, OBJ_ABSTRACT);
+    abstract->data = NULL;
+    abstract->feeFn = freeFn;
+    initTable(&abstract->values);
+    
+    return abstract;
+}
+
 static void printFunction(ObjFunction *function) {
     if (function->name == NULL) {
         printf("<script>");

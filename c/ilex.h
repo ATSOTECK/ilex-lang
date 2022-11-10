@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 
-#define DEBUG_PRINT_CODE
+//#define DEBUG_PRINT_CODE
 //#define DEBUG_TRACE_EXECUTION
 
 //#define DEBUG_STRESS_GC
@@ -119,6 +119,7 @@ typedef void (*ErrorCallback)(const char *msg);
 #define IS_FILE(value)         isObjType(value, OBJ_FILE)
 #define IS_MAP(value)          isObjType(value, OBJ_MAP)
 #define IS_SET(value)          isObjType(value, OBJ_SET)
+#define IS_ABSTRACT(value)     isObjType(value, OBJ_ABSTRACT)
 
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
 #define AS_CLASS(value)        ((ObjClass*)AS_OBJ(value))
@@ -134,6 +135,7 @@ typedef void (*ErrorCallback)(const char *msg);
 #define AS_FILE(value)         ((ObjFile*)AS_OBJ(value))
 #define AS_MAP(value)          ((ObjMap*)AS_OBJ(value))
 #define AS_SET(value)          ((ObjSet*)AS_OBJ(value))
+#define AS_ABSTRACT(value)     ((ObjAbstract*)AS_OBJ(value))
 
 typedef union {
     uint64_t bits64;
@@ -168,6 +170,7 @@ typedef enum {
     OBJ_FILE,
     OBJ_MAP,
     OBJ_SET,
+    OBJ_ABSTRACT,
 } ObjType;
 
 typedef enum {
@@ -337,6 +340,16 @@ typedef struct {
     int capacity;
     SetItem *items;
 } ObjSet;
+
+typedef struct ObjAbstract ObjAbstract;
+typedef void (*AbstractFreeFn)(VM *vm, ObjAbstract *abstract);
+
+struct ObjAbstract {
+    Obj obj;
+    Table values;
+    void *data;
+    AbstractFreeFn feeFn;
+};
 
 typedef struct {
     Obj obj;

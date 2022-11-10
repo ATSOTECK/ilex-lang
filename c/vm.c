@@ -567,6 +567,16 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
             runtimeError(vm, "Set has no function %s().", name->str);
             return false;
         }
+        case OBJ_ABSTRACT: {
+            ObjAbstract *abstract = AS_ABSTRACT(receiver);
+            Value value;
+            if (tableGet(&abstract->values, name, &value)) {
+                return callNativeFunction(vm, AS_NATIVE(value), argc);
+            }
+    
+            runtimeError(vm, "Object has no function '%s'.", name->str);
+            return false;
+        }
         default: break;
     }
 

@@ -25,6 +25,7 @@ ObjArray *newArray(VM *vm);
 ObjFile *newFile(VM *vm);
 ObjMap *newMap(VM *vm);
 ObjSet *newSet(VM *vm);
+ObjAbstract *newAbstract(VM *vm, AbstractFreeFn freeFn);
 char *objectType(Value value);
 char *objectToString(Value value);
 char *arrayToString(ObjArray *array);

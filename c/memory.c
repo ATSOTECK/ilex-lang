@@ -154,6 +154,10 @@ static void blackenObject(VM *vm, Obj *obj) {
         } break;
         case OBJ_FILE:
             break;
+        case OBJ_ABSTRACT: {
+            ObjAbstract *abstract = (ObjAbstract*)obj;
+            markTable(vm, &abstract->values);
+        } break;
     }
 }
 
@@ -230,6 +234,12 @@ static void freeObject(VM *vm, Obj *obj) {
         } break;
         case OBJ_FILE: {
             FREE(vm, ObjFile, obj);
+        } break;
+        case OBJ_ABSTRACT: {
+            ObjAbstract *abstract = (ObjAbstract*)obj;
+            abstract->feeFn(vm, abstract);
+            freeTable(vm, &abstract->values);
+            FREE(vm, ObjAbstract, obj);
         } break;
     }
 }
