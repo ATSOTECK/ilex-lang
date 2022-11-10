@@ -976,6 +976,18 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     push(vm, value);
                 } else if (IS_INSTANCE(peek(vm, 1))) {
                     ObjInstance *instance = AS_INSTANCE(peek(vm, 1));
+                    ObjString *var = READ_STRING();
+                    
+                    // TODO: Move these checks to the compiler. Have an instance map.
+                    Value unused;
+                    if (tableGet(&instance->privateFields, var, &unused)) {
+                        runtimeError(vm, "Cannot assign to private variable '%s'.", var->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    } else if (!tableGet(&instance->fields, var, &unused)) {
+                        runtimeError(vm, "Instance of '%s' contains no variable '%s'.", instance->objClass->name->str, var->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    
                     tableSet(vm, &instance->fields, READ_STRING(), peek(vm, 0));
                     Value value = pop(vm);
                     pop(vm); // Instance.
