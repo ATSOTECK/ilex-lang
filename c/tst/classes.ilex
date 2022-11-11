@@ -5,11 +5,17 @@ abstract class Animal {
     abstract fn sayHi(name)
 }
 
+// Variables are private by default.
+// Functions are public by default.
+
 class Cat : Animal {
     const type = "cat"
-    var name
+    private var name
     var size = 10
     // age := 0
+    public var legs = 4
+    
+    static var what
     
     fn init(thing) {
         println('yo from init', thing)
@@ -17,6 +23,7 @@ class Cat : Animal {
     
     fn sayHi(to) {
         println("hi " + to)
+        this.privFn()
     }
     
     fn setName(newName) {
@@ -34,6 +41,10 @@ class Cat : Animal {
     fn setSize(size) {
         this.size = size
     }
+    
+    private fn privFn() {
+        println('private function')
+    }
 }
 
 var cat = Cat('yort')
@@ -48,9 +59,24 @@ sayHi("Skyler");
 cat.sayHi('yeet')
 
 println('Cat type is:', Cat.type)
+println('Cat type is:', Cat::type)
 
 println(cat)
 println(cat.getSize())
+
+println(cat.legs)
+cat.legs = 3 // :(
+println(cat.legs)
+
+Cat.what = 'what'
+println(Cat.what)
+Cat.what = '???'
+println(Cat::what)
+
+// Cat.len = 12 // TODO: This should error.
+
+// Cat.type = 122 // Should error.
+// cat.privFn() // Should error.
 
 /*
 

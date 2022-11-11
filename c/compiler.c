@@ -1353,7 +1353,7 @@ static void parseClassBody(Compiler *compiler) {
 
             match(compiler, TK_SEMICOLON);
         } else if (match(compiler, TK_CONST)) {
-            eat(compiler->parser, TK_IDENT, "Expect constant name."); // TODO: Better error message for ::=
+            eat(compiler->parser, TK_IDENT, "Expect constant name.");
             uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
 
             eat(compiler->parser, TK_ASSIGN, "Expect '=' after identifier.");
@@ -1369,8 +1369,35 @@ static void parseClassBody(Compiler *compiler) {
                     return;
                 }
                 method(compiler, true, TYPE_METHOD, &compiler->parser->previous);
-            } else if (match(compiler, TK_VAR) && match(compiler, TK_IDENT)) {
-                // TODO
+            } else if (match(compiler, TK_VAR)) {
+                // Same as var
+                eat(compiler->parser, TK_IDENT, "Expect variable name.");
+                uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
+                tableSet(compiler->parser->vm, &compiler->class->privateVariables,
+                         AS_STRING(currentChunk(compiler)->constants.values[name]), NULL_VAL);
+    
+                if (match(compiler, TK_ASSIGN)) {
+                    expression(compiler);
+                } else {
+                    emitByte(compiler, OP_NULL);
+                }
+                emitByteShort(compiler, OP_SET_PRIVATE_PROPERTY, name);
+    
+                match(compiler, TK_SEMICOLON);
+            }
+        } else if (match(compiler, TK_PUBLIC)) {
+            if (match(compiler, TK_VAR)) {
+                eat(compiler->parser, TK_IDENT, "Expect variable name.");
+                uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
+    
+                if (match(compiler, TK_ASSIGN)) {
+                    expression(compiler);
+                } else {
+                    emitByte(compiler, OP_NULL);
+                }
+                emitByteShort(compiler, OP_SET_PROPERTY, name);
+    
+                match(compiler, TK_SEMICOLON);
             }
         } else if (match(compiler, TK_FN) && match(compiler, TK_IDENT)) {
             method(compiler, false, TYPE_METHOD, &compiler->parser->previous);
@@ -1380,6 +1407,21 @@ static void parseClassBody(Compiler *compiler) {
                 return;
             }
             method(compiler, false, TYPE_ABSTRACT, &compiler->parser->previous);
+        } else if (match(compiler, TK_STATIC)) {
+            if (match(compiler, TK_VAR)) {
+                eat(compiler->parser, TK_IDENT, "Expect constant name.");
+                uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
+    
+                if (match(compiler, TK_ASSIGN)) {
+                    expression(compiler);
+                } else {
+                    emitByte(compiler, OP_NULL);
+                }
+                emitByteShort(compiler, OP_SET_CLASS_STATIC_VAR, name);
+                emitByte(compiler, false); // not constant
+    
+                match(compiler, TK_SEMICOLON);
+            }
         } else {
             char *msg = newCStringLen(compiler->parser->current.start, compiler->parser->current.len);
             error(compiler->parser, "Unexpected token '%s'.", msg);

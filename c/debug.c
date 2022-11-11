@@ -16,6 +16,7 @@ void disassembleChunk(Chunk *chunk, const char *name) {
     }
 }
 
+// TODO: There is a bug here. Causes a crash when printing the value with OP_SET_CLASS_STATIC_VAR.
 static int constantInstruction(const char *name, Chunk *chunk, int offset) {
     uint16_t constant = (uint16_t)(chunk->code[offset + 1] << 8);
     constant |= chunk->code[offset + 2];
@@ -147,6 +148,7 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_CALL: return byteInstruction("OP_CALL", chunk, offset);
         case OP_INVOKE: return invokeInstruction("OP_INVOKE", chunk, offset);
         case OP_INVOKE_SUPER: return invokeInstruction("OP_SUPER_INVOKE", chunk, offset);
+        case OP_INVOKE_THIS: return invokeInstruction("OP_INVOKE_THIS", chunk, offset);
         case OP_CLOSURE: {
             offset++;
             uint16_t constant = (uint16_t)(chunk->code[offset] << 8);

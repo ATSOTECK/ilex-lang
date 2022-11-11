@@ -381,7 +381,7 @@ static bool callValue(VM *vm, Value callee, int argc) {
             default: break; // Non-callable object type.
         }
     }
-
+    
     runtimeError(vm, "Can only call functions and classes.");
     return false;
 }
@@ -998,15 +998,34 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     
-                    tableSet(vm, &instance->fields, READ_STRING(), peek(vm, 0));
+                    tableSet(vm, &instance->fields, var, peek(vm, 0));
                     Value value = pop(vm);
                     pop(vm); // Instance.
                     push(vm, value);
                 } else if (IS_CLASS(peek(vm, 1))) {
                     ObjClass *objClass = AS_CLASS(peek(vm, 1));
-                    tableSet(vm, &objClass->fields, READ_STRING(), peek(vm, 0));
+                    ObjString *var = READ_STRING();
+                    
+                    // TODO: Move these check to the compiler.
+                    Value unused;
+                    if (tableGet(&objClass->staticConsts, var, &unused)) {
+                        runtimeError(vm, "Cannot assign to a class constant '%s'.", var->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    } /*else if (!tableGet(&objClass->fields, var, &unused)) {
+                        runtimeError(vm, "Class '%s' contains no static variable '%s'.", objClass->name->str, var->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    } */
+                    
+                    // If it is static set that.
+                    // TODO: Have the compiler generate OP_SET_CLASS_STATIC_VAR for Class.staticVar = thing
+                    
+                    if (tableGet(&objClass->staticVars, var, &unused)) {
+                        tableSet(vm, &objClass->staticVars, var, peek(vm, 0));
+                    } else {
+                        tableSet(vm, &objClass->fields, var, peek(vm, 0));
+                    }
                     pop(vm); // Value.
-                    pop(vm); // Class.
+                    // pop(vm); // Class.
                 } else {
                     char *type = valueType(peek(vm, 1));
                     runtimeError(vm, "Can't set property on type '%s'.", type);

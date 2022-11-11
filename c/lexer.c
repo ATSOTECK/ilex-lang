@@ -242,6 +242,7 @@ static IlexTokenType identType() {
                         }
                     }
                     case 'r': return checkKeyword(2, 5, "ivate", TK_PRIVATE);
+                    case 'u': return checkKeyword(2, 4, "blic", TK_PUBLIC);
                 }
             }
         case 'r': return checkKeyword(1, 5, "eturn", TK_RETURN);
