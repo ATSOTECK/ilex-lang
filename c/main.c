@@ -5,7 +5,7 @@
 #include "ilex.h"
 
 int main(int argc, char **argv) {
-    if (argc == 2) {
+    if (argc >= 2) {
         if (strcmp("-v", argv[1]) == 0) {
             printf("%s\n", ILEX_VERSION);
             return 0;
@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
             return 0;
         }
         
-        VM *vm = initVM(argv[1]);
+        VM *vm = initVM(argv[1], argc, argv);
         runFile(vm, argv[1]);
         freeVM(vm);
     } else {

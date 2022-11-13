@@ -28,9 +28,9 @@
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION_BUILD 62
-#define ILEX_VERSION "0.0.62"
-#define ILEX_DATE "21 - September - 2022"
+#define ILEX_VERSION_BUILD 64
+#define ILEX_VERSION "0.0.64"
+#define ILEX_DATE "12 - November - 2022"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN
@@ -361,7 +361,7 @@ typedef struct {
 extern "C" {
 #endif
 
-VM *initVM(const char *path);
+VM *initVM(const char *path, int argc, char **argv);
 void freeVM(VM *vm);
 void runFile(VM *vm, const char *path);
 

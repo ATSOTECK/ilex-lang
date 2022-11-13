@@ -7,13 +7,12 @@ t := seconds()
 str := "yeet"
 
 class Cat {
-    sayHi(name) {
+    fn sayHi(name) {
         println("hi " + name)
     }
 }
 
 cat := Cat()
-cat.name = "Kiikii"
 
 println("t is a", typeof(t))
 println("str is a", typeof(str))
@@ -27,6 +26,7 @@ println("This is running in ilex version:", ilex::version())
 println("Ilex version major:", ilex::versionMajor())
 println("Ilex version minor:", ilex::versionMinor())
 println("Ilex version build:", ilex::versionBuild())
+println("Version date:", ilex::versionDate())
 
 println("ln() test begin")
 ln(5)
@@ -45,6 +45,18 @@ println("This\nis\na\ntest.")
 
 println('String with \'')
 println("String with \"");
+
+println(ilex::argc, "args passed")
+println(ilex::args)
+
+/-
+var t
+ilex::args.forEach(fn |arg| -> {
+    println(arg) TODO: Arg parsing test. Needs better strings.
+})
+-/
+
+ilex.argc = 12 // TODO: This should error.
 
 ilex::printMemUsage()
 ilex::collectGarbage()

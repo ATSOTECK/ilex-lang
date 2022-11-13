@@ -64,6 +64,9 @@ struct VM_ {
     int libCount;
     int libCapacity;
     
+    int argc;
+    char **argv;
+    
     ErrorCallback runtimeCallback;
     ErrorCallback assertCallback;
     ErrorCallback panicCallback;

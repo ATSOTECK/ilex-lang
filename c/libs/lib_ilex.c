@@ -140,7 +140,7 @@ Value useIlexLib(VM *vm) {
     defineNative(vm, "versionMajor", ilexVersionMajor, &lib->values);
     defineNative(vm, "versionMinor", ilexVersionMinor, &lib->values);
     defineNative(vm, "versionBuild", ilexVersionBuild, &lib->values);
-    defineNative(vm, "buildDate", ilexDateString, &lib->values);
+    defineNative(vm, "versionDate", ilexDateString, &lib->values);
 
     defineNative(vm, "memAllocated", ilexMemUsed, &lib->values);
     defineNative(vm, "printMemUsage", ilexPrintMemUsed, &lib->values);
@@ -152,7 +152,21 @@ Value useIlexLib(VM *vm) {
 
     defineNative(vm, "functionCount", ilexFunctionCount, &lib->values);
     defineNative(vm, "valueCount", ilexValueCount, &lib->values);
+    
+    defineNativeValue(vm, "argc", NUMBER_VAL(vm->argc), &lib->values);
+    ObjArray *arr = newArray(vm);
+    push(vm, OBJ_VAL(arr));
+    
+    for (int i = 0; i < vm->argc; ++i) {
+        Value arg = OBJ_VAL(copyString(vm, vm->argv[i], strlen(vm->argv[i])));
+        push(vm, arg);
+        writeValueArray(vm, &arr->data, arg);
+        pop(vm);
+    }
+    
+    defineNativeValue(vm, "args", OBJ_VAL(arr), &lib->values);
 
+    pop(vm);
     pop(vm);
     pop(vm);
 

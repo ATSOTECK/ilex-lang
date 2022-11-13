@@ -190,7 +190,7 @@ void registerLibrary(VM *vm, const char *name, BuiltInLib lib) {
     vm->libs[vm->libCount++] = newLib;
 }
 
-VM *initVM(const char *path) {
+VM *initVM(const char *path, int argc, char **argv) {
     VM *vm = (VM*)calloc(1, sizeof(VM));
 
     resetStack(vm);
@@ -208,6 +208,9 @@ VM *initVM(const char *path) {
 
     vm->fnCount = 0;
     vm->valCount = 0;
+    
+    vm->argc = argc;
+    vm->argv = argv;
 
     initTable(&vm->globals);
     initTable(&vm->consts);
