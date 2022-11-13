@@ -244,6 +244,7 @@ typedef struct {
 typedef struct {
     Obj obj;
     int arity;
+    int arityDefault;
     int upvalueCount;
     Chunk chunk;
     ObjString *name;

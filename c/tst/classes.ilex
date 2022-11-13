@@ -7,6 +7,8 @@ abstract class Animal {
 
 // Variables are private by default.
 // Functions are public by default.
+// Static vars are public.
+// Consts are static.
 
 class Cat : Animal {
     const type = "cat"

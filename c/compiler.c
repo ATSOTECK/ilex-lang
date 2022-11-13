@@ -1273,17 +1273,36 @@ static void functionPrototype(Compiler *compiler, Compiler *functionCompiler, Fu
     initCompiler(compiler->parser, functionCompiler, compiler, type, level);
     beginScope(functionCompiler);
 
+    bool hasDefault = false;
     eat(functionCompiler->parser, TK_LPAREN, "Expect '(' after function name.");
     if (!check(functionCompiler, TK_RPAREN)) {
         do {
-            functionCompiler->function->arity++;
-            if (functionCompiler->function->arity > 255) {
+            eat(compiler->parser, TK_IDENT, "Expect parameter name.");
+            uint16_t constant = identifierConstant(functionCompiler, &functionCompiler->parser->previous);
+            declareVariable(functionCompiler);
+            defineVariable(functionCompiler, constant, false);
+            
+            if (match(functionCompiler, TK_ASSIGN)) {
+                ++functionCompiler->function->arityDefault;
+                hasDefault = true;
+                expression(functionCompiler);
+            } else {
+                ++functionCompiler->function->arity;
+                
+                if (hasDefault) {
+                    error(functionCompiler->parser, "Cannot have non-optional parameter after an optional parameter.");
+                }
+            }
+            
+            if (functionCompiler->function->arity + functionCompiler->function->arityDefault > 255) {
                 errorAtCurrent(functionCompiler->parser, "Can't have more than 255 parameters.");
             }
-
-            uint16_t constant = parseVariable(functionCompiler, "Expect parameter name.");
-            defineVariable(functionCompiler, constant, false); // TODO: Should this be true?
         } while (match(functionCompiler, TK_COMMA));
+        
+        if (functionCompiler->function->arityDefault > 0) {
+            emitByte(functionCompiler, OP_DEFINE_DEFAULT);
+            emitBytes(functionCompiler, functionCompiler->function->arity, functionCompiler->function->arityDefault);
+        }
     }
     eat(functionCompiler->parser, TK_RPAREN, "Expect ')' after parameters.");
 }

@@ -1,0 +1,32 @@
+fn normalAdd(a, b) {
+    return a + b
+}
+
+assert(normalAdd(2, 2) == 4)
+
+fn add(a = 2, b = 12) {
+    return a + b
+}
+
+assert(add() == 14)
+assert(add(2, 2) == 4)
+assert(add(0) == 12)
+
+fn addOpt(a, b = 12) {
+    return a + b
+}
+
+assert(addOpt(4) == 16)
+assert(addOpt(2, 2) == 4)
+
+fn someFunc(a = "yeet", b = 12, c = null, d = false, e = [1, 2, 3]) {
+    println(a, b, c, d, e)
+}
+
+someFunc()
+someFunc(1)
+someFunc(1, "yeet")
+someFunc(1, "yeet", true)
+someFunc(1, "yeet", true, [1, 2, 3])
+someFunc(1, "yeet", true, [1, 2, 3], null)
+

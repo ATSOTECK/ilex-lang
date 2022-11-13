@@ -68,6 +68,7 @@ ObjClosure *newClosure(VM *vm, ObjFunction *function) {
 ObjFunction *newFunction(VM *vm, FunctionType type, AccessLevel level, ObjScript *script) {
     ObjFunction* function = ALLOCATE_OBJ(vm, ObjFunction, OBJ_FUNCTION);
     function->arity = 0;
+    function->arityDefault = 0;
     function->upvalueCount = 0;
     function->name = NULL;
     function->type = type;

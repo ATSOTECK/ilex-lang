@@ -273,8 +273,10 @@ Value peek(VM *vm, int amount) {
 }
 
 Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
-    if (argc != closure->function->arity) {
-        runtimeError(vm ,"Function '%s' expected %d arguments but got %d.", closure->function->name->str, closure->function->arity, argc);
+    if (argc < closure->function->arity ||
+        argc > closure->function->arity + closure->function->arityDefault) {
+        runtimeError(vm ,"Function '%s' expected %d arguments but got %d.", closure->function->name->str,
+                     closure->function->arity + closure->function->arityDefault, argc);
         return ERROR_VAL;
     }
 
@@ -316,9 +318,11 @@ static void printStack(VM *vm) {
 }
 
 static bool call(VM *vm, ObjClosure *closure, int argc) {
-    if (argc != closure->function->arity) {
-        runtimeError(vm ,"Function '%s' expected %d arguments but got %d.", closure->function->name->str, closure->function->arity, argc);
-        return false;
+    if (argc < closure->function->arity ||
+        argc > closure->function->arity + closure->function->arityDefault) {
+        runtimeError(vm ,"Function '%s' expected %d arguments but got %d.", closure->function->name->str,
+                     closure->function->arity + closure->function->arityDefault, argc);
+        return ERROR_VAL;
     }
 
     if (vm->frameCount == FRAMES_MAX) {
@@ -1919,6 +1923,32 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 
                 vm->stackTop -= count + 1;
                 push(vm, OBJ_VAL(set));
+            } break;
+            case OP_DEFINE_DEFAULT: {
+                int arity = READ_BYTE();
+                int arityDefault = READ_BYTE();
+                int argc = (int)(vm->stackTop - frame->slots - arityDefault - 1);
+                
+                Value values[255];
+                int index;
+                
+                for (index = 0; index < arityDefault + argc; ++index) {
+                    values[index] = pop(vm);
+                }
+                
+                --index;
+                
+                for (int i = 0; i < argc; ++i) {
+                    push(vm, values[index - i]);
+                }
+                
+                // How many default values are required.
+                int remaining = arity + arityDefault - argc;
+                
+                // Push any default values back on to the stack.
+                for (int i = remaining; i > 0; --i) {
+                    push(vm, values[i - 1]);
+                }
             } break;
         }
     }

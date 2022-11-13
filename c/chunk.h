@@ -95,6 +95,7 @@ typedef enum {
     OP_DEFINE_SCRIPT,
     OP_NEW_MAP,
     OP_NEW_SET,
+    OP_DEFINE_DEFAULT,
 } OpCode;
 
 void initChunk(Chunk *chunk);

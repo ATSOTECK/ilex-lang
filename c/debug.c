@@ -189,6 +189,7 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_SLICE: return simpleInstruction("OP_SLICE", offset);
         case OP_OPEN_FILE: return constantInstruction("OP_OPEN_FILE", chunk, offset);
         case OP_CLOSE_FILE: return constantInstruction("OP_CLOSE_FILE", chunk, offset);
+        case OP_DEFINE_DEFAULT: return constantInstruction("OP_DEFINE_DEFAULT", chunk, offset);
         default:
             printf("??? Unknown opcode %d\n", instruction);
             return offset + 1;
