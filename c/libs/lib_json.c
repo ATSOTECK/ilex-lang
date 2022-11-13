@@ -195,6 +195,10 @@ Value useJsonLib(VM *vm) {
     push(vm, OBJ_VAL(name));
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));
+    
+    if (lib->used) {
+        return OBJ_VAL(lib);
+    }
 
     defineNative(vm, "parse", jsonParse, &lib->values);
     defineNative(vm, "stringify", jsonStringify, &lib->values);
@@ -202,5 +206,6 @@ Value useJsonLib(VM *vm) {
     pop(vm);
     pop(vm);
 
+    lib->used = true;
     return OBJ_VAL(lib);
 }

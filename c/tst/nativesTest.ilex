@@ -65,6 +65,8 @@ use <math>
 use <random>
 use <env>
 use <sys>
+use <json>
+use <json> // Should this emit a warning?
 
 println('Registered functions:', ilex::functionCount())
 println('Registered values:', ilex::valueCount())
