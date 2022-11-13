@@ -56,8 +56,6 @@ ilex::args.forEach(fn |arg| -> {
 })
 -/
 
-ilex.argc = 12 // TODO: This should error.
-
 ilex::printMemUsage()
 ilex::collectGarbage()
 ilex::printMemUsage()

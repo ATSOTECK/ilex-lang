@@ -15,7 +15,7 @@ void initTable(Table *table);
 void freeTable(VM *vm, Table *table);
 bool tableGet(Table *table, ObjString *key, Value *value);
 int tableGetKeyValue(Table *table, char **key, Value *value, int startIndex);
-bool tableSet(VM *vm, Table *table, ObjString *key, Value value);
+bool tableSet(VM *vm, Table *table, ObjString *key, Value value, bool readOnly);
 bool tableDelete(Table *table, ObjString *key);
 void tableAddAll(VM *vm, Table *from, Table *to);
 ObjString *tableFindString(Table *table, const char *str, int len, uint32_t hash);

@@ -105,7 +105,7 @@ int tableGetKeyValue(Table *table, char **key, Value *value, int startIndex) {
     return found ? idx + 1 : 0;
 }
 
-bool tableSet(VM *vm, Table *table, ObjString *key, Value value) {
+bool tableSet(VM *vm, Table *table, ObjString *key, Value value, bool readOnly) {
     if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
         int capacity = GROW_CAPACITY(table->capacity);
         adjustCapacity(vm, table, capacity);
@@ -115,10 +115,13 @@ bool tableSet(VM *vm, Table *table, ObjString *key, Value value) {
     bool isNewKey = entry->key == NULL;
     if (isNewKey && IS_NULL(entry->value)) {
         table->count++;
+    } else if (!isNewKey && entry->readOnly) {
+        runtimeError(vm, "%s is marked as readonly.", entry->key->str); // TODO: Move this check to the compiler.
     }
 
     entry->key = key;
     entry->value = value;
+    entry->readOnly = readOnly;
     return isNewKey;
 }
 
@@ -141,7 +144,7 @@ void tableAddAll(VM *vm, Table *from, Table *to) {
     for (int i = 0; i < from->capacity; ++i) {
         Entry *entry = &from->entries[i];
         if (entry->key != NULL) {
-            tableSet(vm, to, entry->key, entry->value);
+            tableSet(vm, to, entry->key, entry->value, entry->readOnly);
         }
     }
 }

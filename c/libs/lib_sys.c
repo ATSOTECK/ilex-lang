@@ -151,6 +151,10 @@ Value useSysLib(VM *vm) {
     push(vm, OBJ_VAL(name));
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));
+    
+    if (lib->used) {
+        return OBJ_VAL(lib);
+    }
 
     defineNative(vm, "sleep", sysSleep, &lib->values);
     defineNative(vm, "exit", sysExit, &lib->values);
@@ -163,5 +167,6 @@ Value useSysLib(VM *vm) {
     pop(vm);
     pop(vm);
 
+    lib->used = true;
     return OBJ_VAL(lib);
 }

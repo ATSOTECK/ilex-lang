@@ -301,6 +301,10 @@ Value useMathLib(VM *vm) {
     push(vm, OBJ_VAL(name));
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));
+    
+    if (lib->used) {
+        return OBJ_VAL(lib);
+    }
 
     defineNative(vm, "toRad", mathToRad, &lib->values);
     defineNative(vm, "toDeg", mathToDeg, &lib->values);
@@ -317,7 +321,7 @@ Value useMathLib(VM *vm) {
     defineNative(vm, "tanh", mathTanh, &lib->values);
     defineNative(vm, "exp", mathExp, &lib->values);
     defineNative(vm, "log", mathLog, &lib->values);
-    defineNative(vm, "log10", mathLog10, &lib->values);
+    defineNative(vm, "log_10", mathLog10, &lib->values);
     defineNative(vm, "ceil", mathCeil, &lib->values);
     defineNative(vm, "floor", mathFloor, &lib->values);
     defineNative(vm, "abs", mathAbs, &lib->values);
@@ -352,5 +356,6 @@ Value useMathLib(VM *vm) {
     pop(vm);
     pop(vm);
 
+    lib->used = true;
     return OBJ_VAL(lib);
 }

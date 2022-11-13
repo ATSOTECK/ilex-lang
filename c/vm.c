@@ -151,7 +151,7 @@ void defineNative(VM *vm, const char *name, NativeFn function, Table *table) {
     push(vm, OBJ_VAL(nativeName));
     ObjNative *nativeFunction = newNative(vm, function);
     push(vm, OBJ_VAL(nativeFunction));
-    tableSet(vm, table, nativeName, OBJ_VAL(nativeFunction));
+    tableSet(vm, table, nativeName, OBJ_VAL(nativeFunction), ILEX_READ_ONLY);
     pop(vm);
     pop(vm);
     ++vm->fnCount;
@@ -165,7 +165,7 @@ void defineNativeValue(VM *vm, const char *name, Value value, Table *table) {
     ObjString *valueName = copyString(vm, name, (int)strlen(name));
     push(vm, OBJ_VAL(valueName));
     push(vm, value);
-    tableSet(vm, table, valueName, value);
+    tableSet(vm, table, valueName, value, ILEX_READ_ONLY);
     pop(vm);
     pop(vm);
     ++vm->valCount;
@@ -645,12 +645,12 @@ static void defineMethod(VM *vm, ObjString *name) {
     ObjFunction *function = AS_CLOSURE(method)->function;
 
     if (function->accessLevel == ACCESS_PRIVATE) {
-        tableSet(vm, &objClass->privateMethods, name, method);
+        tableSet(vm, &objClass->privateMethods, name, method, ILEX_READ_ONLY);
     } else {
         if (function->type == TYPE_ABSTRACT) {
-            tableSet(vm, &objClass->abstractMethods, name, method);
+            tableSet(vm, &objClass->abstractMethods, name, method, ILEX_READ_ONLY);
         } else {
-            tableSet(vm, &objClass->methods, name, method);
+            tableSet(vm, &objClass->methods, name, method, ILEX_READ_ONLY);
         }
     }
 
@@ -944,12 +944,12 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             } break;
             case OP_DEFINE_GLOBAL: {
                 ObjString *name = READ_STRING();
-                tableSet(vm, &vm->globals, name, peek(vm, 0));
+                tableSet(vm, &vm->globals, name, peek(vm, 0), ILEX_READ_WRITE);
                 pop(vm);
             } break;
             case OP_DEFINE_SCRIPT: {
                 ObjString *name = READ_STRING();
-                tableSet(vm, &frame->closure->function->script->values, name, peek(vm, 0));
+                tableSet(vm, &frame->closure->function->script->values, name, peek(vm, 0), ILEX_READ_WRITE);
                 pop(vm);
             } break;
             case OP_SET_LOCAL: {
@@ -958,7 +958,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             } break;
             case OP_SET_GLOBAL: {
                 ObjString *name = READ_STRING();
-                if (tableSet(vm, &vm->globals, name, peek(vm, 0))) {
+                if (tableSet(vm, &vm->globals, name, peek(vm, 0), ILEX_READ_WRITE)) {
                     tableDelete(&vm->globals, name);
                     runtimeError(vm, "SET_GLOBAL: Undefined variable '%s'.", name->str);
                     return INTERPRET_RUNTIME_ERROR;
@@ -966,7 +966,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             } break;
             case OP_SET_SCRIPT: {
                 ObjString *name = READ_STRING();
-                if (tableSet(vm, &frame->closure->function->script->values, name, peek(vm, 0))) {
+                if (tableSet(vm, &frame->closure->function->script->values, name, peek(vm, 0), ILEX_READ_WRITE)) {
                     tableDelete(&frame->closure->function->script->values, name);
                     runtimeError(vm, "SET_SCRIPT: Undefined variable '%s'.", name->str);
                     return INTERPRET_RUNTIME_ERROR;
@@ -987,7 +987,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     
-                    tableSet(vm, &script->values, name, peek(vm, 0));
+                    tableSet(vm, &script->values, name, peek(vm, 0), ILEX_READ_WRITE);
                     Value value = pop(vm);
                     pop(vm); // Script.
                     push(vm, value);
@@ -1005,7 +1005,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     
-                    tableSet(vm, &instance->fields, var, peek(vm, 0));
+                    tableSet(vm, &instance->fields, var, peek(vm, 0), ILEX_READ_WRITE);
                     Value value = pop(vm);
                     pop(vm); // Instance.
                     push(vm, value);
@@ -1027,9 +1027,9 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     // TODO: Have the compiler generate OP_SET_CLASS_STATIC_VAR for Class.staticVar = thing
                     
                     if (tableGet(&objClass->staticVars, var, &unused)) {
-                        tableSet(vm, &objClass->staticVars, var, peek(vm, 0));
+                        tableSet(vm, &objClass->staticVars, var, peek(vm, 0), ILEX_READ_WRITE);
                     } else {
-                        tableSet(vm, &objClass->fields, var, peek(vm, 0));
+                        tableSet(vm, &objClass->fields, var, peek(vm, 0), ILEX_READ_WRITE);
                     }
                     pop(vm); // Value.
                     // pop(vm); // Class.
@@ -1043,13 +1043,13 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             case OP_SET_PRIVATE_PROPERTY: {
                 if (IS_INSTANCE(peek(vm, 1))) {
                     ObjInstance *instance = AS_INSTANCE(peek(vm, 1));
-                    tableSet(vm, &instance->privateFields, READ_STRING(), peek(vm, 0));
+                    tableSet(vm, &instance->privateFields, READ_STRING(), peek(vm, 0), ILEX_READ_WRITE);
                     pop(vm);
                     pop(vm);
                     push(vm, NULL_VAL);
                 } else if (IS_CLASS(peek(vm, 1))) {
                     ObjClass *objClass = AS_CLASS(peek(vm, 1));
-                    tableSet(vm, &objClass->privateFields, READ_STRING(), peek(vm, 0));
+                    tableSet(vm, &objClass->privateFields, READ_STRING(), peek(vm, 0), ILEX_READ_WRITE);
                     pop(vm); // Value.
 //                    pop(vm); // Class.
                 }
@@ -1060,9 +1060,9 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 bool isConst = READ_BYTE();
 
                 if (isConst) {
-                    tableSet(vm, &objClass->staticConsts, key, peek(vm, 0));
+                    tableSet(vm, &objClass->staticConsts, key, peek(vm, 0), ILEX_READ_ONLY);
                 } else {
-                    tableSet(vm, &objClass->staticVars, key, peek(vm, 0));
+                    tableSet(vm, &objClass->staticVars, key, peek(vm, 0), ILEX_READ_WRITE);
                 }
 
                 pop(vm);
@@ -1377,7 +1377,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 Value value = peek(vm, 0);
                 ObjEnum *enumObj = AS_ENUM(peek(vm, 1));
 
-                tableSet(vm, &enumObj->values, READ_STRING(), value);
+                tableSet(vm, &enumObj->values, READ_STRING(), value, ILEX_READ_ONLY);
                 pop(vm);
             } break;
             case OP_USE: {

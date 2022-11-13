@@ -88,7 +88,7 @@ ObjInstance *newInstance(VM *vm, ObjClass *objClass) {
     push(vm, OBJ_VAL(instance));
     ObjString *classStr = copyString(vm, "_class", 6);
     push(vm, OBJ_VAL(classStr));
-    tableSet(vm, &instance->fields, classStr, OBJ_VAL(objClass));
+    tableSet(vm, &instance->fields, classStr, OBJ_VAL(objClass), ILEX_READ_ONLY);
     
     tableAddAll(vm, &objClass->fields, &instance->fields);
     tableAddAll(vm, &objClass->privateFields, &instance->privateFields);
@@ -109,13 +109,14 @@ ObjScript *newScript(VM *vm, ObjString* name) {
     initTable(&script->values);
     script->name = name;
     script->path = NULL;
+    script->used = false;
 
     push(vm, OBJ_VAL(script));
     ObjString *file = copyString(vm, "$file", 5);
     push(vm, OBJ_VAL(file));
 
-    tableSet(vm, &script->values, file, OBJ_VAL(name));
-    tableSet(vm, &vm->scripts, name, OBJ_VAL(script));
+    tableSet(vm, &script->values, file, OBJ_VAL(name), ILEX_READ_ONLY);
+    tableSet(vm, &vm->scripts, name, OBJ_VAL(script), ILEX_READ_ONLY);
 
     pop(vm);
     pop(vm);
@@ -137,7 +138,7 @@ static ObjString *allocateString(VM *vm, char *str, int len, uint32_t hash) {
     string->hash = hash;
 
     push(vm, OBJ_VAL(string));
-    tableSet(vm, &vm->strings, string, NULL_VAL);
+    tableSet(vm, &vm->strings, string, NULL_VAL, ILEX_READ_WRITE);
     pop(vm);
 
     return string;

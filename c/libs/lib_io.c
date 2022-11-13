@@ -383,6 +383,10 @@ Value useIoLib(VM *vm) {
     push(vm, OBJ_VAL(name));
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));
+    
+    if (lib->used) {
+        return OBJ_VAL(lib);
+    }
 
     defineNative(vm, "input", ioInput, &lib->values);
     defineNative(vm, "getNumber", ioGetNumber, &lib->values);
@@ -401,6 +405,7 @@ Value useIoLib(VM *vm) {
 
     pop(vm);
     pop(vm);
-
+    
+    lib->used = true;
     return OBJ_VAL(lib);
 }

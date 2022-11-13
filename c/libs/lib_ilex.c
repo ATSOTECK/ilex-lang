@@ -135,6 +135,10 @@ Value useIlexLib(VM *vm) {
     push(vm, OBJ_VAL(name));
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));
+    
+    if (lib->used) {
+        return OBJ_VAL(lib);
+    }
 
     defineNative(vm, "version", ilexVersionString, &lib->values);
     defineNative(vm, "versionMajor", ilexVersionMajor, &lib->values);
@@ -170,5 +174,6 @@ Value useIlexLib(VM *vm) {
     pop(vm);
     pop(vm);
 
+    lib->used = true;
     return OBJ_VAL(lib);
 }

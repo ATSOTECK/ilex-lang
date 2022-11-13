@@ -63,6 +63,9 @@
 typedef struct VM_ VM;
 typedef uint64_t Value;
 
+#define ILEX_READ_ONLY true
+#define ILEX_READ_WRITE false
+
 typedef enum {
     INTERPRET_GOOD          = (int)0x0B00B135,
     INTERPRET_COMPILE_ERROR = (int)0xBAADF00D,
@@ -226,6 +229,7 @@ typedef struct {
 typedef struct {
     ObjString *key;
     Value value;
+    bool readOnly;
 } Entry;
 
 typedef struct {
@@ -239,6 +243,7 @@ typedef struct {
     ObjString *name;
     ObjString *path;
     Table values;
+    bool used;
 } ObjScript;
 
 typedef struct {

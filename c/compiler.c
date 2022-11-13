@@ -380,7 +380,11 @@ static uint16_t parseVariable(Compiler *compiler, const char *errorMessage) {
 static void defineVariable(Compiler *compiler, uint16_t global, bool isConst) {
     if (compiler->scopeDepth == 0) {
         if (isConst) {
-            tableSet(compiler->parser->vm, &compiler->parser->vm->consts, AS_STRING(currentChunk(compiler)->constants.values[global]), NULL_VAL);
+            tableSet(compiler->parser->vm,
+                     &compiler->parser->vm->consts,
+                     AS_STRING(currentChunk(compiler)->constants.values[global]),
+                     NULL_VAL,
+                     ILEX_READ_ONLY);
         }
     
         emitByteShort(compiler, OP_DEFINE_SCRIPT, global);
@@ -1360,8 +1364,11 @@ static void parseClassBody(Compiler *compiler) {
         } else if (match(compiler, TK_VAR)) {
             eat(compiler->parser, TK_IDENT, "Expect variable name.");
             uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
-            tableSet(compiler->parser->vm, &compiler->class->privateVariables,
-                     AS_STRING(currentChunk(compiler)->constants.values[name]), NULL_VAL);
+            tableSet(compiler->parser->vm,
+                     &compiler->class->privateVariables,
+                     AS_STRING(currentChunk(compiler)->constants.values[name]),
+                     NULL_VAL,
+                     ILEX_READ_WRITE);
 
             if (match(compiler, TK_ASSIGN)) {
                 expression(compiler);
@@ -1392,8 +1399,11 @@ static void parseClassBody(Compiler *compiler) {
                 // Same as var
                 eat(compiler->parser, TK_IDENT, "Expect variable name.");
                 uint16_t name = identifierConstant(compiler, &compiler->parser->previous);
-                tableSet(compiler->parser->vm, &compiler->class->privateVariables,
-                         AS_STRING(currentChunk(compiler)->constants.values[name]), NULL_VAL);
+                tableSet(compiler->parser->vm,
+                         &compiler->class->privateVariables,
+                         AS_STRING(currentChunk(compiler)->constants.values[name]),
+                         NULL_VAL,
+                         ILEX_READ_WRITE);
     
                 if (match(compiler, TK_ASSIGN)) {
                     expression(compiler);
