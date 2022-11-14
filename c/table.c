@@ -49,6 +49,7 @@ static void adjustCapacity(VM *vm, Table* table, int capacity) {
     for (int i = 0; i < capacity; i++) {
         entries[i].key = NULL;
         entries[i].value = NULL_VAL;
+        entries[i].readOnly = false;
     }
 
     table->count = 0;
@@ -61,6 +62,7 @@ static void adjustCapacity(VM *vm, Table* table, int capacity) {
         Entry *dest = findEntry(entries, capacity, entry->key);
         dest->key = entry->key;
         dest->value = entry->value;
+        dest->readOnly = entry->readOnly;
         table->count++;
     }
 
@@ -122,6 +124,11 @@ bool tableSet(VM *vm, Table *table, ObjString *key, Value value, bool readOnly) 
     entry->key = key;
     entry->value = value;
     entry->readOnly = readOnly;
+    
+    if (strcmp(key->str, "aardvark") == 0 && (readOnly || entry->readOnly)) {
+        printf("yeet\n");
+    }
+    
     return isNewKey;
 }
 

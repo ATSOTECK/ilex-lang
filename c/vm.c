@@ -58,7 +58,7 @@ void runtimeError(VM *vm, const char *format, ...) {
     va_end(args);
     msg[len++] = '\n';
 
-    for (int i = vm->frameCount - 1; i >= 0; i--) {
+    for (int i = vm->frameCount - 1; i >= 0; --i) {
         CallFrame *frame = &vm->frames[i];
         ObjFunction *function = frame->closure->function;
         // TODO: Find a better way to store line numbers.
@@ -66,9 +66,10 @@ void runtimeError(VM *vm, const char *format, ...) {
         int line = function->chunk.lines[instruction];
         len += snprintf(msg + len, I_ERR_MSG_SIZE, "[line %d] in ", line);
         if (function->name == NULL) {
-            len += snprintf(msg + len, I_ERR_MSG_SIZE, "script %s\n", vm->scriptName->str);
+            len += snprintf(msg + len, I_ERR_MSG_SIZE, "script %s\n", function->script->name->str);
+            i = -1;
         } else {
-            len += snprintf(msg + len, I_ERR_MSG_SIZE, "function %s()\n", function->name->str);
+            len += snprintf(msg + len, I_ERR_MSG_SIZE, "function '%s' in script %s\n", function->name->str, function->script->name->str);
         }
     }
     
@@ -697,6 +698,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
 #define BINARY_OP(valueType, op, type) \
     do { \
       if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
+        frame->ip = ip; \
         runtimeError(vm, "Operands must be numbers."); \
         return INTERPRET_RUNTIME_ERROR; \
       } \
@@ -735,6 +737,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 ObjString *name = READ_STRING();
                 Value value;
                 if (!tableGet(&vm->globals, name, &value)) {
+                    frame->ip = ip;
                     runtimeError(vm, "GET_GLOBAL: Undefined variable '%s'.", name->str);
 
                     return INTERPRET_RUNTIME_ERROR;
@@ -745,6 +748,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 ObjString *name = READ_STRING();
                 Value value;
                 if (!tableGet(&frame->closure->function->script->values, name, &value)) {
+                    frame->ip = ip;
                     runtimeError(vm, "GET_SCRIPT: Undefined variable '%s'.", name->str);
     
                     return INTERPRET_RUNTIME_ERROR;
@@ -759,6 +763,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 Value receiver = peek(vm, 0);
                 if (!IS_OBJ(receiver)) {
                     char *type = valueType(receiver);
+                    frame->ip = ip;
                     runtimeError(vm, "Type '%s' has no properties.", type);
                     free(type);
                     return INTERPRET_RUNTIME_ERROR;
@@ -775,6 +780,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             push(vm, value);
                             break;
                         } else if (tableGet(&instance->privateFields, name, &value)) {
+                            frame->ip = ip;
                             runtimeError(vm, "Can't access private property '%s' on '%s' instance.", name->str, instance->objClass->name->str);
                             return INTERPRET_RUNTIME_ERROR;
                         }
@@ -782,7 +788,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         if (bindMethod(vm, instance->objClass, name)) {
                             break;
                         }
-
+    
+                        frame->ip = ip;
                         runtimeError(vm, "'%s' instance does not have property: '%s'.", instance->objClass->name->str, name->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -796,7 +803,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             push(vm, value);
                             break;
                         }
-
+    
+                        frame->ip = ip;
                         runtimeError(vm, "'%s' enum does not have property: '%s'.", enumObj->name->str, name->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -809,7 +817,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             push(vm, value);
                             break;
                         }
-
+    
+                        frame->ip = ip;
                         runtimeError(vm, "'%s' does not have property: '%s'.", script->name->str, name->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -839,12 +848,14 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         }
     
                         if (!found) {
+                            frame->ip = ip;
                             runtimeError(vm, "'%s' does not have property '%s'.", checkingClass->name->str, name->str);
                             return INTERPRET_RUNTIME_ERROR;
                         }
                     } break;
                     default: {
                         char *type = valueType(receiver);
+                        frame->ip = ip;
                         runtimeError(vm, "Type '%s' has no properties.", type);
                         free(type);
                         return INTERPRET_RUNTIME_ERROR;
@@ -853,6 +864,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             } break;
             case OP_GET_PROPERTY_NO_POP: {
                 if (!IS_INSTANCE(peek(vm, 0))) {
+                    frame->ip = ip;
                     runtimeError(vm, "Only instances have properties.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -871,15 +883,18 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 }
 
                 if (tableGet(&instance->privateFields, name, &value)) {
+                    frame->ip = ip;
                     runtimeError(vm, "Can't access private property '%s' on '%s' instance.", name->str, instance->objClass->name->str);
                     return INTERPRET_RUNTIME_ERROR;
                 }
-
+    
+                frame->ip = ip;
                 runtimeError(vm, "'%s' instance does not have property: '%s'.", instance->objClass->name->str, name->str);
                 return INTERPRET_RUNTIME_ERROR;
             }
             case OP_GET_PRIVATE_PROPERTY: {
                 if (!IS_INSTANCE(peek(vm, 0))) {
+                    frame->ip = ip;
                     runtimeError(vm, "Only instances have properties.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -903,12 +918,14 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (bindMethod(vm, instance->objClass, name)) {
                     break;
                 }
-
+    
+                frame->ip = ip;
                 runtimeError(vm, "'%s' instance does not have property: '%s'.", instance->objClass->name->str, name->str);
                 return INTERPRET_RUNTIME_ERROR;
             }
             case OP_GET_PRIVATE_PROPERTY_NO_POP: {
                 if (!IS_INSTANCE(peek(vm, 0))) {
+                    frame->ip = ip;
                     runtimeError(vm, "Only instances have properties.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -930,7 +947,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (bindMethod(vm, instance->objClass, name)) {
                     break;
                 }
-
+    
+                frame->ip = ip;
                 runtimeError(vm, "'%s' instance does not have property: '%s'.", instance->objClass->name->str, name->str);
                 return INTERPRET_RUNTIME_ERROR;
             }
@@ -960,6 +978,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 ObjString *name = READ_STRING();
                 if (tableSet(vm, &vm->globals, name, peek(vm, 0), ILEX_READ_WRITE)) {
                     tableDelete(&vm->globals, name);
+                    frame->ip = ip;
                     runtimeError(vm, "SET_GLOBAL: Undefined variable '%s'.", name->str);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -968,6 +987,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 ObjString *name = READ_STRING();
                 if (tableSet(vm, &frame->closure->function->script->values, name, peek(vm, 0), ILEX_READ_WRITE)) {
                     tableDelete(&frame->closure->function->script->values, name);
+                    frame->ip = ip;
                     runtimeError(vm, "SET_SCRIPT: Undefined variable '%s'.", name->str);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -983,6 +1003,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     Value unused;
                     
                     if (tableGet(&vm->consts, name, &unused)) {
+                        frame->ip = ip;
                         runtimeError(vm, "Cannot assign to const variable '%s'.", name->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -998,9 +1019,11 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     // TODO: Move these checks to the compiler. Have an instance map.
                     Value unused;
                     if (tableGet(&instance->privateFields, var, &unused)) {
+                        frame->ip = ip;
                         runtimeError(vm, "Cannot assign to private variable '%s'.", var->str);
                         return INTERPRET_RUNTIME_ERROR;
                     } else if (!tableGet(&instance->fields, var, &unused)) {
+                        frame->ip = ip;
                         runtimeError(vm, "Instance of '%s' contains no variable '%s'.", instance->objClass->name->str, var->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -1016,9 +1039,11 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     // TODO: Move these check to the compiler.
                     Value unused;
                     if (tableGet(&objClass->staticConsts, var, &unused)) {
+                        frame->ip = ip;
                         runtimeError(vm, "Cannot assign to a class constant '%s'.", var->str);
                         return INTERPRET_RUNTIME_ERROR;
                     } /*else if (!tableGet(&objClass->fields, var, &unused)) {
+                        frame->ip = ip;
                         runtimeError(vm, "Class '%s' contains no static variable '%s'.", objClass->name->str, var->str);
                         return INTERPRET_RUNTIME_ERROR;
                     } */
@@ -1035,6 +1060,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     // pop(vm); // Class.
                 } else {
                     char *type = valueType(peek(vm, 1));
+                    frame->ip = ip;
                     runtimeError(vm, "Can't set property on type '%s'.", type);
                     free(type);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1089,12 +1115,14 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 } else if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
                     concat(vm);
                 } else {
+                    frame->ip = ip;
                     runtimeError(vm, "Operands must be two numbers or two strings.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
             } break;
             case OP_INC: {
                 if (!IS_NUMBER(peek(vm, 0))) {
+                    frame->ip = ip;
                     runtimeError(vm, "Operand must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1104,6 +1132,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             case OP_SUB: BINARY_OP(NUMBER_VAL, -, double); break;
             case OP_DEC: {
                 if (!IS_NUMBER(peek(vm, 0))) {
+                    frame->ip = ip;
                     runtimeError(vm, "Operand must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1114,6 +1143,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             case OP_DIV: BINARY_OP(NUMBER_VAL, /, double); break;
             case OP_POW: {
                 if (!IS_NUMBER(peek(vm, 0) || !IS_NUMBER(peek(vm, 1)))) {
+                    frame->ip = ip;
                     runtimeError(vm, "Operands must be two numbers.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1123,6 +1153,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             } break;
             case OP_MOD: {
                 if (!IS_NUMBER(peek(vm, 0) || !IS_NUMBER(peek(vm, 1)))) {
+                    frame->ip = ip;
                     runtimeError(vm, "Operands must be two numbers.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1158,6 +1189,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             case OP_NOT: push(vm, BOOL_VAL(isFalsy(pop(vm)))); break;
             case OP_BIT_NOT: {
                 if (!IS_NUMBER(peek(vm, 0))) {
+                    frame->ip = ip;
                     runtimeError(vm, "Operand must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1165,6 +1197,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             } break;
             case OP_NEG: {
                 if (!IS_NUMBER(peek(vm, 0))) {
+                    frame->ip = ip;
                     runtimeError(vm, "Operand must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1288,6 +1321,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 Value superClass = peek(vm, 0);
                 if (!IS_CLASS(superClass)) {
                     char *vt = valueType(superClass);
+                    frame->ip = ip;
                     runtimeError(vm, "Superclass must be a class, got a '%s' instead.", vt);
                     free(vt);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1306,6 +1340,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
 
                     Value unused;
                     if (!tableGet(&objClass->methods, key, &unused)) {
+                        frame->ip = ip;
                         runtimeError(vm, "Class '%s' doesn't implement abstract method '%s'.", objClass->name->str, objClass->abstractMethods.entries[i].key->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -1402,12 +1437,14 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
 
                 char path[I_MAX_PATH];
                 if (!resolvePath(frame->closure->function->script->path->str, filenameStr, path)) {
+                    frame->ip = ip;
                     runtimeError(vm, "Coule not open file '%s'.", filenameStr);
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
                 char *src = readFile(path);
                 if (src == NULL) {
+                    frame->ip = ip;
                     runtimeError(vm, "Could not open file '%s'.", filenameStr);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1472,6 +1509,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (tableGet(&vm->scripts, fileName, &libVal)) {
                     script = AS_SCRIPT(libVal);
                 } else {
+                    frame->ip = ip;
                     runtimeError(vm, "Unknown error.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1481,6 +1519,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     ObjString *variable = READ_STRING();
 
                     if (!tableGet(&script->values, variable, &libVar)) {
+                        frame->ip = ip;
                         runtimeError(vm, "'%s' can't be found in library '%s'.", variable->str, script->name->str);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -1510,6 +1549,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
     
                 if (!IS_OBJ(receiver)) {
                     char *type = valueType(receiver);
+                    frame->ip = ip;
                     runtimeError(vm, "Type '%s' is not indexable.", type);
                     free(type);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1518,6 +1558,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 switch (getObjType(receiver)) {
                     case OBJ_ARRAY: {
                         if (!IS_NUMBER(indexValue)) {
+                            frame->ip = ip;
                             runtimeError(vm, "Array index must be a number.");
                             return INTERPRET_RUNTIME_ERROR;
                         }
@@ -1536,12 +1577,14 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             push(vm, array->data.values[idx]);
                             break;
                         }
-        
+    
+                        frame->ip = ip;
                         runtimeError(vm, "Array index '%d' out of bounds.", oIdx);
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     case OBJ_STRING: {
                         if (!IS_NUMBER(indexValue)) {
+                            frame->ip = ip;
                             runtimeError(vm, "Array index must be a number.");
                             return INTERPRET_RUNTIME_ERROR;
                         }
@@ -1560,7 +1603,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             push(vm, OBJ_VAL(copyString(vm, &str->str[idx], 1)));
                             break;
                         }
-        
+    
+                        frame->ip = ip;
                         runtimeError(vm, "String index '%d' out of bounds.", oIdx);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -1568,6 +1612,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         ObjMap *map = AS_MAP(receiver);
                         if (!isValidKey(indexValue)) {
                             char *type = valueType(indexValue);
+                            frame->ip = ip;
                             runtimeError(vm, "Expect string or number for key but got '%s'.", type);
                             free(type);
                             return INTERPRET_RUNTIME_ERROR;
@@ -1585,6 +1630,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     } break;
                     default: {
                         char *type = valueType(receiver);
+                        frame->ip = ip;
                         runtimeError(vm, "Type '%s' is not indexable.", type);
                         free(type);
                         return INTERPRET_RUNTIME_ERROR;
@@ -1598,6 +1644,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
     
                 if (!IS_OBJ(receiver)) {
                     char *type = valueType(receiver);
+                    frame->ip = ip;
                     runtimeError(vm, "Type '%s' is not indexable.", type);
                     free(type);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1606,6 +1653,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 switch (getObjType(receiver)) {
                     case OBJ_ARRAY: {
                         if (!IS_NUMBER(indexValue)) {
+                            frame->ip = ip;
                             runtimeError(vm, "Array index must be a number.");
                             return INTERPRET_RUNTIME_ERROR;
                         }
@@ -1627,16 +1675,19 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             break;
                         }
     
+                        frame->ip = ip;
                         runtimeError(vm, "Array index '%d' out of bounds.", oIdx);
                         return INTERPRET_RUNTIME_ERROR;
                     }
                     case OBJ_STRING: {
                         if (!IS_NUMBER(indexValue)) {
+                            frame->ip = ip;
                             runtimeError(vm, "Array index must be a number.");
                             return INTERPRET_RUNTIME_ERROR;
                         }
                         
                         if (!IS_STRING(assignValue)) {
+                            frame->ip = ip;
                             runtimeError(vm, "Assign value must be a string.");
                             return INTERPRET_RUNTIME_ERROR;
                         }
@@ -1658,7 +1709,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             push(vm, NULL_VAL);
                             break;
                         }
-        
+    
+                        frame->ip = ip;
                         runtimeError(vm, "String index '%d' out of bounds.", oIdx);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -1666,6 +1718,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         ObjMap *map = AS_MAP(receiver);
                         if (!isValidKey(indexValue)) {
                             char *type = valueType(indexValue);
+                            frame->ip = ip;
                             runtimeError(vm, "Expect string or number for key but got '%s'.", type);
                             free(type);
                             return INTERPRET_RUNTIME_ERROR;
@@ -1679,6 +1732,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     } break;
                     default: {
                         char *type = valueType(receiver);
+                        frame->ip = ip;
                         runtimeError(vm, "Type '%s' is not indexable.", type);
                         free(type);
                         return INTERPRET_RUNTIME_ERROR;
@@ -1692,6 +1746,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
     
                 if (!IS_OBJ(receiver)) {
                     char *type = valueType(receiver);
+                    frame->ip = ip;
                     runtimeError(vm, "Type '%s' is not indexable.", type);
                     free(type);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1700,6 +1755,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 switch (getObjType(receiver)) {
                     case OBJ_ARRAY: {
                         if (!IS_NUMBER(indexValue)) {
+                            frame->ip = ip;
                             runtimeError(vm, "Array index must be a number.");
                             return INTERPRET_RUNTIME_ERROR;
                         }
@@ -1717,7 +1773,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             push(vm, pushValue);
                             break;
                         }
-            
+    
+                        frame->ip = ip;
                         runtimeError(vm, "Array index '%d' out of bounds.", oIdx);
                         return INTERPRET_RUNTIME_ERROR;
                     }
@@ -1725,6 +1782,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         ObjMap *map = AS_MAP(receiver);
                         if (!isValidKey(indexValue)) {
                             char *type = valueType(indexValue);
+                            frame->ip = ip;
                             runtimeError(vm, "Expect string or number for key but got '%s'.", type);
                             free(type);
                             return INTERPRET_RUNTIME_ERROR;
@@ -1740,6 +1798,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     } break;
                     default: {
                         char *type = valueType(receiver);
+                        frame->ip = ip;
                         runtimeError(vm, "Type '%s' is not indexable.", type);
                         free(type);
                         return INTERPRET_RUNTIME_ERROR;
@@ -1753,17 +1812,20 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
     
                 if (!IS_OBJ(receiver)) {
                     char *type = valueType(receiver);
+                    frame->ip = ip;
                     runtimeError(vm, "Type '%s' is not sliceable.", type);
                     free(type);
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
                 if (!IS_NUMBER(sliceStartIndex) && !IS_ERR(sliceStartIndex)) {
+                    frame->ip = ip;
                     runtimeError(vm, "Slice start index must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
                 if (!IS_NUMBER(sliceEndIndex) && !IS_ERR(sliceEndIndex)) {
+                    frame->ip = ip;
                     runtimeError(vm, "Slice end index must be a number.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1830,6 +1892,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     } break;
                     default: {
                         char *type = valueType(receiver);
+                        frame->ip = ip;
                         runtimeError(vm, "Type '%s' is not sliceable.", type);
                         free(type);
                         return INTERPRET_RUNTIME_ERROR;
@@ -1848,6 +1911,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 
                 if (!IS_STRING(flag)) {
                     char *type = valueType(flag);
+                    frame->ip = ip;
                     runtimeError(vm, "File flag must be a string got '%s'.", type);
                     free(type);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1855,6 +1919,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
     
                 if (!IS_STRING(name)) {
                     char *type = valueType(name);
+                    frame->ip = ip;
                     runtimeError(vm, "File name must be a string got '%s'.", type);
                     free(type);
                     return INTERPRET_RUNTIME_ERROR;
@@ -1874,6 +1939,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 file->flags = flagStr->str;
                 
                 if (err != 0) {
+                    frame->ip = ip;
                     runtimeError(vm, "Unable to open file '%s'.", file->path);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -1897,6 +1963,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 for (int i = count * 2; i > 0; i -= 2) {
                     if (!isValidKey(peek(vm, i))) {
                         char *type = valueType(peek(vm, i));
+                        frame->ip = ip;
                         runtimeError(vm, "Expect string or number for key but got '%s'.", type);
                         free(type);
                         return INTERPRET_RUNTIME_ERROR;
@@ -1916,6 +1983,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 for (int i = count; i > 0; --i) {
                     if (!isValidKey(peek(vm, i))) {
                         char *type = valueType(peek(vm, i));
+                        frame->ip = ip;
                         runtimeError(vm, "Expect string or number for value but got '%s'.", type);
                         free(type);
                         return INTERPRET_RUNTIME_ERROR;

@@ -1,19 +1,19 @@
 class A {
-    method() {
+    fn method() {
         println("A method")
     }
 }
 
-class B < A {
-    method() {
+class B : A {
+    fn method() {
         println("B method")
     }
 
-    test() {
+    fn test() {
         super.method()
     }
 }
 
-class C < B {}
+class C : B {}
 
 C().test()

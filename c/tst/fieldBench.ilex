@@ -1,5 +1,12 @@
 class Zoo {
-    init() {
+    var aardvark
+    var baboon
+    var cat
+    var donkey
+    var elephant
+    var fox
+    
+    fn init() {
         this.aardvark = 1
         this.baboon   = 1
         this.cat      = 1
@@ -7,12 +14,12 @@ class Zoo {
         this.elephant = 1
         this.fox      = 1
     }
-    ant()    { return this.aardvark }
-    banana() { return this.baboon }
-    tuna()   { return this.cat }
-    hay()    { return this.donkey }
-    grass()  { return this.elephant }
-    mouse()  { return this.fox }
+    fn ant()    { return this.aardvark }
+    fn banana() { return this.baboon }
+    fn tuna()   { return this.cat }
+    fn hay()    { return this.donkey }
+    fn grass()  { return this.elephant }
+    fn mouse()  { return this.fox }
 }
 
 zoo := Zoo()

@@ -1,9 +1,9 @@
-http://cloc.sourceforge.net v 1.62  T=0.14 s (369.8 files/s, 81895.4 lines/s)
+http://cloc.sourceforge.net v 1.62  T=0.14 s (365.5 files/s, 81464.9 lines/s)
 ------------------------------------------------------------------------------------
 File                                  blank        comment           code
 ------------------------------------------------------------------------------------
 .\c\compiler.c                          376             20           1952
-.\c\vm.c                                265             46           1692
+.\c\vm.c                                265             47           1759
 .\c\object.c                            188              7            753
 .\c\libs\lib_array.c                    184              3            719
 .\c\lexer.c                              65              3            460
@@ -14,9 +14,9 @@ File                                  blank        comment           code
 .\c\libs\lib_file.c                      78              5            264
 .\c\libs\lib_env.c                       53              3            184
 .\c\value.c                              39             12            175
+.\c\table.c                              33              3            174
 .\c\debug.c                              21              4            172
 .\c\libs\lib_json.c                      38              3            170
-.\c\table.c                              31              3            169
 .\c\libs\lib_map.c                       45              3            156
 .\c\util.c                               29              3            141
 .\c\libs\lib_ilex.c                      40              3            136
@@ -31,7 +31,7 @@ File                                  blank        comment           code
 .\c\compiler.h                           11              3             57
 .\c\object.h                              5              3             38
 .\c\libs\lib_builtIn.c                    9              3             35
-.\c\chunk.c                               9              3             34
+.\c\chunk.c                               8              3             34
 .\c\main.c                                4              0             22
 .\c\table.h                               7              3             18
 .\c\memory.h                             11              3             17
@@ -56,5 +56,5 @@ File                                  blank        comment           code
 .\build.sh                                0              0              3
 .\c\libs\lib_time.c                       3              3              1
 ------------------------------------------------------------------------------------
-SUM:                                   2024            257           9457
+SUM:                                   2025            258           9529
 ------------------------------------------------------------------------------------
