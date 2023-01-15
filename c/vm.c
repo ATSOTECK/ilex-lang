@@ -689,6 +689,7 @@ static void concat(VM *vm) {
 
 InterpretResult run(VM *vm, int frameIndex, Value *val) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1];
+    // printf("frameCount %d\n", vm->frameCount);
     register uint8_t *ip = frame->ip;
 
 #define READ_BYTE() (*ip++)
@@ -1301,6 +1302,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (vm->frameCount == 0 || (frameIndex != -1 && &vm->frames[vm->frameCount - 1] == &vm->frames[frameIndex])) {
                     if (frameIndex != -1) {
                         *val = result;
+                        pop(vm);
                     }
 
                     pop(vm);

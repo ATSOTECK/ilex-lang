@@ -113,6 +113,8 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_GET_UPVALUE: return shortInstruction("OP_GET_UPVALUE", chunk, offset);
         case OP_GET_PROPERTY: return constantInstruction("OP_GET_PROPERTY", chunk, offset);
         case OP_GET_PROPERTY_NO_POP: return constantInstruction("OP_GET_PROPERTY_NO_POP", chunk, offset);
+        case OP_GET_PRIVATE_PROPERTY: return constantInstruction("OP_GET_PRIVATE_PROPERTY", chunk, offset);
+        case OP_GET_PRIVATE_PROPERTY_NO_POP: return constantInstruction("OP_GET_PRIVATE_PROPERTY_NO_POP", chunk, offset);
         case OP_GET_SUPER: return constantInstruction("OP_GET_SUPER", chunk, offset);
         case OP_GET_SCRIPT: return constantInstruction("OP_GET_SCRIPT", chunk, offset);
         case OP_DEFINE_GLOBAL: return constantInstruction("OP_DEFINE_GLOBAL", chunk, offset);

@@ -49,6 +49,7 @@ typedef struct ClassCompiler {
 
 typedef struct Compiler {
     Parser *parser;
+    Table stringConsts;
     struct Compiler *enclosing;
     ClassCompiler *class;
     ObjFunction *function;

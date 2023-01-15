@@ -116,14 +116,9 @@ static Value fileReadln(VM *vm, int argc, Value *args) {
     }
     
     char *line = NULL;
-    size_t len = 0;
-    if (getline(&line, &len, file->file) != -1) {
-        if (line[len - 1] == '\n') {
-            --len;
-            line[len] = '\0';
-        }
-        
-        return OBJ_VAL(copyString(vm, line, len));
+    size_t size = 0;
+    if (getline(&line, &size, file->file) != -1) {
+        return OBJ_VAL(copyString(vm, line, strlen(line)));
     }
     
     return NULL_VAL;
