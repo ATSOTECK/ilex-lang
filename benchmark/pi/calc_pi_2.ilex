@@ -1,0 +1,33 @@
+use <random>
+// random::randomSeed() broken
+
+numSteps ::= 500
+runs ::= 1_000_000
+choices ::= []
+
+for (i := 0; i < runs; i++) {
+    steps ::= []
+    for (j := 0; j < numSteps; j++) {
+        steps.push(random::choose(1, -1))
+    }
+    choices.push(steps)
+}
+
+distances ::= []
+distance := 0
+choices.forEach(fn |steps| -> {
+    distance = steps.reduce(fn |dist, num| dist + num)
+    // distance ::= randoms.reduce(fn |dist, num| dist + num) broken, distance == randoms = true
+    distances.push(distance)
+})
+
+total := 0
+distances.forEach(fn |avg| -> {
+    total += avg
+})
+
+average ::= total / runs
+println(average)
+
+pi ::= (2 * steps) / average ** 2
+println('pi is approx', pi)

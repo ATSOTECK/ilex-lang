@@ -394,6 +394,12 @@ void registerGlobalValue(VM *vm, const char *name, Value value);
 void registerLibraryFunction(VM *vm, const char *name, NativeFn function, Table *table);
 void registerLibrary(VM *vm, const char *name, BuiltInLib lib);
 
+void registerBaseClass(VM *vm, const char *name);
+void registerClassFunction(VM *vm, ObjClass *objClass, const char *name, NativeFn function, AccessLevel accessLevel);
+void registerClassVariable(VM *vm, ObjClass *objClass, const char *name, NativeFn function, bool isPrivate);
+void registerClassStaticVariable(VM *vm, ObjClass *objClass, const char *name, NativeFn function, bool isConst);
+
+
 //void registerType(VM *vm, const char *name); //Struct and conversion function
 //void registerTypeFunction(VM *vm, const char *type, const char *name, NativeFn function);
 //void registerTypeValue(VM *vm, const char *type, const char *name, Value value);

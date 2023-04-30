@@ -671,6 +671,16 @@ static void createClass(VM *vm, ObjString *name, ObjClass *superClass, ClassType
     }
 }
 
+void registerBaseClass(VM *vm, const char *name) {
+    createClass(vm, copyString(vm, name, (int)strlen(name)), NULL, CLASS_ABSTRACT);
+}
+
+void registerClassFunction(VM *vm, ObjClass *objClass, const char *name, NativeFn function, AccessLevel accessLevel) {
+
+}
+void registerClassVariable(VM *vm, ObjClass *objClass, const char *name, NativeFn function, bool isPrivate);
+void registerClassStaticVariable(VM *vm, ObjClass *objClass, const char *name, NativeFn function, bool isConst);
+
 static void concat(VM *vm) {
     ObjString* b = AS_STRING(peek(vm, 0));
     ObjString* a = AS_STRING(peek(vm, 1));
