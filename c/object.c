@@ -921,6 +921,7 @@ char *objectType(Value value) {
         case OBJ_FILE: return newCString("file");
         case OBJ_MAP: return newCString("map");
         case OBJ_SET: return newCString("set");
+        case OBJ_ABSTRACT: return newCString("abstract");
     }
 
     return newCString("unknown type");
@@ -942,6 +943,7 @@ char *objectToString(Value value) {
         case OBJ_FILE: return fileToString(AS_FILE(value));
         case OBJ_MAP: return mapToString(AS_MAP(value));
         case OBJ_SET: return setToString(AS_SET(value));
+        case OBJ_ABSTRACT: return newCString("<abstract obj>"); // TODO: String.
     }
     
     return newCString("unknown object");

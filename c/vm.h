@@ -31,6 +31,7 @@ struct VM_ {
     int frameCount;
     Value stack[STACK_MAX];
     Value *stackTop;
+    int stackHeight;
     Table globals;
     Table consts;
     Table strings;

@@ -9,6 +9,48 @@
 #include <errno.h>
 #include <stdlib.h>
 
+char *trimWhitespace(size_t *retLen, size_t len, const char *str) {
+    char *ret = NULL;
+
+    if (retLen == NULL) {
+        return NULL;
+    }
+
+    if (len == 0) {
+        ret = (char*)malloc(sizeof(char));
+        *ret = '\0';
+        *retLen = 0;
+        return ret;
+    }
+
+    const char *end;
+
+    while (isspace(*str)) {
+        ++str;
+    }
+
+    if (*str == 0) {
+        ret = (char*)malloc(sizeof(char));
+        *ret = '\0';
+        *retLen = 0;
+        return ret;
+    }
+
+    end = str + strlen(str) - 1;
+    while (end > str && isspace(*end)) {
+        --end;
+    }
+
+    end++;
+    *retLen = (end - str) < len - 1 ? (end - str) : len - 1;
+
+    ret = (char*)malloc(sizeof(char) * *retLen);
+    memcpy(ret, str, *retLen);
+    ret[*retLen] = '\0';
+
+    return ret;
+}
+
 static Value stringToUpper(VM *vm, int argc, Value *args) {
     ObjString *string = AS_STRING(args[0]);
     char *tmp = ALLOCATE(vm, char, string->len + 1);
@@ -63,16 +105,22 @@ static Value stringToNumber(VM *vm, int argc, Value *args) {
     }
 
     char *numberString = AS_CSTRING(args[0]);
+    size_t numberStringLen = strlen(numberString);
     char *end;
     errno = 0;
 
-    double number = strtod(numberString, &end);
+    char *trimedNumberStr = NULL;
+    size_t unused = 0;
+    trimedNumberStr = trimWhitespace(&unused, numberStringLen, numberString);
+    double number = strtod(trimedNumberStr, &end);
 
     // Failed conversion
     if (errno != 0 || *end != '\0') {
+        free(trimedNumberStr);
         return NULL_VAL;
     }
 
+    free(trimedNumberStr);
     return NUMBER_VAL(number);
 }
 

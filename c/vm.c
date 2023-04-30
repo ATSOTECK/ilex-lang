@@ -27,6 +27,7 @@
 
 static void resetStack(VM *vm) {
     vm->stackTop = vm->stack;
+    vm->stackHeight = 0;
     vm->frameCount = 0;
     vm->openUpvalues = NULL;
 }
@@ -261,14 +262,45 @@ void freeVM(VM *vm) {
     freeObjects(vm);
 }
 
+static void printStack(VM *vm) {
+    printf("Stack:\n");
+    Value *st = vm->stackTop - 1;
+    for (int i = vm->stackHeight - 1; i >= 0; --i) {
+        char *type = valueType(*st);
+        char *str = valueToString(*st);
+        printf("%d\t%s: %s\n", i, str, type);
+        free(str);
+        free(type);
+
+        st--;
+
+        /*
+        if (st-- == vm->stack) {
+            return;
+        }
+         */
+    }
+}
+
 // TODO(Skyler): Grow the stack.
 void push(VM *vm, Value v) {
+    printf("--- adding '");
+    printValue(v);
+    printf("' to the stack ---\n");
+
+    printf("-v- before -v- \n");
+    printStack(vm);
     *vm->stackTop = v;
     vm->stackTop++;
+    vm->stackHeight++;
+    printf("-v- after -v- \n");
+    printStack(vm);
 }
 
 Value pop(VM *vm) {
     vm->stackTop--;
+    vm->stackHeight--;
+    printf("popping\n");
     return *vm->stackTop;
 }
 
@@ -303,22 +335,6 @@ Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
     run(vm, currentFrameIndex, &value);
 
     return value;
-}
-
-static void printStack(VM *vm) {
-    printf("Stack:\n");
-    Value *st = &vm->stackTop[-1];
-    for (;;) {
-        char *type = valueType(*st);
-        char *str = valueToString(*st);
-        printf("\t%s: %s\n", str, type);
-        free(str);
-        free(type);
-
-        if (st-- == vm->stack) {
-            return;
-        }
-    }
 }
 
 static bool call(VM *vm, ObjClosure *closure, int argc) {
@@ -699,6 +715,7 @@ static void concat(VM *vm) {
 
 InterpretResult run(VM *vm, int frameIndex, Value *val) {
     CallFrame *frame = &vm->frames[vm->frameCount - 1];
+    // printf("frameCount %d\n", vm->frameCount);
     register uint8_t *ip = frame->ip;
 
 #define READ_BYTE() (*ip++)
@@ -1311,6 +1328,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (vm->frameCount == 0 || (frameIndex != -1 && &vm->frames[vm->frameCount - 1] == &vm->frames[frameIndex])) {
                     if (frameIndex != -1) {
                         *val = result;
+                        pop(vm);
                     }
 
                     pop(vm);

@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 
-//#define DEBUG_PRINT_CODE
+#define DEBUG_PRINT_CODE
 //#define DEBUG_TRACE_EXECUTION
 
 //#define DEBUG_STRESS_GC
@@ -30,7 +30,7 @@
 #define ILEX_VERSION_MINOR 0
 #define ILEX_VERSION_BUILD 64
 #define ILEX_VERSION "0.0.64"
-#define ILEX_DATE "12 - November - 2022"
+#define ILEX_DATE "14 - January - 2023"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN

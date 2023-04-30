@@ -222,6 +222,7 @@ static void patchJump(Compiler *compiler, int offset) {
 
 static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, FunctionType type, AccessLevel level) {
     compiler->parser = parser;
+    initTable(&compiler->stringConsts);
     compiler->enclosing = parent;
     compiler->function = NULL;
     compiler->type = type;
@@ -268,7 +269,15 @@ static void initCompiler(Parser *parser, Compiler *compiler, Compiler *parent, F
 }
 
 static uint16_t identifierConstant(Compiler *compiler, Token *name) {
-    return makeConstant(compiler, OBJ_VAL(copyString(compiler->parser->vm, name->start, name->len)));
+    ObjString *str = copyString(compiler->parser->vm, name->start, name->len);
+    Value idxValue;
+    if (tableGet(&compiler->stringConsts, str, &idxValue)) {
+        return (uint16_t)AS_NUMBER(idxValue);
+    }
+
+    uint16_t index = makeConstant(compiler, OBJ_VAL(str));
+    tableSet(compiler->parser->vm, &compiler->stringConsts, str, NUMBER_VAL((double)index), true);
+    return index;
 }
 
 static bool identifiersEqual(Token *a, Token *b) {
@@ -280,7 +289,7 @@ static bool identifiersEqual(Token *a, Token *b) {
 }
 
 static int resolveLocal(Compiler *compiler, Token *name, bool inFunction) {
-    for (int i = compiler->localCount - 1; i >= 0; i--) {
+    for (int i = compiler->localCount - 1; i >= 0; --i) {
         Local *local = &compiler->locals[i];
         if (identifiersEqual(name, &local->name)) {
             if (!inFunction && local->depth == -1) {
@@ -352,7 +361,7 @@ static void declareVariable(Compiler *compiler) {
     }
 
     Token *name = &compiler->parser->previous;
-    for (int i = compiler->localCount - 1; i >= 0; i--) {
+    for (int i = compiler->localCount - 1; i >= 0; --i) {
         Local *local = &compiler->locals[i];
         if (local->depth != -1 && local->depth < compiler->scopeDepth) {
             break;
@@ -431,6 +440,7 @@ static ObjFunction *endCompiler(Compiler *compiler) {
         }
     }
 
+    freeTable(compiler->parser->vm, &compiler->stringConsts);
     compiler->parser->vm->compiler = compiler->enclosing;
     return function;
 }
@@ -751,12 +761,12 @@ static void namedVariable(Compiler *compiler, Token name, bool canAssign) {
                               emitByte(compiler, token); \
                               emitByteShort(compiler, setOp, (uint16_t)arg); \
                           } while (false) \
-    
+
     if (canAssign && match(compiler, TK_ASSIGN)) {
         checkIfConst(compiler, setOp, arg);
         expression(compiler);
         emitByteShort(compiler, setOp, (uint16_t)arg);
-    } else if (canAssign && match(compiler, TK_PLUSEQ)) {
+    }  else if (canAssign && match(compiler, TK_PLUSEQ)) {
         EMIT_OP_EQ(OP_ADD);
     } else if (canAssign && match(compiler, TK_MINUSEQ)) {
         EMIT_OP_EQ(OP_SUB);
@@ -2343,6 +2353,7 @@ void markCompilerRoots(VM *vm) {
         }
 
         markObject(vm, (Obj*)compiler->function);
+        markTable(vm, &compiler->stringConsts);
         compiler = compiler->enclosing;
     }
 }
