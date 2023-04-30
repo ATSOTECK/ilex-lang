@@ -18,4 +18,10 @@ parent: Standard Libraries
 
 ## Io
 
+To use the Io library use the io library.
 
+```rs
+use <io>
+```
+
+### io::
