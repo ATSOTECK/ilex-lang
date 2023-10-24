@@ -41,13 +41,13 @@ static Value sysSleep(VM *vm, int argc, Value *args) {
 
 static Value sysExit(VM *vm, int argc, Value *args) {
     if (argc != 1) {
-        runtimeError(vm, "Function sleep() expected 1 argument but got '%d'.", argc);
+        runtimeError(vm, "Function exit() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
     }
 
     if (!IS_NUMBER(args[0])) {
         char *type = valueType(args[0]);
-        runtimeError(vm, "Function sleep() expected type 'number' but got '%s'.", type);
+        runtimeError(vm, "Function exit() expected type 'number' but got '%s'.", type);
         free(type);
         return ERROR_VAL;
     }
