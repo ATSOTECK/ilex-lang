@@ -91,7 +91,11 @@ static Value sysCD(VM *vm, int argc, Value *args) {
     }
 
     char *dir = AS_CSTRING(args[0]);
+#ifndef I_WIN
     int ret = chdir(dir);
+#else
+    int ret = _chdir(dir);
+#endif
     return ret < 0 ? NULL_VAL : ZERO_VAL;
 }
 
@@ -109,7 +113,11 @@ static Value sysRMDIR(VM *vm, int argc, Value *args) {
     }
 
     char *dir = AS_CSTRING(args[0]);
+#ifndef I_WIN
     int ret = rmdir(dir);
+#else
+    int ret = _rmdir(dir);
+#endif
 
     return NUMBER_VAL(ret);
 }
@@ -128,7 +136,9 @@ static Value sysMKDIR(VM *vm, int argc, Value *args) {
     }
 
     char *dir = AS_CSTRING(args[0]);
+#ifndef I_WIN
     int mode = 0777;
+#endif
 
     if (argc == 2) {
         if (!IS_NUMBER(args[1])) {
@@ -138,10 +148,16 @@ static Value sysMKDIR(VM *vm, int argc, Value *args) {
             return ERROR_VAL;
         }
 
+#ifndef I_WIN
         mode = AS_NUMBER(args[1]);
+#endif
     }
 
+#ifndef I_WIN
     int ret = mkdir(dir, mode);
+#else
+    int ret = _mkdir(dir);
+#endif
 
     return NUMBER_VAL(ret);
 }

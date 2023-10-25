@@ -37,7 +37,9 @@
 #   include <Windows.h>
 #   define strtok_r strtok_s
 #   define ssize_t SSIZE_T
-#   define PATH_MAX 1024
+#   ifndef PATH_MAX
+#       define PATH_MAX 1024
+#   endif
 #endif
 
 #if defined(__APPLE__)
