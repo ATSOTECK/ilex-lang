@@ -25,6 +25,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+int pushes = 0;
+int pops = 0;
+
 static void resetStack(VM *vm) {
     vm->stackTop = vm->stack;
     vm->stackHeight = 0;
@@ -284,23 +287,30 @@ static void printStack(VM *vm) {
 
 // TODO(Skyler): Grow the stack.
 void push(VM *vm, Value v) {
-    printf("--- adding '");
-    printValue(v);
-    printf("' to the stack ---\n");
+    pushes++;
+    if (pushes > 300) {
+//        printf("--- adding '");
+        printf("vvv\nadding: ");
+        printValue(v);
+        printf("\ntop: ");
+//        printf("' to the stack ---\n");
+        printValue(*vm->stackTop);
+        printf("\n^^^\n\n");
+    }
 
-    printf("-v- before -v- \n");
-    printStack(vm);
-    *vm->stackTop = v;
+    // printf("-v- before -v- \n");
+    // printStack(vm);
+    *vm->stackTop = v;  // This line causes mem issues. Causes vm->frameCount to corrupt.
     vm->stackTop++;
     vm->stackHeight++;
-    printf("-v- after -v- \n");
-    printStack(vm);
+    // printf("-v- after -v- \n");
+    // printStack(vm);
 }
 
 Value pop(VM *vm) {
+    pops++;
     vm->stackTop--;
     vm->stackHeight--;
-    printf("popping\n");
     return *vm->stackTop;
 }
 
