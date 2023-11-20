@@ -25,14 +25,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-int pushes = 0;
-int pops = 0;
-
 static void resetStack(VM *vm) {
     vm->stackTop = vm->stack;
     vm->stackHeight = 0;
     vm->frameCount = 0;
     vm->openUpvalues = NULL;
+    vm->compiler = NULL;
 }
 
 void setRuntimeErrorCallback(VM *vm, ErrorCallback runtimeCallback) {
@@ -198,6 +196,7 @@ void registerLibrary(VM *vm, const char *name, BuiltInLib lib) {
 VM *initVM(const char *path, int argc, char **argv) {
     VM *vm = (VM*)calloc(1, sizeof(VM));
 
+    vm->stack = (Value*)malloc(sizeof(Value) * STACK_MAX);
     resetStack(vm);
     vm->objects = NULL;
     vm->bytesAllocated = 0;
@@ -285,30 +284,14 @@ static void printStack(VM *vm) {
     }
 }
 
-// TODO(Skyler): Grow the stack.
+// TODO(Skyler): Grow the stack if needed.
 void push(VM *vm, Value v) {
-    pushes++;
-    if (pushes > 300) {
-//        printf("--- adding '");
-        printf("vvv\nadding: ");
-        printValue(v);
-        printf("\ntop: ");
-//        printf("' to the stack ---\n");
-        printValue(*vm->stackTop);
-        printf("\n^^^\n\n");
-    }
-
-    // printf("-v- before -v- \n");
-    // printStack(vm);
-    *vm->stackTop = v;  // This line causes mem issues. Causes vm->frameCount to corrupt.
+    *vm->stackTop = v;
     vm->stackTop++;
     vm->stackHeight++;
-    // printf("-v- after -v- \n");
-    // printStack(vm);
 }
 
 Value pop(VM *vm) {
-    pops++;
     vm->stackTop--;
     vm->stackHeight--;
     return *vm->stackTop;

@@ -29,7 +29,7 @@ struct VM_ {
     Compiler *compiler;
     CallFrame frames[FRAMES_MAX];
     int frameCount;
-    Value stack[STACK_MAX];
+    Value *stack;
     Value *stackTop;
     int stackHeight;
     Table globals;
