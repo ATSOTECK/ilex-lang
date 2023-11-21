@@ -129,7 +129,7 @@ static Value randomChoose(VM *vm, int argc, Value *args) {
 }
 
 Value useRandomLib(VM *vm) {
-    ObjString *name = copyString(vm, "math", 4);
+    ObjString *name = copyString(vm, "random", 6);
     push(vm, OBJ_VAL(name));
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));
