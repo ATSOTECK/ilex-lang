@@ -31,6 +31,7 @@ struct VM_ {
     int frameCount;
     Value *stack;
     Value *stackTop;
+    int stackHeight;
     Table globals;
     Table consts;
     Table strings;
@@ -71,6 +72,8 @@ struct VM_ {
     ErrorCallback assertCallback;
     ErrorCallback panicCallback;
 };
+
+void printStack(VM *vm);
 
 InterpretResult interpret(VM *vm, const char *scriptName, const char *source);
 void defineNative(VM *vm, const char *name, NativeFn function, Table *table);

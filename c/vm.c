@@ -28,8 +28,17 @@
 static void resetStack(VM *vm) {
     vm->stackTop = vm->stack;
     vm->frameCount = 0;
+    vm->stackHeight = 0;
     vm->openUpvalues = NULL;
     vm->compiler = NULL;
+}
+
+void printStack(VM *vm) {
+    Value *sp = vm->stackTop - 1;
+    for (int i = 0; i < vm->stackHeight; ++i) {
+        printValueNl(*sp);
+        --sp;
+    }
 }
 
 void setRuntimeErrorCallback(VM *vm, ErrorCallback runtimeCallback) {
@@ -261,15 +270,18 @@ void freeVM(VM *vm) {
     vm->initString = NULL;
     vm->scriptName = NULL;
     freeObjects(vm);
+    free(vm->stack);
 }
 
 // TODO(Skyler): Grow the stack if needed.
 void push(VM *vm, Value v) {
     *vm->stackTop = v;
     vm->stackTop++;
+    vm->stackHeight++;
 }
 
 Value pop(VM *vm) {
+    vm->stackHeight--;
     vm->stackTop--;
     return *vm->stackTop;
 }
@@ -329,6 +341,13 @@ static bool call(VM *vm, ObjClosure *closure, int argc) {
 }
 
 static bool callValue(VM *vm, Value callee, int argc) {
+#ifdef DEBUG_MODE
+    if (callee == 0) {
+        runtimeError(vm, "Empty value passed to callValue.");
+        return false;
+    }
+#endif
+
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
             case OBJ_BOUND_METHOD: {
@@ -376,7 +395,7 @@ static bool callValue(VM *vm, Value callee, int argc) {
         }
     }
     
-    runtimeError(vm, "Can only call functions and classes.");
+    runtimeError(vm, "Can only call functions and classes. Tried to call '%s' of type '%s'.", valueToString(callee), valueType(callee));
     return false;
 }
 
@@ -1232,6 +1251,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (!callValue(vm, peek(vm, argc), argc)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
+
                 frame = &vm->frames[vm->frameCount - 1];
                 ip = frame->ip;
             } break;
@@ -1298,7 +1318,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (vm->frameCount == 0 || (frameIndex != -1 && &vm->frames[vm->frameCount - 1] == &vm->frames[frameIndex])) {
                     if (frameIndex != -1) {
                         *val = result;
-                        pop(vm);
+                        // pop(vm); // TODO: Is this needed? Or is this an extra pop?
                     }
 
                     pop(vm);

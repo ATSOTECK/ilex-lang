@@ -19,6 +19,7 @@ uint32_t hashValue(Value value);
 
 char *valueToString(Value value);
 void printValue(Value value);
+void printValueNl(Value value);
 
 bool isFalsy(Value value);
 

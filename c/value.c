@@ -217,6 +217,12 @@ void printValue(Value value) {
     free(str);
 }
 
+void printValueNl(Value value) {
+    char *str = valueToString(value);
+    printf("%s\n", str);
+    free(str);
+}
+
 bool isFalsy(Value value) {
     return IS_NULL(value) ||
            (IS_BOOL(value) && !AS_BOOL(value)) ||

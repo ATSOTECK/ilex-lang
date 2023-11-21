@@ -23,6 +23,8 @@
 //#define DEBUG_STRESS_GC
 //#define DEBUG_LOG_GC
 
+//#define DEBUG_MODE
+
 #define UINT8_COUNT (UINT8_MAX + 1)
 #define UINT16_COUNT (UINT16_MAX + 1)
 
