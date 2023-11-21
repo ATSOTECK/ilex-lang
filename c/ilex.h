@@ -28,7 +28,7 @@
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION_BUILD 64
+#define ILEX_VERSION_BUILD 65
 #define ILEX_VERSION "0.0.65"
 #define ILEX_DATE "20 - November - 2023"
 

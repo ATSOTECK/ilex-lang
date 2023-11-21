@@ -27,7 +27,6 @@
 
 static void resetStack(VM *vm) {
     vm->stackTop = vm->stack;
-    vm->stackHeight = 0;
     vm->frameCount = 0;
     vm->openUpvalues = NULL;
     vm->compiler = NULL;
@@ -264,36 +263,14 @@ void freeVM(VM *vm) {
     freeObjects(vm);
 }
 
-static void printStack(VM *vm) {
-    printf("Stack:\n");
-    Value *st = vm->stackTop - 1;
-    for (int i = vm->stackHeight - 1; i >= 0; --i) {
-        char *type = valueType(*st);
-        char *str = valueToString(*st);
-        printf("%d\t%s: %s\n", i, str, type);
-        free(str);
-        free(type);
-
-        st--;
-
-        /*
-        if (st-- == vm->stack) {
-            return;
-        }
-         */
-    }
-}
-
 // TODO(Skyler): Grow the stack if needed.
 void push(VM *vm, Value v) {
     *vm->stackTop = v;
     vm->stackTop++;
-    vm->stackHeight++;
 }
 
 Value pop(VM *vm) {
     vm->stackTop--;
-    vm->stackHeight--;
     return *vm->stackTop;
 }
 
@@ -542,7 +519,7 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
 
             Value value;
             if (!tableGet(&script->values, name, &value)) {
-                runtimeError(vm, "Undefined property '%s'.", name->str);
+                runtimeError(vm, "Undefined property '%s' on '%s'.", name->str, script->name->str);
                 return false;
             }
 
@@ -715,16 +692,16 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
 #define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 #define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_SHORT()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
-#define BINARY_OP(valueType, op, type) \
+#define BINARY_OP(valueTypeArg, op, type) \
     do { \
       if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
         frame->ip = ip; \
-        runtimeError(vm, "Operands must be numbers."); \
+        runtimeError(vm, "Operands must be numbers. Got '%s', '%s' (%s, %s).", valueType(peek(vm, 0)), valueType(peek(vm, 1)), valueToString(peek(vm, 0)), valueToString(peek(vm, 1))); \
         return INTERPRET_RUNTIME_ERROR; \
       } \
       type b = AS_NUMBER(pop(vm)); \
       type a = AS_NUMBER(pop(vm)); \
-      push(vm, valueType(a op b)); \
+      push(vm, valueTypeArg(a op b)); \
     } while (false)
 
     for (;;) {
