@@ -25,8 +25,8 @@ set(sources
         table.c
         libs/lib_natives.h
         libs/lib_natives.c
-        libs/lib_string.h
-        libs/lib_string.c
+        types/type_string.h
+        types/type_string.c
         libs/lib_builtIn.h
         libs/lib_builtIn.c
         libs/lib_math.h
@@ -37,20 +37,20 @@ set(sources
         libs/lib_io.c
         libs/lib_random.h
         libs/lib_random.c
-        libs/lib_array.h
-        libs/lib_array.c
+        types/type_array.h
+        types/type_array.c
         libs/lib_env.h
         libs/lib_env.c
-        libs/lib_file.h
-        libs/lib_file.c
+        types/type_file.h
+        types/type_file.c
         util.h
         util.c
-        libs/lib_map.h
-        libs/lib_map.c
+        types/type_map.h
+        types/type_map.c
         libs/lib_sys.h
         libs/lib_sys.c
-        libs/lib_set.h
-        libs/lib_set.c
+        types/type_set.h
+        types/type_set.c
         libs/json/json.h
         libs/json/json.c
         libs/json/json-builder.h
@@ -60,6 +60,6 @@ set(sources
         libs/lib_time.h
         libs/lib_time.c)
 
-add_executable(ilex main.c ${sources})
+add_executable(ilex main.c ${sources} types/window.h)
 
 add_library(ilex_lib ${sources})

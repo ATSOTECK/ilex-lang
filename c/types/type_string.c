@@ -2,7 +2,7 @@
 // Created by Skyler on 4/21/22.
 //
 
-#include "lib_string.h"
+#include "type_string.h"
 #include "../memory.h"
 
 #include <ctype.h>

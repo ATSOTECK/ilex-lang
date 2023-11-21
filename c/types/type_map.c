@@ -2,7 +2,7 @@
 // Created by Skyler on 7/24/22.
 //
 
-#include "lib_map.h"
+#include "type_map.h"
 
 #include "../util.h"
 

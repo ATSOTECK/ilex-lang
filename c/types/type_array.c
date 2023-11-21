@@ -2,7 +2,7 @@
 // Created by Skyler on 05/7/22.
 //
 
-#include "lib_array.h"
+#include "type_array.h"
 
 #include "../memory.h"
 

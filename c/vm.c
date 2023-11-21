@@ -11,13 +11,13 @@
 #include "memory.h"
 #include "util.h"
 
-#include "libs/lib_array.h"
+#include "types/type_array.h"
 #include "libs/lib_builtIn.h"
-#include "libs/lib_file.h"
-#include "libs/lib_map.h"
+#include "types/type_file.h"
+#include "types/type_map.h"
 #include "libs/lib_natives.h"
-#include "libs/lib_set.h"
-#include "libs/lib_string.h"
+#include "types/type_set.h"
+#include "types/type_string.h"
 
 #include <math.h>
 #include <stdarg.h>

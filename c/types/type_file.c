@@ -2,7 +2,7 @@
 // Created by Skyler on 05/20/22.
 //
 
-#include "lib_file.h"
+#include "type_file.h"
 
 #include "../memory.h"
 #include "../util.h"
