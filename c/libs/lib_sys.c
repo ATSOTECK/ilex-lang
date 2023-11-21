@@ -163,7 +163,7 @@ static Value sysMKDIR(VM *vm, int argc, Value *args) {
 }
 
 Value useSysLib(VM *vm) {
-    ObjString *name = copyString(vm, "io", 2);
+    ObjString *name = copyString(vm, "sys", 3);
     push(vm, OBJ_VAL(name));
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));
