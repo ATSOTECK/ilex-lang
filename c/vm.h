@@ -31,7 +31,9 @@ struct VM_ {
     int frameCount;
     Value *stack;
     Value *stackTop;
+#ifdef DEBUG_MODE
     int stackHeight;
+#endif
     Table globals;
     Table consts;
     Table strings;
@@ -76,7 +78,9 @@ struct VM_ {
     ObjWindow *window;
 };
 
-void printStack(VM *vm);
+#ifdef DEBUG_MODE
+    void printStack(VM *vm);
+#endif
 
 InterpretResult interpret(VM *vm, const char *scriptName, const char *source);
 void defineNative(VM *vm, const char *name, NativeFn function, Table *table);

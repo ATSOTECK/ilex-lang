@@ -122,7 +122,7 @@ static Value windowClose(VM *vm, int argc, Value *args) {
 
     glfwTerminate();
 
-    return ZERO_VAL;
+    return NULL_VAL;
 }
 
 static Value windowClear(VM *vm, int argc, Value *args) {
@@ -137,7 +137,7 @@ static Value windowClear(VM *vm, int argc, Value *args) {
     }
 
     glClear(GL_COLOR_BUFFER_BIT);
-    return ZERO_VAL;
+    return NULL_VAL;
 }
 
 static Value windowDraw(VM *vm, int argc, Value *args) {
@@ -153,7 +153,7 @@ static Value windowDraw(VM *vm, int argc, Value *args) {
 
     glfwSwapBuffers(vm->window->window);
     glfwPollEvents();
-    return ZERO_VAL;
+    return NULL_VAL;
 }
 
 static Value windowSetClearColor(VM *vm, int argc, Value *args) {
@@ -205,7 +205,7 @@ static Value windowSetClearColor(VM *vm, int argc, Value *args) {
     }
 
     glClearColor(r, g, b, a);
-    return ZERO_VAL;
+    return NULL_VAL;
 }
 
 Value useWindowLib(VM *vm) {

@@ -28,18 +28,24 @@
 static void resetStack(VM *vm) {
     vm->stackTop = vm->stack;
     vm->frameCount = 0;
+#ifdef DEBUG_MODE
     vm->stackHeight = 0;
+#endif
     vm->openUpvalues = NULL;
     vm->compiler = NULL;
 }
 
+#ifdef DEBUG_MODE
 void printStack(VM *vm) {
+    printf("vvvvvvvvvvvvv\n");
     Value *sp = vm->stackTop - 1;
     for (int i = 0; i < vm->stackHeight; ++i) {
         printValueNl(*sp);
         --sp;
     }
+    printf("^^^^^^^^^^^^\n");
 }
+#endif
 
 void setRuntimeErrorCallback(VM *vm, ErrorCallback runtimeCallback) {
     vm->runtimeCallback = runtimeCallback;
@@ -279,11 +285,15 @@ void freeVM(VM *vm) {
 void push(VM *vm, Value v) {
     *vm->stackTop = v;
     vm->stackTop++;
+#ifdef DEBUG_MODE
     vm->stackHeight++;
+#endif
 }
 
 Value pop(VM *vm) {
+#ifdef DEBUG_MODE
     vm->stackHeight--;
+#endif
     vm->stackTop--;
     return *vm->stackTop;
 }
@@ -310,6 +320,7 @@ Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
     frame->closure = closure;
     frame->ip = closure->function->chunk.code;
 
+    // Push args onto the stack.
     for (int i = 0; i < argc; ++i) {
         push(vm, args[i]);
     }
@@ -317,6 +328,11 @@ Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
     frame->slots = vm->stackTop - argc - 1;
     Value value;
     run(vm, currentFrameIndex, &value);
+
+    // Pop args from the stack when done.
+    for (int i = 0; i < argc; ++i) {
+        pop(vm);
+    }
 
     return value;
 }
@@ -388,6 +404,9 @@ static bool callValue(VM *vm, Value callee, int argc) {
                     return false;
                 }
 
+#ifdef DEBUG_MODE
+                vm->stackHeight -= argc + 1;
+#endif
                 vm->stackTop -= argc + 1;
                 push(vm, result);
 
@@ -407,6 +426,9 @@ static bool callNativeFunction(VM *vm, NativeFn native, int argc) {
         return false;
     }
 
+#ifdef DEBUG_MODE
+    vm->stackHeight -= argc + 1;
+#endif
     vm->stackTop -= argc + 1;
     push(vm, res);
     return true;
@@ -499,7 +521,9 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
     Value receiver = peek(vm, argc);
     
     if (!IS_OBJ(receiver)) {
-        runtimeError(vm, "Only instances have methods.");
+        char *type = valueType(receiver);
+        runtimeError(vm, "Only objects have methods. Tried to run method on type '%s'.", type);
+        free(type);
         return false;
     }
 
@@ -1328,7 +1352,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (vm->frameCount == 0 || (frameIndex != -1 && &vm->frames[vm->frameCount - 1] == &vm->frames[frameIndex])) {
                     if (frameIndex != -1) {
                         *val = result;
-                        // pop(vm); // TODO: Is this needed? Or is this an extra pop?
+                        // TODO: This used to have a pop. Don't think I need it here.
+                        return INTERPRET_GOOD;
                     }
 
                     pop(vm);
@@ -1567,7 +1592,10 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 for (int i = count; i > 0; --i) {
                     writeValueArray(vm, &array->data, peek(vm, i));
                 }
-                
+
+#ifdef DEBUG_MODE
+                vm->stackHeight -= count + 1;
+#endif
                 vm->stackTop -= count + 1;
                 push(vm, OBJ_VAL(array));
             } break;
@@ -1999,7 +2027,10 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
     
                     mapSet(vm, map, peek(vm, i), peek(vm, i - 1));
                 }
-                
+
+#ifdef DEBUG_MODE
+                vm->stackHeight -= count * 2 + 1;
+#endif
                 vm->stackTop -= count * 2 + 1;
                 push(vm, OBJ_VAL(map));
             } break;
@@ -2019,7 +2050,10 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
     
                     setAdd(vm, set, peek(vm, i));
                 }
-                
+
+#ifdef DEBUG_MODE
+                vm->stackHeight -= count + 1;
+#endif
                 vm->stackTop -= count + 1;
                 push(vm, OBJ_VAL(set));
             } break;
