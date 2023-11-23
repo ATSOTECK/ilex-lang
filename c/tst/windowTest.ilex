@@ -18,6 +18,7 @@ window.close()
 use * from <window>
 
 newWindow("ilex", 1200, 720)
+windowSetClearColor(100, 0, 25)
 
 while (!windowShouldClose()) {
     windowClear() // Optional color

@@ -126,8 +126,8 @@ static Value windowClose(VM *vm, int argc, Value *args) {
 }
 
 static Value windowClear(VM *vm, int argc, Value *args) {
-    if (argc != 0 && argc != 1) {
-        runtimeError(vm, "Function windowClear() expected 0 or 1 arguments but got '%d'.", argc);
+    if (argc != 0) {
+        runtimeError(vm, "Function windowClear() expected 0 arguments but got '%d'.", argc);
         return ERROR_VAL;
     }
 
@@ -156,6 +156,58 @@ static Value windowDraw(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
+static Value windowSetClearColor(VM *vm, int argc, Value *args) {
+    if (argc != 3 && argc != 4) {
+        runtimeError(vm, "Function windowSetClearColor() expected 3 or 4 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    // TODO: Less dumb way of checking this.
+    if (!IS_NUMBER(args[0])) {
+        char *type = valueType(args[0]);
+        runtimeError(vm, "Function windowSetClearColor() expected type 'number' for first argument but got '%s'.", type);
+        free(type);
+        return ERROR_VAL;
+    }
+
+    if (!IS_NUMBER(args[1])) {
+        char *type = valueType(args[1]);
+        runtimeError(vm, "Function windowSetClearColor() expected type 'number' for second argument but got '%s'.", type);
+        free(type);
+        return ERROR_VAL;
+    }
+
+    if (!IS_NUMBER(args[2])) {
+        char *type = valueType(args[2]);
+        runtimeError(vm, "Function windowSetClearColor() expected type 'number' for third argument but got '%s'.", type);
+        free(type);
+        return ERROR_VAL;
+    }
+
+    if (argc == 4) {
+        if (!IS_NUMBER(args[3])) {
+            char *type = valueType(args[3]);
+            runtimeError(vm, "Function windowSetClearColor() expected type 'number' for fourth argument but got '%s'.",
+                         type);
+            free(type);
+            return ERROR_VAL;
+        }
+    }
+
+    float r, g, b, a;
+    r = AS_NUMBER(args[0]) / 255;
+    g = AS_NUMBER(args[1]) / 255;
+    b = AS_NUMBER(args[2]) / 255;
+    if (argc == 4) {
+        a = AS_NUMBER(args[3]) / 255;
+    } else {
+        a = 1.f;
+    }
+
+    glClearColor(r, g, b, a);
+    return ZERO_VAL;
+}
+
 Value useWindowLib(VM *vm) {
     ObjString *name = copyString(vm, "window", 6);
     push(vm, OBJ_VAL(name));
@@ -171,6 +223,7 @@ Value useWindowLib(VM *vm) {
     defineNative(vm, "windowClose", windowClose, &lib->values);
     defineNative(vm, "windowClear", windowClear, &lib->values);
     defineNative(vm, "windowDraw", windowDraw, &lib->values);
+    defineNative(vm, "windowSetClearColor", windowSetClearColor, &lib->values);
 
     pop(vm);
     pop(vm);
