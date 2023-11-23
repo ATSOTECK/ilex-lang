@@ -49,7 +49,7 @@ fn elfWithMost(elves) {
 
 elves ::= []
 
-with('dayOneInput.txt', 'r') {
+withFile ('dayOneInput.txt', 'r') {
     str := file.readln()
     calList ::= []
     id := 0

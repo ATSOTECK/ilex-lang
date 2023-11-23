@@ -275,7 +275,7 @@ static IlexTokenType identType() {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'h': return checkKeyword(2, 3, "ile", TK_WHILE);
-                    case 'i': return checkKeyword(2, 2, "th", TK_WITH);
+                    case 'i': return checkKeyword(2, 6, "thFile", TK_WITH);
                 }
             }
     }

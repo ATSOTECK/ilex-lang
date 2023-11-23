@@ -1,19 +1,19 @@
-with('tst.txt', 'w') {
+withFile ('tst.txt', 'w') {
     println(file)
     file.writeln('Hello world!')
 }
 
-with('tst.txt', 'r') {
+withFile ('tst.txt', 'r') {
     str ::= file.read()
     assert(str == 'Hello world!\n')
 }
 
-with('tst.txt', 'a') as tst {
+withFile ('tst.txt', 'a') as tst {
     println(tst)
     tst.write('yeet')
 }
 
-with('tst.txt', 'r') {
+withFile ('tst.txt', 'r') {
     ln()
     str := file.readln()
     
@@ -42,7 +42,7 @@ assert(str == 'ya yeet')
 assert(size == 7)
 // println('file size:', size, 'bytes')
 
-with('tst.txt', 'rb+') {
+withFile ('tst.txt', 'rb+') {
     file.seek(1)
     file.write('e')
     file.seek(0)
