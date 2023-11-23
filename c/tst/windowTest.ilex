@@ -17,7 +17,7 @@ window.close()
 // use { newWindow, windowShouldClose, windowClear, windowDraw, windowClose } from <window>
 use * from <window>
 
-newWindow("ilex", 1200, 720)
+initWindow("ilex", 1200, 720)
 windowSetClearColor(100, 0, 25)
 
 while (!windowShouldClose()) {

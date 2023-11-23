@@ -218,7 +218,7 @@ Value useWindowLib(VM *vm) {
         return OBJ_VAL(lib);
     }
 
-    defineNative(vm, "newWindow", windowNewWindow, &lib->values);
+    defineNative(vm, "initWindow", windowNewWindow, &lib->values);
     defineNative(vm, "windowShouldClose", windowShouldClose, &lib->values);
     defineNative(vm, "windowClose", windowClose, &lib->values);
     defineNative(vm, "windowClear", windowClear, &lib->values);
