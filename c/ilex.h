@@ -17,6 +17,10 @@
 
 #include <stdio.h>
 
+#ifndef __cplusplus
+#   define nullptr ((void*)0)
+#endif
+
 //#define DEBUG_PRINT_CODE
 //#define DEBUG_TRACE_EXECUTION
 
@@ -44,6 +48,9 @@
 #   endif
 #endif
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #if defined(__APPLE__)
 #   define I_MAC
 #endif
@@ -63,6 +70,9 @@
 
 #define I_MAX_PATH 4096
 #define I_ERR_MSG_SIZE 8192
+
+#define WINDOW_WIDTH_DEFAULT 1200
+#define WINDOW_HEIGHT_DEFAULT 720
 
 typedef struct VM_ VM;
 typedef uint64_t Value;
@@ -127,6 +137,7 @@ typedef void (*ErrorCallback)(const char *msg);
 #define IS_MAP(value)          isObjType(value, OBJ_MAP)
 #define IS_SET(value)          isObjType(value, OBJ_SET)
 #define IS_ABSTRACT(value)     isObjType(value, OBJ_ABSTRACT)
+#define IS_WINDOW(value)       isObjType(value, OBJ_WINDOW)
 
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
 #define AS_CLASS(value)        ((ObjClass*)AS_OBJ(value))
@@ -143,6 +154,7 @@ typedef void (*ErrorCallback)(const char *msg);
 #define AS_MAP(value)          ((ObjMap*)AS_OBJ(value))
 #define AS_SET(value)          ((ObjSet*)AS_OBJ(value))
 #define AS_ABSTRACT(value)     ((ObjAbstract*)AS_OBJ(value))
+#define AS_WINDOW(value)       ((ObjWindow*)AS_OBJ(value))
 
 typedef union {
     uint64_t bits64;
@@ -178,6 +190,8 @@ typedef enum {
     OBJ_MAP,
     OBJ_SET,
     OBJ_ABSTRACT,
+
+    OBJ_WINDOW,
 } ObjType;
 
 typedef enum {
@@ -365,6 +379,11 @@ typedef struct {
     Obj obj;
     struct tm time;
 } ObjDateTime;
+
+typedef struct {
+    Obj obj;
+    GLFWwindow *window;
+} ObjWindow;
 
 #ifdef __cplusplus
 extern "C" {

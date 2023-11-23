@@ -30,6 +30,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libs[4] = makeLib(vm, "env",    &useEnvLib);
     vm->libs[5] = makeLib(vm, "sys",    &useSysLib);
     vm->libs[6] = makeLib(vm, "json",   &useJsonLib);
+    vm->libs[7] = makeLib(vm, "window",   &useWindowLib);
 }
 
 Value useBuiltInLib(VM *vm, int idx) {

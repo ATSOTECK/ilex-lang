@@ -1,0 +1,28 @@
+/-
+use { newWindow } from <window>
+
+window ::= newWindow("ilex", 1920, 1200)
+
+while (!window.shouldClose()) {
+    window.clear() // Optional color
+    
+    window.draw()
+}
+
+window.close()
+-/
+
+// Or
+
+// use { newWindow, windowShouldClose, windowClear, windowDraw, windowClose } from <window>
+use * from <window>
+
+newWindow("ilex", 1200, 720)
+
+while (!windowShouldClose()) {
+    windowClear() // Optional color
+    
+    windowDraw()
+}
+
+windowClose()

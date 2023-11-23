@@ -242,6 +242,8 @@ VM *initVM(const char *path, int argc, char **argv) {
     vm->envLoaded = false;
     vm->fallThrough = false;
 
+    vm->window = nullptr;
+
     defineNatives(vm);
     defineStringFunctions(vm);
     defineArrayFunctions(vm);
@@ -1135,6 +1137,14 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     runtimeError(vm, "Operands must be two numbers or two strings.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
+            } break;
+            case OP_CONCAT: {
+                if (!IS_STRING(peek(vm, 0)) || !IS_STRING(peek(vm, 1))) {
+                    frame->ip = ip;
+                    runtimeError(vm, "Concat operands must be two strings.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                concat(vm);
             } break;
             case OP_INC: {
                 if (!IS_NUMBER(peek(vm, 0))) {

@@ -71,6 +71,9 @@ struct VM_ {
     ErrorCallback runtimeCallback;
     ErrorCallback assertCallback;
     ErrorCallback panicCallback;
+
+    // TODO: Add a state struct?
+    ObjWindow *window;
 };
 
 void printStack(VM *vm);

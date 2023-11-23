@@ -3,6 +3,9 @@ project(c C)
 
 set(CMAKE_C_STANDARD 99)
 
+include_directories(${PROJECT_SOURCE_DIR}/inc)
+link_directories(${PROJECT_SOURCE_DIR}/lib)
+
 set(sources
         ilex.h
         chunk.h
@@ -58,8 +61,11 @@ set(sources
         libs/lib_json.h
         libs/lib_json.c
         libs/lib_time.h
-        libs/lib_time.c)
+        libs/lib_time.c
+        glad.c)
 
-add_executable(ilex main.c ${sources} types/window.h)
+add_executable(ilex main.c ${sources} types/type_window.h types/type_window.c libs/lib_window.h libs/lib_window.c)
 
 add_library(ilex_lib ${sources})
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS} -I/usr/local/lib -framework Cocoa -framework IOKit -framework CoreVideo -framework OpenGL -lglfw3")

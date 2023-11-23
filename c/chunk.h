@@ -36,6 +36,7 @@ typedef enum {
     OP_LT,
     OP_LTEQ,
     OP_ADD,
+    OP_CONCAT,
     OP_INC,
     OP_SUB,
     OP_DEC,

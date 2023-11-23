@@ -5,6 +5,8 @@
 #ifndef __C_LEXER_H__
 #define __C_LEXER_H__
 
+#define MAX_IN_STR_DEPTH 2
+
 typedef enum {
     // Single-character tokens.
     TK_LPAREN,           // (

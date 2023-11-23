@@ -15,6 +15,11 @@ typedef struct {
     int line;
     bool interpolation;
     int interpolationDepth;
+    int inStrDepth;
+    int inStrOpenBrace[MAX_IN_STR_DEPTH];
+    char inStrQuote[MAX_IN_STR_DEPTH];
+    const char *inStrNameEnd;
+    char inStrNameQuote;
 } Lexer;
 
 Lexer lexer;
@@ -26,6 +31,9 @@ void initLexer(const char *source) {
     lexer.line = 1;
     lexer.interpolation = false;
     lexer.interpolationDepth = 0;
+    lexer.inStrDepth = 0;
+    lexer.inStrNameEnd = NULL;
+    lexer.inStrNameQuote = '\0';
 }
 
 static bool isAlpha(char c) {
@@ -78,11 +86,11 @@ static char advance() {
     return lexer.current[-1];
 }
 
-static char peek() {
+inline static char peek() {
     return *lexer.current;
 }
 
-static char peekNext() {
+inline static char peekNext() {
     if (atEnd()) {
         return '\0';
     }
@@ -277,8 +285,10 @@ static IlexTokenType identType() {
 
 static Token string(char strChar) {
     bool overwrite = false;
+    bool skipInStr = false;
     while ((peek() != strChar || overwrite) && !atEnd()) {
         overwrite = false;
+        skipInStr = false;
         
         if (peek() == '\\' && peekNext() == strChar) {
             overwrite = true;
@@ -287,6 +297,18 @@ static Token string(char strChar) {
         if (peek() == '\n') {
             lexer.line++;
         }
+
+        /*
+        if (peek() == '\\' && peekNext() == '$') {
+            skipInStr = true;
+        }
+
+        if (peek() == '$' && !skipInStr) {
+            lexer.inStrDepth++;
+            lexer.inStrQuote[lexer.inStrDepth - 1] = strChar;
+            return makeToken(TK_STRING);
+        }
+        */
 
         advance();
     }
@@ -424,8 +446,22 @@ Token nextToken() {
         case '$': return ident();
         case '(': return makeToken(TK_LPAREN);
         case ')': return makeToken(TK_RPAREN);
-        case '{': return makeToken(TK_LBRACE);
-        case '}': return makeToken(TK_RBRACE);
+        case '{': {
+            /*
+            if (lexer.inStrDepth > 0) {
+                lexer.inStrOpenBrace[lexer.inStrDepth - 1]++;
+                return nextToken();
+            }*/
+            return makeToken(TK_LBRACE);
+        }
+        case '}': {
+            /*
+            if (lexer.inStrDepth > 0) {
+                lexer.inStrOpenBrace[lexer.inStrDepth - 1]--;
+                return nextToken();
+            }*/
+            return makeToken(TK_RBRACE);
+        }
         case '[': return makeToken(TK_LBRACKET);
         case ']': return makeToken(TK_RBRACKET);
         case ';': return makeToken(TK_SEMICOLON);
