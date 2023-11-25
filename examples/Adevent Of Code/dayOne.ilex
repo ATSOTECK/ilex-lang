@@ -74,6 +74,6 @@ for (i := 0; i < elves.len(); i++) {
     println(elves[i])
 }
 
-elves.forEach(fn |elf| println(elf)) // causes crash on 8th element
+elves.forEach(fn |elf| println(elf))
 
 // println('Index', answer[0], 'is the elf with the most calories. Carrying', answer[1])

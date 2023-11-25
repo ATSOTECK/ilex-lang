@@ -1,3 +1,4 @@
+*** automated testing ***
 (done) map datatype
 (done) set datatype
 (done) shallow/deep copy for arrays/maps

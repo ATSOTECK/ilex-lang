@@ -108,7 +108,7 @@ typedef enum {
     TK_USE,
     TK_VAR,
     TK_WHILE,
-    TK_WITH,
+    TK_WITH_FILE,
 
     // No character representation.
     TK_TO_STR,

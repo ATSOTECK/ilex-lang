@@ -2309,7 +2309,7 @@ static void statement(Compiler *compiler) {
         continueStatement(compiler);
     } else if (match(compiler, TK_BREAK)) {
         breakStatement(compiler);
-    } else if (match(compiler, TK_WITH)) {
+    } else if (match(compiler, TK_WITH_FILE)) {
         withStatement(compiler);
     } else if (match(compiler, TK_LBRACE)) {
         beginScope(compiler);
