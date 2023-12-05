@@ -73,6 +73,16 @@ static int useBuiltinInstruction(const char* name, Chunk* chunk, int offset) {
     return offset + 4;
 }
 
+static int useFromBuiltinInstruction(const char* name, Chunk* chunk, int offset) {
+    uint16_t lib = (uint16_t)(chunk->code[offset + 1] << 8);
+    lib |= chunk->code[offset + 2];
+    uint8_t argc = chunk->code[offset + 3];
+    printf("%-18s '", name);
+    printValue(chunk->constants.values[lib]);
+    printf("'\n");
+    return offset + 5 + argc;
+}
+
 static int classInstruction(const char *name, Chunk *chunk, int offset) {
     uint8_t type = chunk->code[offset + 1];
     uint16_t constant = (uint16_t)(chunk->code[offset + 2] << 8);
@@ -178,9 +188,11 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_METHOD: return constantInstruction("OP_METHOD", chunk, offset);
         case OP_ASSERT: return constantInstruction("OP_ASSERT", chunk, offset);
         case OP_NEW_ARRAY: return byteInstruction("OP_NEW_ARRAY", chunk, offset);
+        case OP_NEW_MAP: return byteInstruction("OP_NEW_MAP", chunk, offset);
         case OP_USE: return constantInstruction("OP_USE", chunk, offset);
         case OP_USE_VAR: return simpleInstruction("OP_USE_VAR", offset);
         case OP_USE_BUILTIN: return useBuiltinInstruction("OP_USE_BUILTIN", chunk, offset);
+        case OP_USE_BUILTIN_VAR: return useFromBuiltinInstruction("OP_USE_BUILTIN_VAR", chunk, offset);
         case OP_USE_END: return simpleInstruction("OP_USE_END", offset);
         case OP_MULTI_CASE: return byteInstruction("OP_MULTI_CASE", chunk, offset);
         case OP_CMP_JMP: return jumpInstruction("OP_CMP_JMP", 1, chunk, offset);
@@ -192,6 +204,8 @@ int disassembleInstruction(Chunk *chunk, int offset) {
         case OP_OPEN_FILE: return constantInstruction("OP_OPEN_FILE", chunk, offset);
         case OP_CLOSE_FILE: return constantInstruction("OP_CLOSE_FILE", chunk, offset);
         case OP_DEFINE_DEFAULT: return constantInstruction("OP_DEFINE_DEFAULT", chunk, offset);
+        case OP_ENUM: return constantInstruction("OP_ENUM", chunk, offset);
+        case OP_ENUM_SET_VALUE: return constantInstruction("OP_ENUM_SET_VALUE", chunk, offset);
         default:
             printf("??? Unknown opcode %d\n", instruction);
             return offset + 1;
