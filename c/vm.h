@@ -76,6 +76,7 @@ struct VM_ {
 
     // TODO: Add a state struct?
     ObjWindow *window;
+    bool testMode;
 };
 
 #ifdef DEBUG_MODE

@@ -1,4 +1,4 @@
-use { pi, e, max, min } from <math>
+use { pi, e, max, min, cos, sin } from <math>
 use <math>
 use { version } from <ilex>
 
@@ -116,6 +116,9 @@ assert(0o10 == 8)
 assert(0O10 == 8)
 assert(0q10 == 8)
 assert(0Q10 == 8)
+
+println("sin(pi) =", sin(pi))
+println("cos(pi) =", cos(pi))
 
 println("\nMath test passed in", milliseconds(), "ms!\n")
 

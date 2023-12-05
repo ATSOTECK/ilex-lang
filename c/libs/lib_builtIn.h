@@ -16,6 +16,7 @@
 #include "lib_random.h"
 #include "lib_sys.h"
 #include "lib_window.h"
+#include "lib_ascii.h"
 
 BuiltInLibs makeLib(VM *vm, const char *name, BuiltInLib lib);
 void initBuiltInLibs(VM *vm);

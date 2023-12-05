@@ -249,6 +249,7 @@ VM *initVM(const char *path, int argc, char **argv) {
     vm->fallThrough = false;
 
     vm->window = nullptr;
+    vm->testMode = (strcmp("test", argv[1]) == 0);
 
     defineNatives(vm);
     defineStringFunctions(vm);
@@ -1352,7 +1353,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 if (vm->frameCount == 0 || (frameIndex != -1 && &vm->frames[vm->frameCount - 1] == &vm->frames[frameIndex])) {
                     if (frameIndex != -1) {
                         *val = result;
-                        // TODO: This used to have a pop. Don't think I need it here.
+                        // pop(vm); // TODO: Sometimes this pop is needed, sometimes it causes crashes.
+                        // printValueNl(peek(vm, 0));
                         return INTERPRET_GOOD;
                     }
 

@@ -18,10 +18,10 @@ BuiltInLibs makeLib(VM *vm, const char *name, BuiltInLib lib) {
 }
 
 void initBuiltInLibs(VM *vm) {
-    vm->libCapacity = 0;
+    vm->libCapacity = 9;
     vm->libCapacity = GROW_CAPACITY(vm->libCapacity);
 
-    vm->libCount = 7;
+    vm->libCount = 9;
     vm->libs = ALLOCATE(vm, BuiltInLibs, vm->libCapacity);
     vm->libs[0] = makeLib(vm, "math",   &useMathLib);
     vm->libs[1] = makeLib(vm, "ilex",   &useIlexLib);
@@ -30,7 +30,8 @@ void initBuiltInLibs(VM *vm) {
     vm->libs[4] = makeLib(vm, "env",    &useEnvLib);
     vm->libs[5] = makeLib(vm, "sys",    &useSysLib);
     vm->libs[6] = makeLib(vm, "json",   &useJsonLib);
-    vm->libs[7] = makeLib(vm, "window",   &useWindowLib);
+    vm->libs[7] = makeLib(vm, "window", &useWindowLib);
+    vm->libs[8] = makeLib(vm, "ascii",  &useAsciiLib);
 }
 
 Value useBuiltInLib(VM *vm, int idx) {
