@@ -7,6 +7,7 @@ enum Test {
 println(Test::First)
 println(Test::Second)
 println(Test::Third)
+println(Test::values())
 
 enum Test2 {
     First = "32",
@@ -14,10 +15,11 @@ enum Test2 {
     Third,
 }
 
-ln()
+newLine()
 println(Test2::First)
 println(Test2::Second)
 println(Test2::Third)
+println(Test2::values())
 
 enum Test3 {
     First = 123,
@@ -25,10 +27,11 @@ enum Test3 {
     Third
 }
 
-ln()
+newLine()
 println(Test3::First)
 println(Test3::Second)
 println(Test3::Third)
+println(Test3::values())
 
 x := Test3::First
 assert (x == 123, "x should be 123")
@@ -36,7 +39,7 @@ assert (x == 123, "x should be 123")
 x = Test2::Second
 assert (x == "Yeet", "x should be Yeet")
 
-ln()
+newLine()
 println(Test)
 println(typeof(Test))
 

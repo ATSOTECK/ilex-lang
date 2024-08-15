@@ -180,6 +180,8 @@ Value useSysLib(VM *vm) {
     defineNative(vm, "rmdir", sysRMDIR, &lib->values);
     defineNative(vm, "mkdir", sysMKDIR, &lib->values);
 
+    defineNativeValue(vm, "captureOutput", BOOL_VAL(true), &lib->values);
+
     pop(vm);
     pop(vm);
 

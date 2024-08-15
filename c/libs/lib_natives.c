@@ -21,11 +21,11 @@ static Value println(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value ln(VM *vm, int argc, Value *args) {
+static Value newLine(VM *vm, int argc, Value *args) {
     int count = 1;
 
     if (argc > 1) {
-        runtimeError(vm, "Function ln() expected 1 or 0 arguments but got %d", argc);
+        runtimeError(vm, "Function newLine() expected 1 or 0 arguments but got %d", argc);
     } else if (argc == 1) {
         count = (int)AS_NUMBER(args[0]);
         if (count <= 0) {
@@ -106,7 +106,7 @@ static Value nativeToString(VM *vm, int argc, Value *args) {
 void defineNatives(VM *vm) {
     defineNative(vm, "println", println, &vm->globals);
     defineNative(vm, "debugln", println, &vm->globals); // Same as println but more searchable.
-    defineNative(vm, "ln", ln, &vm->globals);
+    defineNative(vm, "newLine", newLine, &vm->globals);
     defineNative(vm, "print", print, &vm->globals);
     defineNative(vm, "debug", print, &vm->globals); // Same as print but more searchable.
     defineNative(vm, "printErr", stdErr, &vm->globals);

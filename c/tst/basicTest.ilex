@@ -104,7 +104,7 @@ println("someVar:", someVar)
 someVar := nullVar || 13
 println("someVar:", someVar)
 
-ln()
+newLine()
 
 aVar := null
 aVar ??= 12
@@ -123,7 +123,7 @@ aVar = 10
 aVar ??= 12
 println("aVar:", aVar)
 
-ln()
+newLine()
 
 tVar := false
 idx := 0
@@ -136,7 +136,7 @@ do {
     }
 } while (tVar)
 
-ln()
+newLine()
 
 tVar = true
 do {

@@ -125,10 +125,6 @@ bool tableSet(VM *vm, Table *table, ObjString *key, Value value, bool readOnly) 
     entry->value = value;
     entry->readOnly = readOnly;
     
-    if (strcmp(key->str, "aardvark") == 0 && (readOnly || entry->readOnly)) {
-        printf("yeet\n");
-    }
-    
     return isNewKey;
 }
 

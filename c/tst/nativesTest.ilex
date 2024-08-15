@@ -28,9 +28,9 @@ println("Ilex version minor:", ilex::versionMinor())
 println("Ilex version build:", ilex::versionBuild())
 println("Version date:", ilex::versionDate())
 
-println("ln() test begin")
-ln(5)
-println("ln() test end")
+println("newLine() test begin")
+newLine(5)
+println("newLine() test end")
 
 debugln("yeet")
 print("yote\n")

@@ -64,18 +64,18 @@ println(long.indexOf(42, 3))
 println(long.indexOf(42, 6))
 println(long.indexOf(42, 30))
 
-ln()
+newLine()
 println('Choosing from:', long)
 for (i := 0; i < 10; i++) {
     num ::= random::choose(long)
     println('chose', num)
 }
 
-ln()
+newLine()
 println('max', math::max(long))
 println('min', math::min(long))
 
-ln()
+newLine()
 println(long)
 long.sort()
 println(long)
@@ -86,7 +86,7 @@ println(long)
 long.reverse()
 println(long)
 
-ln()
+newLine()
 println(long.join())
 println(long.join('-'))
 println(long.join('/'))
@@ -96,7 +96,7 @@ println([].join('empty'))
 
 long.clear()
 println(long)
-ln()
+newLine()
 
 vLong := []
 
@@ -171,24 +171,24 @@ println(a1, a2)
 
 a1[0] = 12
 
-ln()
+newLine()
 println(a1, a2)
 
 a2 = a1.shallowCopy()
 a1[0] = 0
 
-ln()
+newLine()
 println(a1, a2)
 
 a1[1][0] = 12
 
-ln()
+newLine()
 println(a1, a2)
 
 a2 = a1.deepCopy()
 a1[1][0] = 1
 
-ln()
+newLine()
 println(a1, a2)
 
 allTruthy ::= [true, true, true, 1, 'yeet']

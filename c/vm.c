@@ -13,6 +13,7 @@
 
 #include "types/type_array.h"
 #include "libs/lib_builtIn.h"
+#include "types/type_enum.h"
 #include "types/type_file.h"
 #include "types/type_map.h"
 #include "libs/lib_natives.h"
@@ -240,6 +241,7 @@ VM *initVM(const char *path, int argc, char **argv) {
     initTable(&vm->fileFunctions);
     initTable(&vm->mapFunctions);
     initTable(&vm->setFunctions);
+    initTable(&vm->enumFunctions);
 
     vm->initString = NULL;
     vm->scriptName = NULL;
@@ -257,6 +259,7 @@ VM *initVM(const char *path, int argc, char **argv) {
     defineFileFunctions(vm);
     defineMapFunctions(vm);
     defineSetFunctions(vm);
+    defineEnumFunctions(vm);
 
     initBuiltInLibs(vm);
 
@@ -272,6 +275,7 @@ void freeVM(VM *vm) {
     freeTable(vm, &vm->fileFunctions);
     freeTable(vm, &vm->mapFunctions);
     freeTable(vm, &vm->setFunctions);
+    freeTable(vm, &vm->enumFunctions);
     for (int i = 0; i < vm->libCount; ++i) {
         FREE(vm, char, vm->libs[i].name);
     }
@@ -340,7 +344,8 @@ Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
 
 static bool call(VM *vm, ObjClosure *closure, int argc) {
     if (argc < closure->function->arity ||
-        argc > closure->function->arity + closure->function->arityDefault) {
+        argc > closure->function->arity + closure->function->arityDefault)
+    {
         runtimeError(vm ,"Function '%s' expected %d arguments but got %d.", closure->function->name->str,
                      closure->function->arity + closure->function->arityDefault, argc);
         return ERROR_VAL;
@@ -550,8 +555,12 @@ static bool invoke(VM *vm, ObjString *name, int argc) {
             return false;
         }
         case OBJ_ENUM: {
-            ObjEnum *enumObj = AS_ENUM(receiver);
             Value value;
+            if (tableGet(&vm->enumFunctions, name, &value)) {
+                return callNativeFunction(vm, AS_NATIVE(value), argc);
+            }
+            
+            ObjEnum *enumObj = AS_ENUM(receiver);
 
             if (tableGet(&enumObj->values, name, &value)) {
                 return callValue(vm, value, argc);

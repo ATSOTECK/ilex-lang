@@ -47,6 +47,7 @@ struct VM_ {
     Table fileFunctions;
     Table mapFunctions;
     Table setFunctions;
+    Table enumFunctions;
 
     size_t bytesAllocated;
     size_t nextGC;

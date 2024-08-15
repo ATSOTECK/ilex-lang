@@ -2,19 +2,19 @@ for (var i = 0; i < 10; i++) {
     println(i)
 }
 
-ln()
+newLine()
 
 for (j := 0; j < 10; j++) {
     println(j)
 }
 
-ln()
+newLine()
 
 for (k := 10; k >= 0; k--) {
     println(k)
 }
 
-ln()
+newLine()
 
 for (l := 0; l < 20; l++) {
     if (l % 2 != 0) {
@@ -24,7 +24,7 @@ for (l := 0; l < 20; l++) {
     println(l)
 }
 
-ln()
+newLine()
 
 for (m := 0; m < 10; m++) {
     n := m + 1

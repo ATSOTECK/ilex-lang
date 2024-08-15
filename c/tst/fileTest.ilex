@@ -14,14 +14,14 @@ withFile ('tst.txt', 'a') as tst {
 }
 
 withFile ('tst.txt', 'r') {
-    ln()
+    newLine()
     str := file.readln()
     
     while (str != null) {
         println(str)
         str = file.readln()
     }
-    ln()
+    newLine()
 }
 
 use { openFile } from <io>
