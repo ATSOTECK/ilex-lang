@@ -1,0 +1,1 @@
+cp ./bin/ilex /usr/local/bin
