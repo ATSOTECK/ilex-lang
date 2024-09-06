@@ -105,6 +105,7 @@ typedef enum {
     TK_STATIC,
     TK_THIS,
     TK_TRUE,
+    TK_UNTIL,
     TK_USE,
     TK_VAR,
     TK_WHILE,

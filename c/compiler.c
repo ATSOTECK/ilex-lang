@@ -1178,6 +1178,7 @@ ParseRule rules[] = {
         [TK_ENUM]             = {NULL,     NULL,    PREC_NONE},
         [TK_WHILE]            = {NULL,     NULL,    PREC_NONE},
         [TK_DO]               = {NULL,     NULL,    PREC_NONE},
+        [TK_UNTIL]            = {NULL,     NULL,    PREC_NONE},
         [TK_SWITCH]           = {NULL,     NULL,    PREC_NONE},
         [TK_CASE]             = {NULL,     NULL,    PREC_NONE},
         [TK_DEFAULT]          = {NULL,     NULL,    PREC_NONE},
@@ -1249,6 +1250,7 @@ static void synchronize(Parser *parser) {
             case TK_IF:
             case TK_WHILE:
             case TK_DO:
+            case TK_UNTIL:
             case TK_RETURN:
             case TK_ASSERT:
             case TK_SWITCH:
@@ -2037,6 +2039,39 @@ static void doWhileStatement(Compiler *compiler) {
     endLoop(compiler, true);
 }
 
+static void untilStatement(Compiler *compiler) {
+    Loop loop;
+    loop.start = currentChunk(compiler)->count;
+    loop.scopeDepth = compiler->scopeDepth;
+    loop.enclosing = compiler->loop;
+    compiler->loop = &loop;
+    
+    bool expectClosingParen = false;
+
+    if (check(compiler, TK_LPAREN)) {
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'until'.");
+        expectClosingParen = true;
+    }
+    
+    expression(compiler);
+    
+    if (expectClosingParen) {
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    }
+
+    compiler->loop->end = emitJump(compiler, OP_JUMP_IF_TRUE);
+    emitByte(compiler, OP_POP);
+    compiler->loop->body = compiler->function->chunk.count;
+
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after until loop.");
+    beginScope(compiler);
+    block(compiler);
+    endScope(compiler);
+
+    emitLoop(compiler, compiler->loop->start);
+    endLoop(compiler, false);
+}
+
 static void useStatement(Compiler *compiler, bool isFrom) {
     if (compiler->scopeDepth > 0) {
         error(compiler->parser, "'use' must be at top level code.");
@@ -2341,6 +2376,8 @@ static void statement(Compiler *compiler) {
         whileStatement(compiler);
     } else if (match(compiler, TK_DO)) {
         doWhileStatement(compiler);
+    } else if (match(compiler, TK_UNTIL)) {
+        untilStatement(compiler); 
     } else if (match(compiler, TK_ASSERT)) {
         assertStatement(compiler);
     } else if (match(compiler, TK_PANIC)) {

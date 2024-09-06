@@ -269,7 +269,13 @@ static IlexTokenType identType() {
                     case 'r': return checkKeyword(2, 2, "ue", TK_TRUE);
                 }
             } break;
-        case 'u': return checkKeyword(1, 2, "se", TK_USE);
+        case 'u': 
+            if (lexer.current - lexer.start > 1) {
+                switch (lexer.start[1]) {
+                    case 's': return checkKeyword(2, 1, "e", TK_USE);
+                    case 'n': return checkKeyword(2, 3, "til", TK_UNTIL);
+                }
+            }
         case 'v': return checkKeyword(1, 2, "ar", TK_VAR);
         case 'w':
             if (lexer.current - lexer.start > 1) {
