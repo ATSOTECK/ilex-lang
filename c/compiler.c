@@ -136,8 +136,8 @@ static bool match(Compiler *compiler, IlexTokenType type) {
     if (!check(compiler, type)) {
         return false;
     }
+    
     advance(compiler->parser);
-
     return true;
 }
 
@@ -1752,7 +1752,12 @@ static void endLoop(Compiler *compiler, bool isDo) {
 
 static void forStatement(Compiler *compiler) {
     beginScope(compiler);
-    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'for'.");
+    bool expectClosingParen = false;
+    
+    if (check(compiler, TK_LPAREN)) {
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'for'.");
+        expectClosingParen = true;
+    }
 
     bool initializer = true;
     if (match(compiler, TK_SEMICOLON)) {
@@ -1792,7 +1797,9 @@ static void forStatement(Compiler *compiler) {
         int incrementStart = currentChunk(compiler)->count;
         expression(compiler);
         emitByte(compiler, OP_POP);
-        eat(compiler->parser, TK_RPAREN, "Expect ')' after for clauses.");
+        if (expectClosingParen) {
+            eat(compiler->parser, TK_RPAREN, "Expect ')' after for clauses.");
+        }
 
         emitLoop(compiler, compiler->loop->start);
         compiler->loop->start = incrementStart;
@@ -1800,7 +1807,7 @@ static void forStatement(Compiler *compiler) {
     }
 
     compiler->loop->body = compiler->function->chunk.count;
-    eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after for loop.");
     beginScope(compiler);
     block(compiler);
     endScope(compiler);
@@ -1840,11 +1847,20 @@ static void panicStatement(Compiler *compiler) {
 static void switchStatement(Compiler *compiler) {
     int caseEnds[256];
     int caseCount = 0;
+    bool expectClosingParen = false;
 
-    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'switch'.");
+    if (check(compiler, TK_LPAREN)) {
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'switch'.");
+        expectClosingParen = true;
+    }
+    
     expression(compiler);
-    eat(compiler->parser, TK_RPAREN, "Expect ')' after expression.");
-    eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
+    
+    if (expectClosingParen) {
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after expression.");
+    }
+    
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after switch statement.");
     eat(compiler->parser, TK_CASE, "Expect at least one 'case' block.");
 
     int nextJmp = -1;
@@ -1915,14 +1931,23 @@ static void switchStatement(Compiler *compiler) {
 }
 
 static void ifStatement(Compiler *compiler) {
-    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'if'.");
+    bool expectClosingParen = false;
+    
+    if (check(compiler, TK_LPAREN)) {
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'if'.");
+        expectClosingParen = true;
+    }
+    
     expression(compiler);
-    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    
+    if (expectClosingParen) {
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    }
 
     int thenJump = emitJump(compiler, OP_JUMP_IF_FALSE);
     emitByte(compiler, OP_POP);
 
-    eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after if statement.");
     beginScope(compiler);
     block(compiler);
     endScope(compiler);
@@ -1952,16 +1977,25 @@ static void whileStatement(Compiler *compiler) {
     loop.scopeDepth = compiler->scopeDepth;
     loop.enclosing = compiler->loop;
     compiler->loop = &loop;
+    
+    bool expectClosingParen = false;
 
-    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'while'.");
+    if (check(compiler, TK_LPAREN)) {
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'while'.");
+        expectClosingParen = true;
+    }
+    
     expression(compiler);
-    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    
+    if (expectClosingParen) {
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    }
 
     compiler->loop->end = emitJump(compiler, OP_JUMP_IF_FALSE);
     emitByte(compiler, OP_POP);
     compiler->loop->body = compiler->function->chunk.count;
 
-    eat(compiler->parser, TK_LBRACE, "Expect '{' after ')'.");
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after while loop.");
     beginScope(compiler);
     block(compiler);
     endScope(compiler);
@@ -1978,16 +2012,26 @@ static void doWhileStatement(Compiler *compiler) {
     compiler->loop = &loop;
 
     compiler->loop->body = compiler->function->chunk.count;
-
+    
+    bool expectClosingParen = false;
+    
     eat(compiler->parser, TK_LBRACE, "Expect '{' after 'do'.");
     beginScope(compiler);
     block(compiler);
     endScope(compiler);
 
     eat(compiler->parser, TK_WHILE, "Expect 'while' after '}'.");
-    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'while'.");
+    
+    if (check(compiler, TK_LPAREN)) {
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'while'.");
+        expectClosingParen = true;
+    }
+    
     expression(compiler);
-    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    
+    if (expectClosingParen) {
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    }
 
     compiler->loop->end = emitJump(compiler, OP_JUMP_DO_WHILE);
     endLoop(compiler, true);
