@@ -32,4 +32,17 @@ map3.forEach(fn |key, value| -> {
     println(key, value)
 })
 
+map4 ::= { key1: 'value1', 'key2': 1, key3: 3 }
+assert(map4.key1 == 'value1')
+assert(map4['key1'] == 'value1')
+assert(map4.get('key1') == 'value1')
+
+assert(map4.key2 == 1)
+assert(map4['key2'] == 1)
+assert(map4.get('key2') == 1)
+
+assert(map4.key3 == 3)
+assert(map4['key3'] == 3)
+assert(map4.get('key3') == 3)
+
 println("Map test \033[32mpassed\033[0m in", milliseconds(), "ms!")

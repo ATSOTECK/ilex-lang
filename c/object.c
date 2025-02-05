@@ -172,8 +172,8 @@ char *newCStringLen(const char *str, int len) {
     return ret;
 }
 
-ObjString *takeString(VM *vm, char *str, int len) {
-    uint32_t hash = hashString(str, len);
+ObjString *takeString(VM *vm, char *str, const int len) {
+    const uint32_t hash = hashString(str, len);
     ObjString *interned = tableFindString(&vm->strings, str, len, hash);
     if (interned != NULL) {
         FREE_ARRAY(vm, char, str, len + 1);

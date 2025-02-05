@@ -831,7 +831,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             pop(vm); // Instance.
                             push(vm, value);
                             break;
-                        } else if (tableGet(&instance->privateFields, name, &value)) {
+                        }
+                        if (tableGet(&instance->privateFields, name, &value)) {
                             frame->ip = ip;
                             runtimeError(vm, "Can't access private property '%s' on '%s' instance.", name->str, instance->objClass->name->str);
                             return INTERPRET_RUNTIME_ERROR;
@@ -903,6 +904,19 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                             frame->ip = ip;
                             runtimeError(vm, "'%s' does not have property '%s'.", checkingClass->name->str, name->str);
                             return INTERPRET_RUNTIME_ERROR;
+                        }
+                    } break;
+                    case OBJ_MAP: {
+                        ObjMap *map = AS_MAP(receiver);
+                        Value name = READ_CONSTANT();
+
+                        pop(vm); // map
+
+                        Value v;
+                        if (mapGet(map, name, &v)) {
+                            push(vm, v);
+                        } else {
+                            push(vm, NULL_VAL);
                         }
                     } break;
                     default: {

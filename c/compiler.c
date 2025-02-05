@@ -596,6 +596,15 @@ static void array(Compiler *compiler, bool canAssign) {
     eat(compiler->parser, TK_RBRACKET, "Expect ']' after array elements.");
 }
 
+static void mapKeyIdent(Compiler *compiler) {
+    const int strLen = compiler->parser->current.len;
+    char *str = ALLOCATE(compiler->parser->vm, char, strLen + 1);
+
+    memcpy(str, compiler->parser->current.start, strLen);
+    emitConstant(compiler, OBJ_VAL(takeString(compiler->parser->vm, str, strLen)));
+    advance(compiler->parser);
+}
+
 static void map(Compiler *compiler, bool canAssign) {
     int count = 0;
     
@@ -603,8 +612,12 @@ static void map(Compiler *compiler, bool canAssign) {
         if (check(compiler, TK_RBRACE)) {
             break;
         }
-    
-        expression(compiler);
+
+        if (check(compiler, TK_IDENT)) {
+            mapKeyIdent(compiler);
+        } else {
+            expression(compiler);
+        }
         eat(compiler->parser, TK_COLON, "Expect ':'.");
         expression(compiler);
         ++count;
