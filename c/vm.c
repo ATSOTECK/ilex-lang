@@ -1088,7 +1088,9 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         frame->ip = ip;
                         runtimeError(vm, "Cannot assign to private variable '%s'.", var->str);
                         return INTERPRET_RUNTIME_ERROR;
-                    } else if (!tableGet(&instance->fields, var, &unused)) {
+                    }
+
+                    if (!tableGet(&instance->fields, var, &unused)) {
                         frame->ip = ip;
                         runtimeError(vm, "Instance of '%s' contains no variable '%s'.", instance->objClass->name->str, var->str);
                         return INTERPRET_RUNTIME_ERROR;
@@ -1124,6 +1126,21 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     }
                     pop(vm); // Value.
                     // pop(vm); // Class.
+                } else if (IS_MAP(peek(vm, 1))) {
+                    ObjMap *map = AS_MAP(peek(vm, 1));
+                    Value key = READ_CONSTANT();
+
+                    Value unused;
+                    if (!mapGet(map, key, &unused)) {
+                        ObjString *str = AS_STRING(key);
+                        frame->ip = ip;
+                        runtimeError(vm, "Key '%s' not found, cannot add keys to map via the dot operator.", str->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    mapSet(vm, map, key, peek(vm, 0));
+
+                    pop(vm); // map
                 } else {
                     char *type = valueType(peek(vm, 1));
                     frame->ip = ip;
