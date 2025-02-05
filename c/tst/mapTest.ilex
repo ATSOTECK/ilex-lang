@@ -55,7 +55,7 @@ fn takesMap(cfg) {
 takesMap({ port: 8000 })
 
 emptyMap ::= {}
-assert(emptyMap.key == null)
+// assert(emptyMap.key == null) // This will cause a runtime error.
 assert(emptyMap['key'] == null)
 assert(emptyMap.get('key') == null)
 assert(emptyMap.get('key', 'yeet') == 'yeet')

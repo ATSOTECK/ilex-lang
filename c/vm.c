@@ -821,7 +821,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                switch ((getObjType(receiver))) {
+                switch (getObjType(receiver)) {
                     case OBJ_INSTANCE: {
                         ObjInstance *instance = AS_INSTANCE(receiver);
                         ObjString *name = READ_STRING();
@@ -916,7 +916,10 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                         if (mapGet(map, name, &v)) {
                             push(vm, v);
                         } else {
-                            push(vm, NULL_VAL);
+                            ObjString *str = AS_STRING(name);
+                            frame->ip = ip;
+                            runtimeError(vm, "Map does not have property '%s'.", str->str);
+                            return INTERPRET_RUNTIME_ERROR;
                         }
                     } break;
                     default: {
@@ -2125,6 +2128,11 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     push(vm, values[i - 1]);
                 }
             } break;
+            default: {
+                frame->ip = ip;
+                runtimeError(vm, "Unknown OP.");
+                return INTERPRET_RUNTIME_ERROR;
+            }
         }
     }
 
