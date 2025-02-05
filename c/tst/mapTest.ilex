@@ -45,4 +45,10 @@ assert(map4.key3 == 3)
 assert(map4['key3'] == 3)
 assert(map4.get('key3') == 3)
 
+fn takesMap(cfg) {
+    assert(cfg.port == 8000)
+}
+
+takesMap({ port: 8000 })
+
 println("Map test \033[32mpassed\033[0m in", milliseconds(), "ms!")

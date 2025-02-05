@@ -36,31 +36,31 @@ void initLexer(const char *source) {
     lexer.inStrNameQuote = '\0';
 }
 
-static bool isAlpha(char c) {
+static bool isAlpha(const char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-static bool isDigit(char c) {
+static bool isDigit(const char c) {
     return c >= '0' && c <= '9';
 }
 
-static bool isOctDigit(char c) {
-    return ((c >= '0' && c <= '7') || (c == '_'));
+static bool isOctDigit(const char c) {
+    return (c >= '0' && c <= '7') || c == '_';
 }
 
-static bool isHexDigit(char c) {
-    return ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') || (c == '_'));
+static bool isHexDigit(const char c) {
+    return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') || (c == '_');
 }
 
-static bool isAlphaNumeric(char c) {
-    return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') || (c >= '0' && c <= '9');
+static bool isAlphaNumeric(const char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (c >= '0' && c <= '9');
 }
 
 static bool atEnd() {
     return *lexer.current == '\0';
 }
 
-static Token makeToken(IlexTokenType type) {
+static Token makeToken(const IlexTokenType type) {
     Token token;
     token.type = type;
     token.start = lexer.start;
@@ -100,7 +100,7 @@ inline static char peekNext() {
 
 static void skipWhitespace() {
     for (;;) {
-        char c = peek();
+        const char c = peek();
         switch (c) {
             case ' ':
             case '\r':
@@ -143,7 +143,7 @@ static void skipWhitespace() {
     }
 }
 
-static IlexTokenType checkKeyword(int start, int len, const char *rest, IlexTokenType type) {
+static IlexTokenType checkKeyword(const int start, const int len, const char *rest, const IlexTokenType type) {
     if (lexer.current - lexer.start == start + len && memcmp(lexer.start + start, rest, len) == 0) {
         return type;
     }
@@ -151,7 +151,7 @@ static IlexTokenType checkKeyword(int start, int len, const char *rest, IlexToke
     return TK_IDENT;
 }
 
-static bool match(char expected) {
+static bool match(const char expected) {
     if (atEnd()) {
         return false;
     }
@@ -166,7 +166,7 @@ static bool match(char expected) {
 
 static IlexTokenType identType() {
     switch (lexer.start[0]) {
-        case 'a':
+        case 'a': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'b': return checkKeyword(2, 6, "stract", TK_ABSTRACT);
@@ -174,34 +174,39 @@ static IlexTokenType identType() {
                     case 's':
                         if (lexer.start[2] == 's') {
                             return checkKeyword(2, 4, "sert", TK_ASSERT);
-                        } else {
-                            return checkKeyword(2, 0, "", TK_AS);
                         }
+                        return checkKeyword(2, 0, "", TK_AS);
+                    default: break;
                 }
             }
+        } break;
         case 'b': return checkKeyword(1, 4, "reak", TK_BREAK);
-        case 'c':
+        case 'c': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'a': return checkKeyword(2, 2, "se", TK_CASE);
                     case 'l': return checkKeyword(2, 3, "ass", TK_CLASS);
                     case 'o': {
-                        IlexTokenType tk = checkKeyword(2, 3, "nst", TK_CONST);
+                        const IlexTokenType tk = checkKeyword(2, 3, "nst", TK_CONST);
                         if (tk == TK_IDENT) {
                             return checkKeyword(2, 6, "ntinue", TK_CONTINUE);
                         }
                         return tk;
                     }
+                    default: break;
                 }
             }
-        case 'd':
+        } break;
+        case 'd': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'e': return checkKeyword(2, 5, "fault", TK_DEFAULT);
                     case 'o': return checkKeyword(2, 0, "", TK_DO);
+                    default: break;
                 }
             }
-        case 'e':
+        } break;
+        case 'e': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'l':
@@ -209,81 +214,100 @@ static IlexTokenType identType() {
                             switch (lexer.start[2]) {
                                 case 'i': return checkKeyword(3, 1, "f", TK_ELIF);
                                 case 's': return checkKeyword(3, 1, "e", TK_ELSE);
+                                default: break;
                             }
                         }
                     case 'n': return checkKeyword(2, 2, "um", TK_ENUM);
+                    default: break;
                 }
             }
-        case 'f':
+        } break;
+        case 'f': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'a': return checkKeyword(2, 3, "lse", TK_FALSE);
                     case 'n': return TK_FN;
                     case 'o': return checkKeyword(2, 1, "r", TK_FOR);
                     case 'r': return checkKeyword(2, 2, "om", TK_FROM);
+                    default: break;
                 }
             }
-        case 'i':
+        } break;
+        case 'i': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'f': return TK_IF;
                     case 'n': return checkKeyword(2, 6, "herits", TK_INHERITS);
+                    default: break;
                 }
             }
-        case 'n':
+        } break;
+        case 'n': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'a': return checkKeyword(2, 7, "mespace", TK_NAMESPACE);
                     case 'u': return checkKeyword(2, 2, "ll", TK_NULL);
+                    default: break;
                 }
             }
+        } break;
         case 'o': return checkKeyword(1, 1, "r", TK_OR);
-        case 'p':
+        case 'p': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'a': {
-                        int tk = checkKeyword(2, 3, "nic", TK_PANIC);
+                        const int tk = checkKeyword(2, 3, "nic", TK_PANIC);
                         if (tk == TK_PANIC && match('!')) {
                             return tk;
-                        } else {
-                            return TK_IDENT;
                         }
+                        return TK_IDENT;
                     }
                     case 'r': return checkKeyword(2, 5, "ivate", TK_PRIVATE);
                     case 'u': return checkKeyword(2, 4, "blic", TK_PUBLIC);
+                    default: break;
                 }
             }
+        } break;
         case 'r': return checkKeyword(1, 5, "eturn", TK_RETURN);
-        case 's':
+        case 's': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'u': return checkKeyword(2, 3, "per", TK_SUPER);
                     case 'w': return checkKeyword(2, 4, "itch", TK_SWITCH);
                     case 't': return checkKeyword(2, 4, "atic", TK_STATIC);
+                    default: break;
                 }
             }
-        case 't':
+        } break;
+        case 't': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'h': return checkKeyword(2, 2, "is", TK_THIS);
                     case 'r': return checkKeyword(2, 2, "ue", TK_TRUE);
+                    default: break;
                 }
-            } break;
-        case 'u': 
+            }
+        } break;
+        case 'u': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 's': return checkKeyword(2, 1, "e", TK_USE);
                     case 'n': return checkKeyword(2, 3, "til", TK_UNTIL);
+                    default: break;
                 }
             }
+        } break;
         case 'v': return checkKeyword(1, 2, "ar", TK_VAR);
-        case 'w':
+        case 'w': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'h': return checkKeyword(2, 3, "ile", TK_WHILE);
                     case 'i': return checkKeyword(2, 6, "thFile", TK_WITH_FILE);
+                    default: break;
                 }
             }
+        } break;
+        default: break;
     }
     
     return TK_IDENT;
@@ -291,10 +315,10 @@ static IlexTokenType identType() {
 
 static Token string(char strChar) {
     bool overwrite = false;
-    bool skipInStr = false;
+    // bool skipInStr = false;
     while ((peek() != strChar || overwrite) && !atEnd()) {
         overwrite = false;
-        skipInStr = false;
+        // skipInStr = false;
         
         if (peek() == '\\' && peekNext() == strChar) {
             overwrite = true;
@@ -439,7 +463,7 @@ Token nextToken() {
         return makeToken(TK_EOF);
     }
 
-    char c = advance();
+    const char c = advance();
     if (isAlpha(c)) {
         return ident();
     }
