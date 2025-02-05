@@ -1,2 +1,2 @@
 @echo off
-cloc . --by-file --exclude-dir=lib,inc,cmake-build-debug,cmake-build-release,.idea,.git,docs,benchmark,json,.vscode --not-match-f="CMakeLists.txt|scc|glad.c" --quiet --report-file=scc.txt
+cloc . --by-file --exclude-dir=lib,inc,cmake-build-debug,cmake-build-release,.idea,.git,docs,benchmark,json,.vscode --not-match-f="CMakeLists.txt|scc|glad.c|.txt" --quiet --report-file=scc.txt
