@@ -1,4 +1,5 @@
 assert({} == {})
+assert({} != [])
 
 map ::= { 'key1' : 'yeet', 'key2' : 12 }
 mapSame ::= { 'key1' : 'yeet', 'key2' : 12 }
@@ -55,10 +56,33 @@ fn takesMap(cfg) {
 takesMap({ port: 8000 })
 
 emptyMap ::= {}
-// assert(emptyMap.key == null) // This will cause a runtime error.
+// assert(emptyMap.key == null) // This will cause a runtime error. Should it?
 assert(emptyMap['key'] == null)
 assert(emptyMap.get('key') == null)
 assert(emptyMap.get('key', 'yeet') == 'yeet')
+
+nestedMap ::= { a: { one: 1 } }
+assert(nestedMap.a.one == 1)
+
+map5 ::= { key1: "bla" }
+assert(map5.key1 == "bla")
+map5.clear()
+assert(map5 == {})
+assert({} == map5)
+
+map6 ::= { a: 'a' }
+map7 ::= { b: 'b' }
+map6.update(map7)
+assert(map6 == { a: 'a', b: 'b' }, "Merge failed")
+
+map8 ::= { a: 'a' }
+map9 ::= { a: '1', b: '2' }
+map8.update(map9)
+assert(map8 == map9, "Merge failed")
+
+map10 := { a: 'a' }
+map10.merge(map9)
+assert(map10 == { a: 'a', b: '2' })
 
 println("Map test \033[32mpassed\033[0m in", milliseconds(), "ms!")
 

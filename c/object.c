@@ -415,8 +415,8 @@ char *mapToString(ObjMap *map) {
     memcpy(mapStr, "{", 1);
     int strLen = 1;
     
-    for (int i = 0; i <= map->capacity; ++i) {
-        MapItem *item = &map->items[i];
+    for (int i = 0; i < map->capacity + 1; ++i) {
+        const MapItem *item = &map->items[i];
         if (IS_ERR(item->key)) {
             continue;
         }
@@ -427,7 +427,7 @@ char *mapToString(ObjMap *map) {
         int keySize;
         
         if (IS_STRING(item->key)) {
-            ObjString *str = AS_STRING(item->key);
+            const ObjString *str = AS_STRING(item->key);
             key = str->str;
             keySize = str->len;
         } else {
@@ -468,7 +468,7 @@ char *mapToString(ObjMap *map) {
         int valueSize;
         
         if (IS_STRING(item->value)) {
-            ObjString *str = AS_STRING(item->value);
+            const ObjString *str = AS_STRING(item->value);
             valueStr = str->str;
             valueSize = str->len;
         } else {
@@ -583,7 +583,7 @@ char *setToString(ObjSet *set) {
     return setStr;
 }
 
-static void adjustMapCapacity(VM *vm, ObjMap *map, int capacity) {
+static void adjustMapCapacity(VM *vm, ObjMap *map, const int capacity) {
     MapItem *items = ALLOCATE(vm, MapItem, capacity + 1);
     for (int i = 0; i <= capacity; ++i) {
         items[i].key = ERROR_VAL;
@@ -592,14 +592,14 @@ static void adjustMapCapacity(VM *vm, ObjMap *map, int capacity) {
     }
     
     MapItem *oldItems = map->items;
-    int oldCapacity = map->capacity;
+    const int oldCapacity = map->capacity;
     
     map->count = 0;
     map->items = items;
     map->capacity = capacity;
     
     for (int i = 0; i <= oldCapacity; ++i) {
-        MapItem *item = &oldItems[i];
+        const MapItem *item = &oldItems[i];
         if (IS_ERR(item->key)) {
             continue;
         }
@@ -610,9 +610,9 @@ static void adjustMapCapacity(VM *vm, ObjMap *map, int capacity) {
     FREE_ARRAY(vm, MapItem, oldItems, oldCapacity + 1);
 }
 
-bool mapSet(VM *vm, ObjMap *map, Value key, Value value) {
+bool mapSet(VM *vm, ObjMap *map, const Value key, const Value value) {
     if (map->count + 1 > (map->capacity + 1) * TABLE_MAX_LOAD) {
-        int capacity = GROW_CAPACITY(map->capacity + 1) - 1;
+        const int capacity = GROW_CAPACITY(map->capacity + 1) - 1;
         adjustMapCapacity(vm, map, capacity);
     }
     
@@ -638,7 +638,7 @@ bool mapSet(VM *vm, ObjMap *map, Value key, Value value) {
             
             if (item.psl > bucket->psl) {
                 isNewKey = true;
-                MapItem tmp = item;
+                const MapItem tmp = item;
                 item = *bucket;
                 *bucket = tmp;
             }
@@ -656,7 +656,7 @@ bool mapSet(VM *vm, ObjMap *map, Value key, Value value) {
     return isNewKey;
 }
 
-bool mapGet(ObjMap *map, Value key, Value *value) {
+bool mapGet(const ObjMap *map, const Value key, Value *value) {
     if (map->count == 0) {
         return false;
     }
@@ -667,7 +667,6 @@ bool mapGet(ObjMap *map, Value key, Value *value) {
     
     for (;;) {
         item = &map->items[index];
-        
         if (IS_ERR(item->key) || psl > item->psl) {
             return false;
         }
@@ -676,11 +675,36 @@ bool mapGet(ObjMap *map, Value key, Value *value) {
             break;
         }
         
-        index = (index + 1) & map->capacity;
+        index = index + 1 & map->capacity;
         ++psl;
     }
     
     *value = item->value;
+    return true;
+}
+
+bool mapHasKey(const ObjMap *map, const Value key) {
+    if (map->count == 0) {
+        return false;
+    }
+
+    uint32_t index = hashValue(key) & map->capacity;
+    uint32_t psl = 0;
+
+    for (;;) {
+        const MapItem *item = &map->items[index];
+        if (IS_ERR(item->key) || psl > item->psl) {
+            return false;
+        }
+
+        if (valuesEqual(key, item->key)) {
+            break;
+        }
+
+        index = index + 1 & map->capacity;
+        ++psl;
+    }
+
     return true;
 }
 
@@ -735,6 +759,11 @@ bool mapDelete(VM *vm, ObjMap *map, Value key) {
     }
     
     return true;
+}
+
+void mapClear(VM *vm, ObjMap *map) {
+    FREE_ARRAY(vm, MapItem, map->items, map->capacity + 1);
+    *map = *newMap(vm);
 }
 
 void markMap(VM *vm, ObjMap *map) {
@@ -927,7 +956,7 @@ char *objectType(Value value) {
     return newCString("unknown type");
 }
 
-char *objectToString(Value value) {
+char *objectToString(const Value value) {
     switch (OBJ_TYPE(value)) {
         case OBJ_BOUND_METHOD: return functionToString(AS_BOUND_METHOD(value)->method->function);
         case OBJ_CLASS: return newCString(AS_CLASS(value)->name->str);

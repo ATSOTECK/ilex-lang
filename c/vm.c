@@ -48,15 +48,15 @@ void printStack(VM *vm) {
 }
 #endif
 
-void setRuntimeErrorCallback(VM *vm, ErrorCallback runtimeCallback) {
+void setRuntimeErrorCallback(VM *vm, const ErrorCallback runtimeCallback) {
     vm->runtimeCallback = runtimeCallback;
 }
 
-void setAssertErrorCallback(VM *vm, ErrorCallback assertCallback) {
+void setAssertErrorCallback(VM *vm, const ErrorCallback assertCallback) {
     vm->assertCallback = assertCallback;
 }
 
-void setPanicErrorCallback(VM *vm, ErrorCallback panicCallback) {
+void setPanicErrorCallback(VM *vm, const ErrorCallback panicCallback) {
     vm->panicCallback = panicCallback;
 }
 
@@ -76,8 +76,8 @@ void runtimeError(VM *vm, const char *format, ...) {
     msg[len++] = '\n';
 
     for (int i = vm->frameCount - 1; i >= 0; --i) {
-        CallFrame *frame = &vm->frames[i];
-        ObjFunction *function = frame->closure->function;
+        const CallFrame *frame = &vm->frames[i];
+        const ObjFunction *function = frame->closure->function;
         // TODO: Find a better way to store line numbers.
         size_t instruction = frame->ip - function->chunk.code - 1;
         int line = function->chunk.lines[instruction];
@@ -110,10 +110,10 @@ void assertError(VM *vm, const char *format, ...) {
     msg[len++] = '\n';
 
     for (int i = vm->frameCount - 1; i >= 0; i--) {
-        CallFrame *frame = &vm->frames[i];
-        ObjFunction *function = frame->closure->function;
-        size_t instruction = frame->ip - function->chunk.code - 1;
-        int line = function->chunk.lines[instruction];
+        const CallFrame *frame = &vm->frames[i];
+        const ObjFunction *function = frame->closure->function;
+        const size_t instruction = frame->ip - function->chunk.code - 1;
+        const int line = function->chunk.lines[instruction];
         len += snprintf(msg + len, I_ERR_MSG_SIZE, "[line %d] in ", line);
         if (function->name == NULL) {
             len += snprintf(msg + len, I_ERR_MSG_SIZE, "script %s\n", vm->scriptName->str);
@@ -142,10 +142,10 @@ void panicError(VM *vm, const char *panicMsg) {
     }
 
     for (int i = vm->frameCount - 1; i >= 0; i--) {
-        CallFrame *frame = &vm->frames[i];
-        ObjFunction *function = frame->closure->function;
-        size_t instruction = frame->ip - function->chunk.code - 1;
-        int line = function->chunk.lines[instruction];
+        const CallFrame *frame = &vm->frames[i];
+        const ObjFunction *function = frame->closure->function;
+        const size_t instruction = frame->ip - function->chunk.code - 1;
+        const int line = function->chunk.lines[instruction];
         len += snprintf(msg + len, I_ERR_MSG_SIZE, "[line %d] in ", line);
         if (function->name == NULL) {
             len += snprintf(msg + len, I_ERR_MSG_SIZE, "script %s\n", vm->scriptName->str);
@@ -164,7 +164,7 @@ void panicError(VM *vm, const char *panicMsg) {
     resetStack(vm);
 }
 
-void defineNative(VM *vm, const char *name, NativeFn function, Table *table) {
+void defineNative(VM *vm, const char *name, const NativeFn function, Table *table) {
     ObjString *nativeName = copyString(vm, name, (int)strlen(name));
     push(vm, OBJ_VAL(nativeName));
     ObjNative *nativeFunction = newNative(vm, function);
@@ -175,11 +175,11 @@ void defineNative(VM *vm, const char *name, NativeFn function, Table *table) {
     ++vm->fnCount;
 }
 
-void registerGlobalFunction(VM *vm, const char *name, NativeFn function) {
+void registerGlobalFunction(VM *vm, const char *name, const NativeFn function) {
     defineNative(vm, name, function, &vm->globals);
 }
 
-void defineNativeValue(VM *vm, const char *name, Value value, Table *table) {
+void defineNativeValue(VM *vm, const char *name, const Value value, Table *table) {
     ObjString *valueName = copyString(vm, name, (int)strlen(name));
     push(vm, OBJ_VAL(valueName));
     push(vm, value);
@@ -189,18 +189,18 @@ void defineNativeValue(VM *vm, const char *name, Value value, Table *table) {
     ++vm->valCount;
 }
 
-void registerGlobalValue(VM *vm, const char *name, Value value) {
+void registerGlobalValue(VM *vm, const char *name, const Value value) {
     defineNativeValue(vm, name, value, &vm->globals);
 }
 
-void registerLibraryFunction(VM *vm, const char *name, NativeFn function, Table *table) {
+void registerLibraryFunction(VM *vm, const char *name, const NativeFn function, Table *table) {
     defineNative(vm, name, function, table);
 }
 
-void registerLibrary(VM *vm, const char *name, BuiltInLib lib) {
-    BuiltInLibs newLib = makeLib(vm, name, lib);
+void registerLibrary(VM *vm, const char *name, const BuiltInLib lib) {
+    const BuiltInLibs newLib = makeLib(vm, name, lib);
     if (vm->libCapacity < vm->libCount + 1) {
-        int oldCapacity = vm->libCapacity;
+        const int oldCapacity = vm->libCapacity;
         vm->libCapacity = GROW_CAPACITY(oldCapacity);
         vm->libs = GROW_ARRAY(vm, BuiltInLibs, vm->libs, oldCapacity, vm->libCapacity);
     }
@@ -303,11 +303,11 @@ Value pop(VM *vm) {
     return *vm->stackTop;
 }
 
-Value peek(VM *vm, int amount) {
+Value peek(const VM *vm, const int amount) {
     return vm->stackTop[-1 - amount];
 }
 
-Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
+Value callFromScript(VM *vm, ObjClosure *closure, const int argc, const Value *args) {
     if (argc < closure->function->arity ||
         argc > closure->function->arity + closure->function->arityDefault) {
         runtimeError(vm ,"Function '%s' expected %d arguments but got %d.", closure->function->name->str,
@@ -320,7 +320,7 @@ Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
         return ERROR_VAL;
     }
 
-    int currentFrameIndex = vm->frameCount - 1;
+    const int currentFrameIndex = vm->frameCount - 1;
     CallFrame *frame = &vm->frames[vm->frameCount++];
     frame->closure = closure;
     frame->ip = closure->function->chunk.code;
@@ -342,7 +342,7 @@ Value callFromScript(VM *vm, ObjClosure *closure, int argc, Value *args) {
     return value;
 }
 
-static bool call(VM *vm, ObjClosure *closure, int argc) {
+static bool call(VM *vm, ObjClosure *closure, const int argc) {
     if (argc < closure->function->arity ||
         argc > closure->function->arity + closure->function->arityDefault)
     {
@@ -375,7 +375,7 @@ static bool callValue(VM *vm, Value callee, int argc) {
     if (IS_OBJ(callee)) {
         switch (OBJ_TYPE(callee)) {
             case OBJ_BOUND_METHOD: {
-                ObjBoundMethod *bound = AS_BOUND_METHOD(callee);
+                const ObjBoundMethod *bound = AS_BOUND_METHOD(callee);
                 vm->stackTop[-argc - 1] = bound->receiver;
                 return call(vm, bound->method, argc);
             }
@@ -390,7 +390,8 @@ static bool callValue(VM *vm, Value callee, int argc) {
                 Value initializer;
                 if (tableGet(&objClass->methods, vm->initString, &initializer)) {
                     return call(vm, AS_CLOSURE(initializer), argc);
-                } else if (argc != 0) {
+                }
+                if (argc != 0) {
                     runtimeError(vm, "Expected 0 arguments but got %d.", argc);
                     return false;
                 }
@@ -403,8 +404,8 @@ static bool callValue(VM *vm, Value callee, int argc) {
                 return call(vm, AS_CLOSURE(callee), argc);
             }
             case OBJ_NATIVE: {
-                NativeFn native = AS_NATIVE(callee);
-                Value result = native(vm, argc, vm->stackTop - argc);
+                const NativeFn native = AS_NATIVE(callee);
+                const Value result = native(vm, argc, vm->stackTop - argc);
 
                 if (IS_ERR(result)) {
                     return false;
@@ -426,8 +427,8 @@ static bool callValue(VM *vm, Value callee, int argc) {
     return false;
 }
 
-static bool callNativeFunction(VM *vm, NativeFn native, int argc) {
-    Value res = native(vm, argc, vm->stackTop - argc - 1);
+static bool callNativeFunction(VM *vm, const NativeFn native, int argc) {
+    const Value res = native(vm, argc, vm->stackTop - argc - 1);
     if (IS_ERR(res)) {
         return false;
     }
@@ -440,7 +441,7 @@ static bool callNativeFunction(VM *vm, NativeFn native, int argc) {
     return true;
 }
 
-static bool invokeFromClass(VM *vm, ObjClass *objClass, ObjString *name, int argc) {
+static bool invokeFromClass(VM *vm, ObjClass *objClass, ObjString *name, const int argc) {
     Value method;
     if (!tableGet(&objClass->methods, name, &method)) {
         runtimeError(vm, "Undefined property '%s'.", name->str);
@@ -450,11 +451,11 @@ static bool invokeFromClass(VM *vm, ObjClass *objClass, ObjString *name, int arg
     return call(vm, AS_CLOSURE(method), argc);
 }
 
-static bool invokeFromThis(VM *vm, ObjString *name, int argc) {
-    Value receiver = peek(vm, argc);
+static bool invokeFromThis(VM *vm, ObjString *name, const int argc) {
+    const Value receiver = peek(vm, argc);
 
     if (IS_INSTANCE(receiver)) {
-        ObjInstance *instance = AS_INSTANCE(receiver);
+        const ObjInstance *instance = AS_INSTANCE(receiver);
 
         Value value;
         if (tableGet(&instance->objClass->privateMethods, name, &value)) {
@@ -523,8 +524,8 @@ static bool invokeFromThis(VM *vm, ObjString *name, int argc) {
     return false;
 }
 
-static bool invoke(VM *vm, ObjString *name, int argc) {
-    Value receiver = peek(vm, argc);
+static bool invoke(VM *vm, ObjString *name, const int argc) {
+    const Value receiver = peek(vm, argc);
     
     if (!IS_OBJ(receiver)) {
         char *type = valueType(receiver);
@@ -672,7 +673,7 @@ static ObjUpvalue *captureUpvalue(VM *vm, Value *local) {
     return createdUpvalue;
 }
 
-static void closeUpvalues(VM *vm, Value *last) {
+static void closeUpvalues(VM *vm, const Value *last) {
     while (vm->openUpvalues != NULL && vm->openUpvalues->location >= last) {
         ObjUpvalue *upvalue = vm->openUpvalues;
         upvalue->closed = *upvalue->location;
@@ -682,9 +683,9 @@ static void closeUpvalues(VM *vm, Value *last) {
 }
 
 static void defineMethod(VM *vm, ObjString *name) {
-    Value method = peek(vm, 0);
+    const Value method = peek(vm, 0);
     ObjClass *objClass = AS_CLASS(peek(vm, 1));
-    ObjFunction *function = AS_CLOSURE(method)->function;
+    const ObjFunction *function = AS_CLOSURE(method)->function;
 
     if (function->accessLevel == ACCESS_PRIVATE) {
         tableSet(vm, &objClass->privateMethods, name, method, ILEX_READ_ONLY);
@@ -699,7 +700,7 @@ static void defineMethod(VM *vm, ObjString *name) {
     pop(vm);
 }
 
-static void createClass(VM *vm, ObjString *name, ObjClass *superClass, ClassType type) {
+static void createClass(VM *vm, ObjString *name, ObjClass *superClass, const ClassType type) {
     ObjClass *objClass = newClass(vm, name, superClass, type);
     push(vm, OBJ_VAL(objClass));
 
@@ -2169,7 +2170,7 @@ InterpretResult interpret(VM *vm, const char *scriptName, const char *source) {
 
 void runFile(VM *vm, const char *path) {
     char *source = readFile(path);
-    InterpretResult res = interpret(vm, path, source);
+    const InterpretResult res = interpret(vm, path, source);
     free(source);
     
     switch (res) {
