@@ -24,13 +24,13 @@ assert('yeet' == "yeet")
 
 count ::= 10
 str = 'You have ${count + 2} items.'
-println(str)
+println('one:', str)
 
 str = 'You have ' + toString(count + 2) + ' items.'
-println(str)
+println('two:', str)
 
 str = 'You have \${count + 2} items.'
-println(str)
+println('three:', str)
 
 println('hello' + ' there')
 

@@ -365,6 +365,15 @@ typedef struct {
     SetItem *items;
 } ObjSet;
 
+typedef struct {
+
+} Route;
+
+typedef struct {
+    Obj obj;
+    Table routes;
+} WebApp;
+
 typedef struct ObjAbstract ObjAbstract;
 typedef void (*AbstractFreeFn)(VM *vm, ObjAbstract *abstract);
 

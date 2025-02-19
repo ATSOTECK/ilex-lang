@@ -11,6 +11,7 @@
 #include "memory.h"
 #include "util.h"
 
+#include "types/base_types.h"
 #include "types/type_array.h"
 #include "libs/lib_builtIn.h"
 #include "types/type_enum.h"
@@ -208,7 +209,7 @@ void registerLibrary(VM *vm, const char *name, const BuiltInLib lib) {
     vm->libs[vm->libCount++] = newLib;
 }
 
-VM *initVM(const char *path, int argc, char **argv) {
+VM *initVM(const char *path, const int argc, char **argv) {
     VM *vm = (VM*)calloc(1, sizeof(VM));
 
     vm->stack = (Value*)malloc(sizeof(Value) * STACK_MAX);
@@ -236,6 +237,7 @@ VM *initVM(const char *path, int argc, char **argv) {
     initTable(&vm->strings);
 
     initTable(&vm->scripts);
+    initTable(&vm->numberFunctions);
     initTable(&vm->stringFunctions);
     initTable(&vm->arrayFunctions);
     initTable(&vm->fileFunctions);
@@ -254,6 +256,7 @@ VM *initVM(const char *path, int argc, char **argv) {
     vm->testMode = (strcmp("test", argv[1]) == 0);
 
     defineNatives(vm);
+    defineBaseTypes(vm);
     defineStringFunctions(vm);
     defineArrayFunctions(vm);
     defineFileFunctions(vm);
@@ -269,6 +272,7 @@ VM *initVM(const char *path, int argc, char **argv) {
 void freeVM(VM *vm) {
     freeTable(vm, &vm->globals);
     freeTable(vm, &vm->consts);
+    freeTable(vm, &vm->numberFunctions);
     freeTable(vm, &vm->strings);
     freeTable(vm, &vm->stringFunctions);
     freeTable(vm, &vm->arrayFunctions);
@@ -526,6 +530,16 @@ static bool invokeFromThis(VM *vm, ObjString *name, const int argc) {
 
 static bool invoke(VM *vm, ObjString *name, const int argc) {
     const Value receiver = peek(vm, argc);
+
+    if (IS_NUMBER(receiver)) {
+        Value value;
+        if (tableGet(&vm->numberFunctions, name, &value)) {
+            return callNativeFunction(vm, AS_NATIVE(value), argc);
+        }
+
+        runtimeError(vm, "Number has no function %s().", name->str);
+        return false;
+    }
     
     if (!IS_OBJ(receiver)) {
         char *type = valueType(receiver);

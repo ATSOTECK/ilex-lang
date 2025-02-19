@@ -78,7 +78,7 @@ static Value mapGetLib(VM *vm, int argc, Value *args) {
         return ERROR_VAL;
     }
     
-    ObjMap *map = AS_MAP(args[0]);
+    const ObjMap *map = AS_MAP(args[0]);
     Value ret;
     
     if (mapGet(map, args[1], &ret)) {
@@ -88,7 +88,7 @@ static Value mapGetLib(VM *vm, int argc, Value *args) {
     return defaultValue;
 }
 
-static Value mapPopLib(VM *vm, int argc, Value *args) {
+static Value mapPopLib(VM *vm, const int argc, Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function pop() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -117,7 +117,7 @@ static Value mapPopLib(VM *vm, int argc, Value *args) {
     return defaultValue;
 }
 
-static Value mapDeleteLib(VM *vm, int argc, Value *args) {
+static Value mapDeleteLib(VM *vm, const int argc, Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function delete() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;

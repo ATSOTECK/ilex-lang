@@ -15,11 +15,7 @@ typedef struct {
     int line;
     bool interpolation;
     int interpolationDepth;
-    int inStrDepth;
-    int inStrOpenBrace[MAX_IN_STR_DEPTH];
-    char inStrQuote[MAX_IN_STR_DEPTH];
-    const char *inStrNameEnd;
-    char inStrNameQuote;
+    char stringChar;
 } Lexer;
 
 Lexer lexer;
@@ -31,9 +27,7 @@ void initLexer(const char *source) {
     lexer.line = 1;
     lexer.interpolation = false;
     lexer.interpolationDepth = 0;
-    lexer.inStrDepth = 0;
-    lexer.inStrNameEnd = NULL;
-    lexer.inStrNameQuote = '\0';
+    lexer.stringChar = '\0';
 }
 
 static bool isAlpha(const char c) {
@@ -86,16 +80,24 @@ static char advance() {
     return lexer.current[-1];
 }
 
-inline static char peek() {
+static char peek() {
     return *lexer.current;
 }
 
-inline static char peekNext() {
+static char peekNext() {
     if (atEnd()) {
         return '\0';
     }
 
     return lexer.current[1];
+}
+
+static char peekn(const int n) {
+    if (atEnd()) {
+        return '\0';
+    }
+
+    return lexer.current[n];
 }
 
 static void skipWhitespace() {
@@ -313,32 +315,31 @@ static IlexTokenType identType() {
     return TK_IDENT;
 }
 
-static Token string(char strChar) {
+static Token string(const char strChar) {
+    lexer.stringChar = strChar;
     bool overwrite = false;
-    // bool skipInStr = false;
+    bool skipInterpolation = false;
     while ((peek() != strChar || overwrite) && !atEnd()) {
         overwrite = false;
-        // skipInStr = false;
         
         if (peek() == '\\' && peekNext() == strChar) {
             overwrite = true;
-        }
-        
-        if (peek() == '\n') {
+        } else if (peek() == '\\' && peekNext() == '$' && peekn(2) == '{') {
+            skipInterpolation = true;
+        } else if (peek() == '\n') {
             lexer.line++;
-        }
+        } else if (!skipInterpolation && peek() == '$' && peekNext() == '{') {
+            if (lexer.interpolationDepth >= MAX_INTERPOLATION_DEPTH) {
+                return errorToken("Interpolation may only nest 2 levels deep");
+            }
 
-        /*
-        if (peek() == '\\' && peekNext() == '$') {
-            skipInStr = true;
-        }
+            ++lexer.interpolationDepth;
 
-        if (peek() == '$' && !skipInStr) {
-            lexer.inStrDepth++;
-            lexer.inStrQuote[lexer.inStrDepth - 1] = strChar;
-            return makeToken(TK_STRING);
+            advance();
+            const Token token = makeToken(TK_INTERPOLATION);
+            advance();
+            return token;
         }
-        */
 
         advance();
     }
@@ -476,20 +477,12 @@ Token nextToken() {
         case '$': return ident();
         case '(': return makeToken(TK_LPAREN);
         case ')': return makeToken(TK_RPAREN);
-        case '{': {
-            /*
-            if (lexer.inStrDepth > 0) {
-                lexer.inStrOpenBrace[lexer.inStrDepth - 1]++;
-                return nextToken();
-            }*/
-            return makeToken(TK_LBRACE);
-        }
+        case '{': return makeToken(TK_LBRACE);
         case '}': {
-            /*
-            if (lexer.inStrDepth > 0) {
-                lexer.inStrOpenBrace[lexer.inStrDepth - 1]--;
-                return nextToken();
-            }*/
+            if (lexer.interpolationDepth > 0) {
+                --lexer.interpolationDepth;
+                return string(lexer.stringChar);
+            }
             return makeToken(TK_RBRACE);
         }
         case '[': return makeToken(TK_LBRACKET);

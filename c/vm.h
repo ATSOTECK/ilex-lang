@@ -48,6 +48,7 @@ struct VM_ {
     Table mapFunctions;
     Table setFunctions;
     Table enumFunctions;
+    Table numberFunctions;
 
     size_t bytesAllocated;
     size_t nextGC;

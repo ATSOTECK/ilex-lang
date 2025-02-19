@@ -64,7 +64,13 @@ set(sources
         libs/lib_time.c
         glad.c)
 
-add_executable(ilex main.c ${sources} types/type_window.h types/type_window.c libs/lib_window.h libs/lib_window.c libs/lib_test.h libs/lib_test.c libs/lib_ascii.h libs/lib_ascii.c types/type_enum.h types/type_enum.c)
+add_executable(ilex main.c ${sources} types/type_window.h types/type_window.c libs/lib_window.h libs/lib_window.c libs/lib_test.h libs/lib_test.c libs/lib_ascii.h libs/lib_ascii.c types/type_enum.h types/type_enum.c
+        libs/lib_web.h
+        libs/lib_web.c
+        types/type_web_app.h
+        types/type_web_app.c
+        types/base_types.h
+        types/base_types.c)
 
 add_library(ilex_lib ${sources})
 

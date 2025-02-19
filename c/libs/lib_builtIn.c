@@ -6,7 +6,7 @@
 
 #include "../memory.h"
 
-BuiltInLibs makeLib(VM *vm, const char *name, BuiltInLib lib) {
+BuiltInLibs makeLib(VM *vm, const char *name, const BuiltInLib lib) {
     BuiltInLibs ret;
     int len = (int)strlen(name);
     ret.name = ALLOCATE(vm, char, len + 1);
@@ -21,7 +21,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libCapacity = 9;
     vm->libCapacity = GROW_CAPACITY(vm->libCapacity);
 
-    vm->libCount = 9;
+    vm->libCount = 10;
     vm->libs = ALLOCATE(vm, BuiltInLibs, vm->libCapacity);
     vm->libs[0] = makeLib(vm, "math",   &useMathLib);
     vm->libs[1] = makeLib(vm, "ilex",   &useIlexLib);
@@ -32,6 +32,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libs[6] = makeLib(vm, "json",   &useJsonLib);
     vm->libs[7] = makeLib(vm, "window", &useWindowLib);
     vm->libs[8] = makeLib(vm, "ascii",  &useAsciiLib);
+    vm->libs[9] = makeLib(vm, "web",    &useWebLib);
 }
 
 Value useBuiltInLib(VM *vm, int idx) {

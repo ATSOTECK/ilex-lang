@@ -191,19 +191,22 @@ char *valueType(Value value) {
     return newCString("unknown");
 }
 
-char *valueToString(Value value) {
+char *valueToString(const Value value) {
     if (IS_BOOL(value)) {
         return newCString(AS_BOOL(value) ? "true" : "false");
-    } else if (IS_NULL(value)) {
+    }
+    if (IS_NULL(value)) {
         return newCString("null");
-    } else if (IS_NUMBER(value)) {
-        double num = AS_NUMBER(value);
+    }
+    if (IS_NUMBER(value)) {
+        const double num = AS_NUMBER(value);
         int len = snprintf(NULL, 0, "%.15g", num) + 1;
         char *ret = (char*)malloc(sizeof(char) * len);
         snprintf(ret, len, "%.15g", num);
         
         return ret;
-    } else if (IS_OBJ(value)) {
+    }
+    if (IS_OBJ(value)) {
         return objectToString(value);
     }
     
