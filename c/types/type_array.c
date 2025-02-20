@@ -895,6 +895,10 @@ void defineArrayFunctions(VM *vm) {
     defineNative(vm, "allTruthy", arrayAllTruthy, &vm->arrayFunctions);
     defineNative(vm, "noneTruthy", arrayNoneTruthy, &vm->arrayFunctions);
     defineNative(vm, "anyTruthy", arrayAnyTruthy, &vm->arrayFunctions);
+    // extend
+    // splice
+    // toSpliced
+    // slice
 
     defineNative(vm, "forEach", arrayForEach, &vm->arrayFunctions);
     defineNative(vm, "map", arrayMap, &vm->arrayFunctions);

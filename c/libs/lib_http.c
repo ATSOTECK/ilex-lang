@@ -152,12 +152,81 @@
 #define HTTP_STATUS_MESSAGE_LOOP_DETECTED                   "Loop Detected"
 #define HTTP_STATUS_MESSAGE_NOT_EXTENDED                    "Not Extended"
 #define HTTP_STATUS_MESSAGE_NETWORK_AUTHENTICATION_REQUIRED "Network Authentication Required"
+#define HTTP_STATUS_MESSAGE_UNKNOWN                         "Unknown Status"
 
 #define DEFAULT_REQUEST_TIMEOUT 20
 
+static const char *httpStatusCodeToMessage(const int status) {
+    switch (status) {
+        case HTTP_STATUS_CODE_CONTINUE:                        return HTTP_STATUS_MESSAGE_CONTINUE;
+        case HTTP_STATUS_CODE_SWITCHING_PROTOCOLS:             return HTTP_STATUS_MESSAGE_SWITCHING_PROTOCOLS;
+        case HTTP_STATUS_CODE_PROCESSING:                      return HTTP_STATUS_MESSAGE_PROCESSING;
+        case HTTP_STATUS_CODE_EARLY_HINTS:                     return HTTP_STATUS_MESSAGE_EARLY_HINTS;
+        case HTTP_STATUS_CODE_OK:                              return HTTP_STATUS_MESSAGE_OK;
+        case HTTP_STATUS_CODE_CREATED:                         return HTTP_STATUS_MESSAGE_CREATED;
+        case HTTP_STATUS_CODE_ACCEPTED:                        return HTTP_STATUS_MESSAGE_ACCEPTED;
+        case HTTP_STATUS_CODE_NON_AUTHORITATIVE_INFO:          return HTTP_STATUS_MESSAGE_NON_AUTHORITATIVE_INFO;
+        case HTTP_STATUS_CODE_NO_CONTENT:                      return HTTP_STATUS_MESSAGE_NO_CONTENT;
+        case HTTP_STATUS_CODE_RESET_CONTENT:                   return HTTP_STATUS_MESSAGE_RESET_CONTENT;
+        case HTTP_STATUS_CODE_PARTIAL_CONTENT:                 return HTTP_STATUS_MESSAGE_PARTIAL_CONTENT;
+        case HTTP_STATUS_CODE_MULTI_STATUS:                    return HTTP_STATUS_MESSAGE_MULTI_STATUS;
+        case HTTP_STATUS_CODE_ALREADY_REPORTED:                return HTTP_STATUS_MESSAGE_ALREADY_REPORTED;
+        case HTTP_STATUS_CODE_IM_USED:                         return HTTP_STATUS_MESSAGE_IM_USED;
+        case HTTP_STATUS_CODE_MULTIPLE_CHOICES:                return HTTP_STATUS_MESSAGE_MULTIPLE_CHOICES;
+        case HTTP_STATUS_CODE_MOVED_PERMANENTLY:               return HTTP_STATUS_MESSAGE_MOVED_PERMANENTLY;
+        case HTTP_STATUS_CODE_FOUND:                           return HTTP_STATUS_MESSAGE_FOUND;
+        case HTTP_STATUS_CODE_SEE_OTHER:                       return HTTP_STATUS_MESSAGE_SEE_OTHER;
+        case HTTP_STATUS_CODE_NOT_MODIFIED:                    return HTTP_STATUS_MESSAGE_NOT_MODIFIED;
+        case HTTP_STATUS_CODE_USE_PROXY:                       return HTTP_STATUS_MESSAGE_USE_PROXY;
+        case HTTP_STATUS_CODE_TEMPORARY_REDIRECT:              return HTTP_STATUS_MESSAGE_TEMPORARY_REDIRECT;
+        case HTTP_STATUS_CODE_PERMANENT_REDIRECT:              return HTTP_STATUS_MESSAGE_PERMANENT_REDIRECT;
+        case HTTP_STATUS_CODE_BAD_REQUEST:                     return HTTP_STATUS_MESSAGE_BAD_REQUEST;
+        case HTTP_STATUS_CODE_UNAUTHORIZED:                    return HTTP_STATUS_MESSAGE_UNAUTHORIZED;
+        case HTTP_STATUS_CODE_PAYMENT_REQUIRED:                return HTTP_STATUS_MESSAGE_PAYMENT_REQUIRED;
+        case HTTP_STATUS_CODE_FORBIDDEN:                       return HTTP_STATUS_MESSAGE_FORBIDDEN;
+        case HTTP_STATUS_CODE_NOT_FOUND:                       return HTTP_STATUS_MESSAGE_NOT_FOUND;
+        case HTTP_STATUS_CODE_METHOD_NOT_ALLOWED:              return HTTP_STATUS_MESSAGE_METHOD_NOT_ALLOWED;
+        case HTTP_STATUS_CODE_NOT_ACCEPTABLE:                  return HTTP_STATUS_MESSAGE_NOT_ACCEPTABLE;
+        case HTTP_STATUS_CODE_PROXY_AUTH_REQUIRED:             return HTTP_STATUS_MESSAGE_PROXY_AUTH_REQUIRED;
+        case HTTP_STATUS_CODE_REQUEST_TIMEOUT:                 return HTTP_STATUS_MESSAGE_REQUEST_TIMEOUT;
+        case HTTP_STATUS_CODE_CONFLICT:                        return HTTP_STATUS_MESSAGE_CONFLICT;
+        case HTTP_STATUS_CODE_GONE:                            return HTTP_STATUS_MESSAGE_GONE;
+        case HTTP_STATUS_CODE_LENGTH_REQUIRED:                 return HTTP_STATUS_MESSAGE_LENGTH_REQUIRED;
+        case HTTP_STATUS_CODE_PRECONDITION_FAILED:             return HTTP_STATUS_MESSAGE_PRECONDITION_FAILED;
+        case HTTP_STATUS_CODE_REQUEST_ENTITY_TOO_LARGE:        return HTTP_STATUS_MESSAGE_REQUEST_ENTITY_TOO_LARGE;
+        case HTTP_STATUS_CODE_REQUEST_URI_TOO_LONG:            return HTTP_STATUS_MESSAGE_REQUEST_URI_TOO_LONG;
+        case HTTP_STATUS_CODE_UNSUPPORTED_MEDIA_TYPE:          return HTTP_STATUS_MESSAGE_UNSUPPORTED_MEDIA_TYPE;
+        case HTTP_STATUS_CODE_REQUESTED_RANGE_NOT_SATISFIABLE: return HTTP_STATUS_MESSAGE_REQUESTED_RANGE_NOT_SATISFIABLE;
+        case HTTP_STATUS_CODE_EXPECTATION_FAILED:              return HTTP_STATUS_MESSAGE_EXPECTATION_FAILED;
+        case HTTP_STATUS_CODE_TEAPOT:                          return HTTP_STATUS_MESSAGE_TEAPOT;
+        case HTTP_STATUS_CODE_MISDIRECTED_REQUEST:             return HTTP_STATUS_MESSAGE_MISDIRECTED_REQUEST;
+        case HTTP_STATUS_CODE_UNPROCESSABLE_ENTITY:            return HTTP_STATUS_MESSAGE_UNPROCESSABLE_ENTITY;
+        case HTTP_STATUS_CODE_LOCKED:                          return HTTP_STATUS_MESSAGE_LOCKED;
+        case HTTP_STATUS_CODE_FAILED_DEPENDENCY:               return HTTP_STATUS_MESSAGE_FAILED_DEPENDENCY;
+        case HTTP_STATUS_CODE_TOO_EARLY:                       return HTTP_STATUS_MESSAGE_TOO_EARLY;
+        case HTTP_STATUS_CODE_UPGRADE_REQUIRED:                return HTTP_STATUS_MESSAGE_UPGRADE_REQUIRED;
+        case HTTP_STATUS_CODE_PRECONDITION_REQUIRED:           return HTTP_STATUS_MESSAGE_PRECONDITION_REQUIRED;
+        case HTTP_STATUS_CODE_TOO_MANY_REQUESTS:               return HTTP_STATUS_MESSAGE_TOO_MANY_REQUESTS;
+        case HTTP_STATUS_CODE_REQUEST_HEADER_FIELDS_TOO_LARGE: return HTTP_STATUS_MESSAGE_REQUEST_HEADER_FIELDS_TOO_LARGE;
+        case HTTP_STATUS_CODE_UNAVAILABLE_FOR_LEGAL_REASONS:   return HTTP_STATUS_MESSAGE_UNAVAILABLE_FOR_LEGAL_REASONS;
+        case HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR:           return HTTP_STATUS_MESSAGE_INTERNAL_SERVER_ERROR;
+        case HTTP_STATUS_CODE_NOT_IMPLEMENTED:                 return HTTP_STATUS_MESSAGE_NOT_IMPLEMENTED;
+        case HTTP_STATUS_CODE_BAD_GATEWAY:                     return HTTP_STATUS_MESSAGE_BAD_GATEWAY;
+        case HTTP_STATUS_CODE_SERVICE_UNAVAILABLE:             return HTTP_STATUS_MESSAGE_SERVICE_UNAVAILABLE;
+        case HTTP_STATUS_CODE_GATEWAY_TIMEOUT:                 return HTTP_STATUS_MESSAGE_GATEWAY_TIMEOUT;
+        case HTTP_STATUS_CODE_HTTP_VERSION_NOT_SUPPORTED:      return HTTP_STATUS_MESSAGE_HTTP_VERSION_NOT_SUPPORTED;
+        case HTTP_STATUS_CODE_VARIANT_ALSO_NEGOTIATES:         return HTTP_STATUS_MESSAGE_VARIANT_ALSO_NEGOTIATES;
+        case HTTP_STATUS_CODE_INSUFFICIENT_STORAGE:            return HTTP_STATUS_MESSAGE_INSUFFICIENT_STORAGE;
+        case HTTP_STATUS_CODE_LOOP_DETECTED:                   return HTTP_STATUS_MESSAGE_LOOP_DETECTED;
+        case HTTP_STATUS_CODE_NOT_EXTENDED:                    return HTTP_STATUS_MESSAGE_NOT_EXTENDED;
+        case HTTP_STATUS_CODE_NETWORK_AUTHENTICATION_REQUIRED: return HTTP_STATUS_MESSAGE_NETWORK_AUTHENTICATION_REQUIRED;
+        default: return HTTP_STATUS_MESSAGE_UNKNOWN;
+    }
+}
+
 static void createResponse(VM *vm, Response *response) {
     response->vm = vm;
-    response->headers = newArray(vm);
+    response->headers = newMap(vm);
 
     push(vm, OBJ_VAL(response->headers));
 
@@ -188,10 +257,18 @@ static size_t writeHeaders(const char *ptr, const size_t size, const size_t nite
     const Response *response = (Response *)data;
     // If nitems equals 2 it's an empty header
     if (nitems != 2) {
-        const Value header = OBJ_VAL(copyString(response->vm, ptr, (nitems - 2) * size));
+        const ObjString *str = copyString(response->vm, ptr, (int)((nitems - 2) * size));
 
-        push(response->vm, header);
-        writeValueArray(response->vm, &response->headers->data, header);
+        const char *key = strtok(str->str, ": ");
+        const char *value = strtok(NULL, ": ");
+
+        const Value keyValue = OBJ_VAL(copyString(response->vm, key, strlen(key)));
+        const Value valueValue = OBJ_VAL(copyString(response->vm, value, strlen(value)));
+
+        push(response->vm, keyValue);
+        push(response->vm, valueValue);
+        mapSet(response->vm, response->headers, keyValue, valueValue);
+        pop(response->vm);
         pop(response->vm);
     }
 
@@ -248,7 +325,7 @@ static ObjMap *makeResponse(VM *vm, CURL *curl, Response response, const bool cl
 
     key = copyString(vm, "headers", 7);
     push(vm, OBJ_VAL(key));
-    mapSet(vm, responseMap, OBJ_VAL(key), OBJ_VAL(response.headers)); // TODO: Make headers a map instead of a string.
+    mapSet(vm, responseMap, OBJ_VAL(key), OBJ_VAL(response.headers));
     pop(vm);
 
     key = copyString(vm, "statusCode", 10);
@@ -258,7 +335,8 @@ static ObjMap *makeResponse(VM *vm, CURL *curl, Response response, const bool cl
 
     key = copyString(vm, "status", 6);
     push(vm, OBJ_VAL(key));
-    mapSet(vm, responseMap, OBJ_VAL(key), NUMBER_VAL(response.statusCode)); // TODO: Status string.
+    const char *statusMessage = httpStatusCodeToMessage(response.statusCode);
+    mapSet(vm, responseMap, OBJ_VAL(key), OBJ_VAL(copyString(vm, statusMessage, strlen(statusMessage)))); // TODO: Status string.
     pop(vm);
 
     pop(vm); // map
@@ -365,6 +443,10 @@ static Value httpGet(VM *vm, const int argc, Value *args) {
 
     // char *errorString = (char *) curl_easy_strerror(CURLE_FAILED_INIT);
     return NULL_VAL; // TODO: Return map with error.
+}
+
+static Value httpPost(VM *vm, const int argc, Value *args) {
+    return NULL_VAL;
 }
 
 Value useHttpLib(VM *vm) {
@@ -522,6 +604,7 @@ Value useHttpLib(VM *vm) {
     defineNativeValue(vm, "MessageNetworkAuthenticationRequired", OBJ_VAL(copyString(vm, HTTP_STATUS_MESSAGE_NETWORK_AUTHENTICATION_REQUIRED, strlen(HTTP_STATUS_MESSAGE_NETWORK_AUTHENTICATION_REQUIRED))), &lib->values);
 
     defineNative(vm, "get", httpGet, &lib->values);
+    defineNative(vm, "post", httpPost, &lib->values);
 
     pop(vm);
     pop(vm);

@@ -9,7 +9,7 @@
 
 typedef struct {
     VM *vm;
-    ObjArray *headers;
+    ObjMap *headers;
     char *res;
     size_t len;
     ObjString *status;

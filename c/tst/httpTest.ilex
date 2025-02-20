@@ -1,6 +1,7 @@
 use <http>
 
 resp ::= http::get('http://www.example.com')
-println('status: {resp.status}')
+println('status code: {resp.statusCode}')
+println('status message: {resp.status}')
 println('body: {resp.body}')
 println('headers: {resp.headers}')
