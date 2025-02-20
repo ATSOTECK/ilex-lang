@@ -130,7 +130,7 @@ static Value sysMKDIR(VM *vm, int argc, Value *args) {
 
     if (!IS_STRING(args[0])) {
         char *type = valueType(args[0]);
-        runtimeError(vm, "Function mkdir() expected type 'string' for first argument but got '%s'.", type);
+        runtimeError(vm, "Function mkdir() expected type 'string' for the first argument but got '%s'.", type);
         free(type);
         return ERROR_VAL;
     }
@@ -143,7 +143,7 @@ static Value sysMKDIR(VM *vm, int argc, Value *args) {
     if (argc == 2) {
         if (!IS_NUMBER(args[1])) {
             char *type = valueType(args[1]);
-            runtimeError(vm, "Function mkdir() expected type 'number' for second argument but got '%s'.", type);
+            runtimeError(vm, "Function mkdir() expected type 'number' for the second argument but got '%s'.", type);
             free(type);
             return ERROR_VAL;
         }

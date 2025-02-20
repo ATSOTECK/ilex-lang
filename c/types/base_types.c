@@ -15,5 +15,5 @@ static Value numberToStringLib(VM *vm, const int argc, Value *args) {
 }
 
 void defineBaseTypes(VM *vm) {
-    defineNative(vm, "toString", numberToStringLib, &vm->numberFunctions);
+    defineNative(vm, "toString", numberToStringLib, &vm->baseTypesFunctions);
 }

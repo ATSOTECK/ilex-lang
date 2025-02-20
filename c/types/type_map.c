@@ -26,41 +26,25 @@ static Value mapToStringLib(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value mapKeys(VM *vm, int argc, Value *args) {
+static Value mapKeysLib(VM *vm, int argc, Value *args) {
     const ObjMap *map = AS_MAP(args[0]);
+    const ValueArray keysArr = mapKeys(vm, map);
     ObjArray *keys = newArray(vm);
-    push(vm, OBJ_VAL(keys));
-    
-    for (int i = 0; i < map->capacity + 1; ++i) {
-        if (IS_ERR(map->items[i].key)) {
-            continue;
-        }
-    
-        writeValueArray(vm, &keys->data, map->items[i].key);
-    }
-    
-    pop(vm);
+    keys->data = keysArr;
+
     return OBJ_VAL(keys);
 }
 
-static Value mapValues(VM *vm, int argc, Value *args) {
+static Value mapValuesLib(VM *vm, int argc, Value *args) {
     const ObjMap *map = AS_MAP(args[0]);
-    ObjArray *keys = newArray(vm);
-    push(vm, OBJ_VAL(keys));
-    
-    for (int i = 0; i < map->capacity + 1; ++i) {
-        if (IS_ERR(map->items[i].key)) {
-            continue;
-        }
-        
-        writeValueArray(vm, &keys->data, map->items[i].value);
-    }
-    
-    pop(vm);
-    return OBJ_VAL(keys);
+    const ValueArray valuesArr = mapValues(vm, map);
+    ObjArray *values = newArray(vm);
+    values->data = valuesArr;
+
+    return OBJ_VAL(values);
 }
 
-static Value mapGetLib(VM *vm, int argc, Value *args) {
+static Value mapGetLib(VM *vm, const int argc, Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function get() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -283,8 +267,8 @@ void defineMapFunctions(VM *vm) {
     defineNative(vm, "size", mapSizeLib, &vm->mapFunctions);
     defineNative(vm, "capacity", mapCapacityLib, &vm->mapFunctions);
     defineNative(vm, "toString", mapToStringLib, &vm->mapFunctions);
-    defineNative(vm, "keys", mapKeys, &vm->mapFunctions);
-    defineNative(vm, "values", mapValues, &vm->mapFunctions);
+    defineNative(vm, "keys", mapKeysLib, &vm->mapFunctions);
+    defineNative(vm, "values", mapValuesLib, &vm->mapFunctions);
     defineNative(vm, "get", mapGetLib, &vm->mapFunctions);
     defineNative(vm, "pop", mapPopLib, &vm->mapFunctions);
     defineNative(vm, "delete", mapDeleteLib, &vm->mapFunctions);

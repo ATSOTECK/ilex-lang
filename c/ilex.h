@@ -408,8 +408,8 @@ void setRuntimeErrorCallback(VM *vm, ErrorCallback runtimeCallback);
 void setAssertErrorCallback(VM *vm, ErrorCallback assertCallback);
 void setPanicErrorCallback(VM *vm, ErrorCallback panicCallback);
 
-ObjScript *newScript(VM *vm, ObjString* name);
-ObjString *copyString(VM *vm, const char* chars, int length);
+ObjScript *newScript(VM *vm, ObjString *name);
+ObjString *copyString(VM *vm, const char *str, int len);
 char *valueType(Value value);
 
 static inline bool isObjType(Value value, ObjType type) {

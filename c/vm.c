@@ -237,7 +237,7 @@ VM *initVM(const char *path, const int argc, char **argv) {
     initTable(&vm->strings);
 
     initTable(&vm->scripts);
-    initTable(&vm->numberFunctions);
+    initTable(&vm->baseTypesFunctions);
     initTable(&vm->stringFunctions);
     initTable(&vm->arrayFunctions);
     initTable(&vm->fileFunctions);
@@ -272,7 +272,7 @@ VM *initVM(const char *path, const int argc, char **argv) {
 void freeVM(VM *vm) {
     freeTable(vm, &vm->globals);
     freeTable(vm, &vm->consts);
-    freeTable(vm, &vm->numberFunctions);
+    freeTable(vm, &vm->baseTypesFunctions);
     freeTable(vm, &vm->strings);
     freeTable(vm, &vm->stringFunctions);
     freeTable(vm, &vm->arrayFunctions);
@@ -533,7 +533,7 @@ static bool invoke(VM *vm, ObjString *name, const int argc) {
 
     if (IS_NUMBER(receiver)) {
         Value value;
-        if (tableGet(&vm->numberFunctions, name, &value)) {
+        if (tableGet(&vm->baseTypesFunctions, name, &value)) {
             return callNativeFunction(vm, AS_NATIVE(value), argc);
         }
 

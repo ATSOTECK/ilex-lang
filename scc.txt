@@ -1,19 +1,20 @@
-github.com/AlDanial/cloc v 2.04  T=0.03 s (2101.1 files/s, 386192.3 lines/s)
+github.com/AlDanial/cloc v 2.04  T=0.03 s (2198.3 files/s, 409826.4 lines/s)
 --------------------------------------------------------------------------------------
 File                                    blank        comment           code
 --------------------------------------------------------------------------------------
 ./c/compiler.c                            407             20           2063
 ./c/vm.c                                  280             52           1866
-./c/object.c                              194              7            778
+./c/object.c                              203              7            799
 ./c/types/type_array.c                    184              3            719
 ./c/lexer.c                                68              3            516
+./c/libs/lib_http.c                        76              7            440
 ./c/ilex.h                                 80             12            352
 ./c/libs/lib_io.c                          82              6            323
-./c/memory.c                               34              3            296
+./c/memory.c                               34              3            297
 ./c/libs/lib_math.c                        82             11            268
 ./c/types/type_string.c                    62              8            265
 ./c/types/type_file.c                      77              5            260
-./c/types/type_map.c                       64              3            233
+./c/types/type_map.c                       60              3            221
 ./c/debug.c                                22              4            187
 ./c/libs/lib_env.c                         53              3            184
 ./c/libs/lib_window.c                      45              4            184
@@ -31,7 +32,7 @@ File                                    blank        comment           code
 ./c/vm.h                                   20              4             75
 ./c/types/type_set.c                       19              3             72
 ./c/compiler.h                             11              3             58
-./c/object.h                                5              3             40
+./c/object.h                                5              3             42
 ./c/libs/lib_builtIn.c                      9              3             38
 ./c/main.c                                  6              4             37
 ./c/chunk.c                                 8              3             34
@@ -43,6 +44,7 @@ File                                    blank        comment           code
 ./c/memory.h                               11              3             17
 ./c/util.h                                  6              3             15
 ./c/value.h                                 8              3             15
+./c/libs/lib_http.h                         5              3             14
 ./Makefile                                  1              0             11
 ./c/types/base_types.c                      5              3             11
 ./README.md                                 6              0              8
@@ -75,5 +77,5 @@ File                                    blank        comment           code
 ./install.sh                                0              0              1
 ./c/types/type_web_app.c                    0              3              0
 --------------------------------------------------------------------------------------
-SUM:                                     2302            323          10609
+SUM:                                     2388            333          11075
 --------------------------------------------------------------------------------------

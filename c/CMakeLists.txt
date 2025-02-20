@@ -6,6 +6,8 @@ set(CMAKE_C_STANDARD 99)
 include_directories(${PROJECT_SOURCE_DIR}/inc)
 link_directories(${PROJECT_SOURCE_DIR}/lib)
 
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCURL_STATICLIB")
+
 set(sources
         ilex.h
         chunk.h
@@ -70,8 +72,10 @@ add_executable(ilex main.c ${sources} types/type_window.h types/type_window.c li
         types/type_web_app.h
         types/type_web_app.c
         types/base_types.h
-        types/base_types.c)
+        types/base_types.c
+        libs/lib_http.h
+        libs/lib_http.c)
 
 add_library(ilex_lib ${sources})
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS} -I/usr/local/lib -framework Cocoa -framework IOKit -framework CoreVideo -framework OpenGL -lglfw3")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS} -I/usr/local/lib -framework Cocoa -framework IOKit -framework CoreVideo -framework OpenGL -lglfw3 -lcurl")

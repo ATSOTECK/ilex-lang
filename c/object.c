@@ -182,8 +182,8 @@ ObjString *takeString(VM *vm, char *str, const int len) {
     return allocateString(vm, str, len, hash);
 }
 
-ObjString *copyString(VM *vm, const char *str, int len) {
-    uint32_t hash = hashString(str, len);
+ObjString *copyString(VM *vm, const char *str, const int len) {
+    const uint32_t hash = hashString(str, len);
     ObjString *interned = tableFindString(&vm->strings, str, len, hash);
     if (interned != NULL) {
         return interned;
@@ -774,7 +774,37 @@ void markMap(VM *vm, ObjMap *map) {
     }
 }
 
-static SetItem *setFindItem(SetItem *items, int capacity, Value value) {
+ValueArray mapKeys(VM *vm, const ObjMap *map) {
+    ValueArray keys;
+    initValueArray(&keys);
+
+    for (int i = 0; i < map->capacity + 1; ++i) {
+        if (IS_ERR(map->items[i].key)) {
+            continue;
+        }
+
+        writeValueArray(vm, &keys, map->items[i].key);
+    }
+
+    return keys;
+}
+
+ValueArray mapValues(VM *vm, const ObjMap *map) {
+    ValueArray values;
+    initValueArray(&values);
+
+    for (int i = 0; i < map->capacity + 1; ++i) {
+        if (IS_ERR(map->items[i].key)) {
+            continue;
+        }
+
+        writeValueArray(vm, &values, map->items[i].value);
+    }
+
+    return values;
+}
+
+static SetItem *setFindItem(SetItem *items, const int capacity, const Value value) {
     uint32_t index = hashValue(value) & capacity;
     SetItem *tombstone = NULL;
     
@@ -784,10 +814,10 @@ static SetItem *setFindItem(SetItem *items, int capacity, Value value) {
         if (IS_ERR(item->value)) {
             if (!item->deleted) {
                 return tombstone != NULL ? tombstone : item;
-            } else {
-                if (tombstone == NULL) {
-                    tombstone = item;
-                }
+            }
+
+            if (tombstone == NULL) {
+                tombstone = item;
             }
         } else if (valuesEqual(value, item->value)) {
             return item;
@@ -807,7 +837,7 @@ static void adjustSetCapacity(VM *vm, ObjSet *set, int capacity) {
     set->count = 0;
     
     for (int i = 0; i <= set->capacity; ++i) {
-        SetItem *item = &set->items[i];
+        const SetItem *item = &set->items[i];
         if (IS_ERR(item->value) || item->deleted) {
             continue;
         }
@@ -824,12 +854,12 @@ static void adjustSetCapacity(VM *vm, ObjSet *set, int capacity) {
 
 bool setAdd(VM *vm, ObjSet *set, Value value) {
     if (set->count + 1 > (set->capacity + 1) * TABLE_MAX_LOAD) {
-        int capacity = GROW_CAPACITY(set->capacity + 1) - 1;
+        const int capacity = GROW_CAPACITY(set->capacity + 1) - 1;
         adjustSetCapacity(vm, set, capacity);
     }
     
     SetItem *item = setFindItem(set->items, set->capacity, value);
-    bool isNewValue = IS_ERR(item->value) || item->deleted;
+    const bool isNewValue = IS_ERR(item->value) || item->deleted;
     item->value = value;
     item->deleted = false;
     
@@ -845,7 +875,7 @@ bool setGet(ObjSet *set, Value value) {
         return false;
     }
     
-    SetItem *item = setFindItem(set->items, set->capacity, value);
+    const SetItem *item = setFindItem(set->items, set->capacity, value);
     return !(IS_ERR(item->value) || item->deleted);
 }
 
@@ -872,12 +902,12 @@ bool setDelete(VM *vm, ObjSet *set, Value value) {
 
 void markSet(VM *vm, ObjSet *set) {
     for (int i = 0; i <= set->capacity; ++i) {
-        SetItem *item = &set->items[i];
+        const SetItem *item = &set->items[i];
         markValue(vm, item->value);
     }
 }
 
-ObjArray *copyArray(VM *vm, ObjArray *array, bool isShallow) {
+ObjArray *copyArray(VM *vm, ObjArray *array, const bool isShallow) {
     ObjArray *ret = newArray(vm);
     push(vm, OBJ_VAL(ret));
     
@@ -902,7 +932,7 @@ ObjArray *copyArray(VM *vm, ObjArray *array, bool isShallow) {
     return ret;
 }
 
-ObjMap *copyMap(VM *vm, ObjMap *map, bool isShallow) {
+ObjMap *copyMap(VM *vm, ObjMap *map, const bool isShallow) {
     ObjMap *ret = newMap(vm);
     push(vm, OBJ_VAL(ret));
     

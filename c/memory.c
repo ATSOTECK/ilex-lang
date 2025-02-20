@@ -89,7 +89,7 @@ static void blackenObject(VM *vm, Obj *obj) {
 
     switch (obj->type) {
         case OBJ_BOUND_METHOD: {
-            ObjBoundMethod *bound = (ObjBoundMethod*)obj;
+            const ObjBoundMethod *bound = (ObjBoundMethod*)obj;
             markValue(vm, bound->receiver);
             markObject(vm, (Obj*)bound->method);
         } break;
@@ -106,7 +106,7 @@ static void blackenObject(VM *vm, Obj *obj) {
             markObject(vm, (Obj*)objClass->superClass);
         } break;
         case OBJ_CLOSURE: {
-            ObjClosure *closure = (ObjClosure*)obj;
+            const ObjClosure *closure = (ObjClosure*)obj;
             markObject(vm, (Obj*)closure->function);
             for (int i = 0; i < closure->upvalueCount; ++i) {
                 markObject(vm, (Obj*)closure->upvalues[i]);
@@ -158,6 +158,7 @@ static void blackenObject(VM *vm, Obj *obj) {
             ObjAbstract *abstract = (ObjAbstract*)obj;
             markTable(vm, &abstract->values);
         } break;
+        default: break;
     }
 }
 

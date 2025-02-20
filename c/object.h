@@ -37,6 +37,8 @@ bool mapHasKey(const ObjMap *map, Value key);
 bool mapDelete(VM *vm, ObjMap *map, Value key);
 void mapClear(VM *vm, ObjMap *map);
 void markMap(VM *vm, ObjMap *map);
+ValueArray mapKeys(VM *vm, const ObjMap *map);
+ValueArray mapValues(VM *vm, const ObjMap *map);
 bool setAdd(VM *vm, ObjSet *set, Value value);
 bool setGet(ObjSet *set, Value value);
 bool setDelete(VM *vm, ObjSet *set, Value value);
