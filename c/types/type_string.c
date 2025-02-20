@@ -308,7 +308,7 @@ static Value stringTrimEnd(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, temp, len + 1));
 }
 
-static Value stringTrim(VM *vm, int argc, Value *args) {
+static Value stringTrim(VM *vm, const int argc, Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function trim() expected 0 arguments but got %d.", argc);
         return ERROR_VAL;
@@ -319,6 +319,10 @@ static Value stringTrim(VM *vm, int argc, Value *args) {
     str = stringTrimEnd(vm, 0, &str);
     pop(vm);
     return str;
+}
+
+static Value stringToString(VM *vm, int argc, Value *args) {
+    return args[0];
 }
 
 void defineStringFunctions(VM *vm) {
@@ -332,4 +336,5 @@ void defineStringFunctions(VM *vm) {
     defineNative(vm, "trimStart", stringTrimStart, &vm->stringFunctions);
     defineNative(vm, "trimEnd", stringTrimEnd, &vm->stringFunctions);
     defineNative(vm, "trim", stringTrim, &vm->stringFunctions);
+    defineNative(vm, "toString", stringToString, &vm->stringFunctions);
 }

@@ -18,6 +18,7 @@
 #include "lib_window.h"
 #include "lib_ascii.h"
 #include "lib_web.h"
+#include "lib_http.h"
 
 BuiltInLibs makeLib(VM *vm, const char *name, BuiltInLib lib);
 void initBuiltInLibs(VM *vm);

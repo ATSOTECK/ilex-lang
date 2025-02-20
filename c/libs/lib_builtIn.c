@@ -21,7 +21,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libCapacity = 9;
     vm->libCapacity = GROW_CAPACITY(vm->libCapacity);
 
-    vm->libCount = 10;
+    vm->libCount = 11;
     vm->libs = ALLOCATE(vm, BuiltInLibs, vm->libCapacity);
     vm->libs[0] = makeLib(vm, "math",   &useMathLib);
     vm->libs[1] = makeLib(vm, "ilex",   &useIlexLib);
@@ -33,6 +33,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libs[7] = makeLib(vm, "window", &useWindowLib);
     vm->libs[8] = makeLib(vm, "ascii",  &useAsciiLib);
     vm->libs[9] = makeLib(vm, "web",    &useWebLib);
+    vm->libs[10] = makeLib(vm, "http",  &useHttpLib);
 }
 
 Value useBuiltInLib(VM *vm, int idx) {

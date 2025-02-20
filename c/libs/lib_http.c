@@ -226,7 +226,7 @@ static bool setRequestHeaders(VM *vm, struct curl_slist *list, CURL *curl, ObjMa
     return true;
 }
 
-static ObjMap *endRequest(VM *vm, CURL *curl, Response response, const bool cleanup) {
+static ObjMap *makeResponse(VM *vm, CURL *curl, Response response, const bool cleanup) {
     // Get status code
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response.statusCode);
     ObjString *body;
@@ -248,7 +248,7 @@ static ObjMap *endRequest(VM *vm, CURL *curl, Response response, const bool clea
 
     key = copyString(vm, "headers", 7);
     push(vm, OBJ_VAL(key));
-    mapSet(vm, responseMap, OBJ_VAL(key), OBJ_VAL(response.headers));
+    mapSet(vm, responseMap, OBJ_VAL(key), OBJ_VAL(response.headers)); // TODO: Make headers a map instead of a string.
     pop(vm);
 
     key = copyString(vm, "statusCode", 10);
@@ -271,6 +271,10 @@ static ObjMap *endRequest(VM *vm, CURL *curl, Response response, const bool clea
     }
 
     return responseMap;
+}
+
+static ObjMap *makeResponseWithError(VM *vm, CURL *curl, Response response, const bool cleanup) {
+    return NULL;
 }
 
 static Value httpGet(VM *vm, const int argc, Value *args) {
@@ -352,7 +356,7 @@ static Value httpGet(VM *vm, const int argc, Value *args) {
             return NULL_VAL; // TODO: Return map with error.
         }
 
-        return OBJ_VAL(endRequest(vm, curl, response, true));
+        return OBJ_VAL(makeResponse(vm, curl, response, true));
     }
 
     curl_easy_cleanup(curl);
@@ -364,10 +368,14 @@ static Value httpGet(VM *vm, const int argc, Value *args) {
 }
 
 Value useHttpLib(VM *vm) {
-    ObjString *name = copyString(vm, "http", 6);
+    ObjString *name = copyString(vm, "http", 4);
     push(vm, OBJ_VAL(name));
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));
+
+    if (lib->used) {
+        return OBJ_VAL(lib);
+    }
 
     defineNativeValue(vm, "MethodGet", OBJ_VAL(copyString(vm, HTTP_METHOD_GET, strlen(HTTP_METHOD_GET))), &lib->values);
     defineNativeValue(vm, "MethodHead", OBJ_VAL(copyString(vm, HTTP_METHOD_HEAD, strlen(HTTP_METHOD_HEAD))), &lib->values);
