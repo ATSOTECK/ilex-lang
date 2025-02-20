@@ -324,11 +324,11 @@ static Token string(const char strChar) {
         
         if (peek() == '\\' && peekNext() == strChar) {
             overwrite = true;
-        } else if (peek() == '\\' && peekNext() == '$' && peekn(2) == '{') {
+        } else if (peek() == '\\' && peekNext() == '{') {
             skipInterpolation = true;
         } else if (peek() == '\n') {
             lexer.line++;
-        } else if (!skipInterpolation && peek() == '$' && peekNext() == '{') {
+        } else if (!skipInterpolation && peek() == '{') {
             if (lexer.interpolationDepth >= MAX_INTERPOLATION_DEPTH) {
                 return errorToken("Interpolation may only nest 2 levels deep");
             }
@@ -337,7 +337,7 @@ static Token string(const char strChar) {
 
             advance();
             const Token token = makeToken(TK_INTERPOLATION);
-            advance();
+
             return token;
         }
 
@@ -426,9 +426,9 @@ static Token octalNumber() {
         }
         
         return makeToken(TK_NUMBER);
-    } else {
-        return number();
     }
+
+    return number();
 }
 
 static Token hexNumber() {
@@ -451,9 +451,9 @@ static Token hexNumber() {
         }
         
         return makeToken(TK_NUMBER);
-    } else {
-        return octalNumber();
     }
+
+    return octalNumber();
 }
 
 Token nextToken() {
