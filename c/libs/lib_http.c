@@ -460,7 +460,6 @@ static Value httpGet(VM *vm, const int argc, Value *args) {
     if (curl) {
         Response response;
         createResponse(vm, &response);
-
         struct curl_slist *list = NULL;
 
         if (headers) {
@@ -566,7 +565,6 @@ static Value httpPost(VM *vm, const int argc, Value *args) {
         createResponse(vm, &response);
         char *url = AS_CSTRING(args[0]);
         char *payload = "";
-
         struct curl_slist *list = NULL;
 
         if (headers) {
@@ -684,7 +682,6 @@ static Value httpPut(VM *vm, const int argc, Value *args) {
         createResponse(vm, &response);
         char *url = AS_CSTRING(args[0]);
         char *payload = "";
-
         struct curl_slist *list = NULL;
 
         if (headers) {
@@ -740,6 +737,183 @@ static Value httpPut(VM *vm, const int argc, Value *args) {
 
     // char *errorString = (char *) curl_easy_strerror(CURLE_FAILED_INIT);
     return NULL_VAL;
+}
+
+static Value httpHead(VM *vm, const int argc, Value *args) {
+    if (argc < 1 || argc > 3) {
+        runtimeError(vm, "Function head() expected 1 to 3 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    if (!IS_STRING(args[0])) {
+        char *type = valueType(args[1]);
+        runtimeError(vm, "Function head() expected type 'string' for the first argument but got '%s'.", type);
+        free(type);
+        return ERROR_VAL;
+    }
+
+    char *url = AS_CSTRING(args[0]);
+    ObjMap *headers = NULL;
+    int timeout = DEFAULT_REQUEST_TIMEOUT;
+
+    if (argc >= 2) {
+        if (!IS_MAP(args[1])) {
+            char *type = valueType(args[1]);
+            runtimeError(vm, "Function head() expected type 'map' for the second argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        headers = AS_MAP(args[1]);
+    }
+
+    if (argc == 3) {
+        if (!IS_NUMBER(args[2])) {
+            char *type = valueType(args[2]);
+            runtimeError(vm, "Function head() expected type 'number' for the third argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        timeout = AS_NUMBER(args[3]);
+    }
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    CURL *curl = curl_easy_init();
+
+    if (curl) {
+        Response response;
+        createResponse(vm, &response);
+        struct curl_slist *list = NULL;
+
+        if (headers) {
+            if (!setRequestHeaders(vm, list, curl, headers)) {
+                curl_slist_free_all(list);
+                return NULL_VAL;
+            }
+        }
+
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+        curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip");
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, writeHeaders);
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+        const CURLcode curlResponse = curl_easy_perform(curl);
+
+        if (headers) {
+            curl_slist_free_all(list);
+        }
+
+        if (curlResponse != CURLE_OK) {
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+            pop(vm);
+
+            // char *errorString = (char *) curl_easy_strerror(curlResponse);
+            return NULL_VAL; // TODO: Return map with error.
+        }
+
+        return OBJ_VAL(makeResponse(vm, curl, response, true));
+    }
+
+    curl_easy_cleanup(curl);
+    curl_global_cleanup();
+    pop(vm);
+
+    // char *errorString = (char *) curl_easy_strerror(CURLE_FAILED_INIT);
+    return NULL_VAL; // TODO: Return map with error.
+}
+
+static Value httpOptions(VM *vm, const int argc, Value *args) {
+    if (argc < 1 || argc > 3) {
+        runtimeError(vm, "Function options() expected 1 to 3 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    if (!IS_STRING(args[0])) {
+        char *type = valueType(args[1]);
+        runtimeError(vm, "Function options() expected type 'string' for the first argument but got '%s'.", type);
+        free(type);
+        return ERROR_VAL;
+    }
+
+    char *url = AS_CSTRING(args[0]);
+    ObjMap *headers = NULL;
+    int timeout = DEFAULT_REQUEST_TIMEOUT;
+
+    if (argc >= 2) {
+        if (!IS_MAP(args[1])) {
+            char *type = valueType(args[1]);
+            runtimeError(vm, "Function options() expected type 'map' for the second argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        headers = AS_MAP(args[1]);
+    }
+
+    if (argc == 3) {
+        if (!IS_NUMBER(args[2])) {
+            char *type = valueType(args[2]);
+            runtimeError(vm, "Function options() expected type 'number' for the third argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        timeout = AS_NUMBER(args[3]);
+    }
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    CURL *curl = curl_easy_init();
+
+    if (curl) {
+        Response response;
+        createResponse(vm, &response);
+        struct curl_slist *list = NULL;
+
+        if (headers) {
+            if (!setRequestHeaders(vm, list, curl, headers)) {
+                curl_slist_free_all(list);
+                return NULL_VAL;
+            }
+        }
+
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "OPTIONS");
+        curl_easy_setopt(curl, CURLOPT_REQUEST_TARGET, "*");
+        curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip");
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, writeHeaders);
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+        const CURLcode curlResponse = curl_easy_perform(curl);
+
+        if (headers) {
+            curl_slist_free_all(list);
+        }
+
+        if (curlResponse != CURLE_OK) {
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+            pop(vm);
+
+            // char *errorString = (char *) curl_easy_strerror(curlResponse);
+            return NULL_VAL; // TODO: Return map with error.
+        }
+
+        return OBJ_VAL(makeResponse(vm, curl, response, true));
+    }
+
+    curl_easy_cleanup(curl);
+    curl_global_cleanup();
+    pop(vm);
+
+    // char *errorString = (char *) curl_easy_strerror(CURLE_FAILED_INIT);
+    return NULL_VAL; // TODO: Return map with error.
 }
 
 Value useHttpLib(VM *vm) {
@@ -899,6 +1073,8 @@ Value useHttpLib(VM *vm) {
     defineNative(vm, "get", httpGet, &lib->values);
     defineNative(vm, "post", httpPost, &lib->values);
     defineNative(vm, "put", httpPut, &lib->values);
+    defineNative(vm, "head", httpHead, &lib->values);
+    defineNative(vm, "options", httpOptions, &lib->values);
 
     pop(vm);
     pop(vm);
