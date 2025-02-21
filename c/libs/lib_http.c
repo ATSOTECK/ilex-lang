@@ -355,6 +355,66 @@ static ObjMap *makeResponseWithError(VM *vm, CURL *curl, Response response, cons
     return NULL;
 }
 
+static char *mapToPayload(ObjMap *map) {
+    int len = 100;
+    char *ret = (char*)malloc(sizeof(char) * len);
+    int currentLen = 0;
+
+    for (int i = 0; i <= map->capacity; i++) {
+        const MapItem *entry = &map->items[i];
+        if (IS_ERR(entry->key)) {
+            continue;
+        }
+
+        char *key;
+        if (IS_STRING(entry->key)) {
+            key = AS_CSTRING(entry->key);
+        } else {
+            key = valueToString(entry->key);
+        }
+
+        char *value;
+        if (IS_STRING(entry->value)) {
+            value = AS_CSTRING(entry->value);
+        } else {
+            value = valueToString(entry->value);
+        }
+
+        int keyLen = (int)strlen(key);
+        int valLen = (int)strlen(value);
+
+        if (currentLen + keyLen + valLen > len) {
+            len = len * 2 + keyLen + valLen;
+            ret = realloc(ret, len);
+
+            if (ret == NULL) {
+                printf("Unable to allocate memory\n");
+                exit(71);
+            }
+        }
+
+        memcpy(ret + currentLen, key, keyLen);
+        currentLen += keyLen;
+        memcpy(ret + currentLen, "=", 1);
+        currentLen += 1;
+        memcpy(ret + currentLen, value, valLen);
+        currentLen += valLen;
+        memcpy(ret + currentLen, "&", 1);
+        currentLen += 1;
+
+        if (!IS_STRING(entry->key)) {
+            free(key);
+        }
+        if (!IS_STRING(entry->value)) {
+            free(value);
+        }
+    }
+
+    ret[currentLen] = '\0';
+
+    return ret;
+}
+
 static Value httpGet(VM *vm, const int argc, Value *args) {
     if (argc < 1 || argc > 3) {
         runtimeError(vm, "Function get() expected 1 to 3 arguments but got '%d'.", argc);
@@ -446,6 +506,239 @@ static Value httpGet(VM *vm, const int argc, Value *args) {
 }
 
 static Value httpPost(VM *vm, const int argc, Value *args) {
+    if (argc < 1 || argc > 4) {
+        runtimeError(vm, "Function post() expected 1 to 4 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    ObjMap *payloadMap = NULL;
+    const ObjString *payloadString = NULL;
+    ObjMap *headers = NULL;
+    int timeout = DEFAULT_REQUEST_TIMEOUT;
+
+    if (!IS_STRING(args[0])) {
+        char *type = valueType(args[0]);
+        runtimeError(vm, "Function post() expected type 'string' for the first argument but got '%s'.", type);
+        free(type);
+        return ERROR_VAL;
+    }
+
+    if (argc >= 2) {
+        if (IS_MAP(args[1])) {
+            payloadMap = AS_MAP(args[1]);
+        } else if (IS_STRING(args[1])) {
+            payloadString = AS_STRING(args[1]);
+        } else {
+            char *type = valueType(args[1]);
+            runtimeError(vm, "Function post() expected type 'map' or 'string' for the second argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+    }
+
+    if (argc >= 3) {
+        if (!IS_MAP(args[2])) {
+            char *type = valueType(args[2]);
+            runtimeError(vm, "Function post() expected type 'map' for the third argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        headers = AS_MAP(args[2]);
+    }
+
+    if (argc == 4) {
+        if (!IS_NUMBER(args[3])) {
+            char *type = valueType(args[3]);
+            runtimeError(vm, "Function post() expected type 'number' for the fourth argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        timeout = (int)AS_NUMBER(args[3]);
+    }
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    CURL *curl = curl_easy_init();
+
+    if (curl) {
+        Response response;
+        createResponse(vm, &response);
+        char *url = AS_CSTRING(args[0]);
+        char *payload = "";
+
+        struct curl_slist *list = NULL;
+
+        if (headers) {
+            if (!setRequestHeaders(vm, list, curl, headers)) {
+                curl_slist_free_all(list);
+                return NULL_VAL;
+            }
+        }
+
+        if (payloadMap != NULL) {
+            payload = mapToPayload(payloadMap);
+        } else if (payloadString != NULL) {
+            payload = payloadString->str;
+        }
+
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+        curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeResponse);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, writeHeaders);
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+        const CURLcode curlResponse = curl_easy_perform(curl);
+
+        if (headers) {
+            curl_slist_free_all(list);
+        }
+
+        if (payloadMap) {
+            free(payload);
+        }
+
+        if (curlResponse != CURLE_OK) {
+            /* always cleanup */
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+            pop(vm);
+
+            // char *errorString = (char *) curl_easy_strerror(curlResponse);
+            return NULL_VAL;
+        }
+
+        return OBJ_VAL(makeResponse(vm, curl, response, true));
+    }
+
+    curl_easy_cleanup(curl);
+    curl_global_cleanup();
+    pop(vm);
+
+    // char *errorString = (char *) curl_easy_strerror(CURLE_FAILED_INIT);
+    return NULL_VAL;
+}
+
+static Value httpPut(VM *vm, const int argc, Value *args) {
+    if (argc < 1 || argc > 4) {
+        runtimeError(vm, "Function put() expected 1 to 4 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    ObjMap *payloadMap = NULL;
+    const ObjString *payloadString = NULL;
+    ObjMap *headers = NULL;
+    int timeout = DEFAULT_REQUEST_TIMEOUT;
+
+    if (!IS_STRING(args[0])) {
+        char *type = valueType(args[0]);
+        runtimeError(vm, "Function put() expected type 'string' for the first argument but got '%s'.", type);
+        free(type);
+        return ERROR_VAL;
+    }
+
+    if (argc >= 2) {
+        if (IS_MAP(args[1])) {
+            payloadMap = AS_MAP(args[1]);
+        } else if (IS_STRING(args[1])) {
+            payloadString = AS_STRING(args[1]);
+        } else {
+            char *type = valueType(args[1]);
+            runtimeError(vm, "Function put() expected type 'map' or 'string' for the second argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+    }
+
+    if (argc >= 3) {
+        if (!IS_MAP(args[2])) {
+            char *type = valueType(args[2]);
+            runtimeError(vm, "Function put() expected type 'map' for the third argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        headers = AS_MAP(args[2]);
+    }
+
+    if (argc == 4) {
+        if (!IS_NUMBER(args[3])) {
+            char *type = valueType(args[3]);
+            runtimeError(vm, "Function put() expected type 'number' for the fourth argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        timeout = (int)AS_NUMBER(args[3]);
+    }
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    CURL *curl = curl_easy_init();
+
+    if (curl) {
+        Response response;
+        createResponse(vm, &response);
+        char *url = AS_CSTRING(args[0]);
+        char *payload = "";
+
+        struct curl_slist *list = NULL;
+
+        if (headers) {
+            if (!setRequestHeaders(vm, list, curl, headers)) {
+                curl_slist_free_all(list);
+                return NULL_VAL;
+            }
+        }
+
+        if (payloadMap != NULL) {
+            payload = mapToPayload(payloadMap);
+        } else if (payloadString != NULL) {
+            payload = payloadString->str;
+        }
+
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+        curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload);
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeResponse);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, writeHeaders);
+        curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+        const CURLcode curlResponse = curl_easy_perform(curl);
+
+        if (headers) {
+            curl_slist_free_all(list);
+        }
+
+        if (payloadMap) {
+            free(payload);
+        }
+
+        if (curlResponse != CURLE_OK) {
+            /* always cleanup */
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+            pop(vm);
+
+            // char *errorString = (char *) curl_easy_strerror(curlResponse);
+            return NULL_VAL;
+        }
+
+        return OBJ_VAL(makeResponse(vm, curl, response, true));
+    }
+
+    curl_easy_cleanup(curl);
+    curl_global_cleanup();
+    pop(vm);
+
+    // char *errorString = (char *) curl_easy_strerror(CURLE_FAILED_INIT);
     return NULL_VAL;
 }
 
@@ -605,6 +898,7 @@ Value useHttpLib(VM *vm) {
 
     defineNative(vm, "get", httpGet, &lib->values);
     defineNative(vm, "post", httpPost, &lib->values);
+    defineNative(vm, "put", httpPut, &lib->values);
 
     pop(vm);
     pop(vm);

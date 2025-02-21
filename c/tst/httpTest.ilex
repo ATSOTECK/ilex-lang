@@ -1,6 +1,8 @@
 use <http>
 
-resp ::= http::get('http://www.example.com')
+// resp ::= http::get('http://www.example.com')
+// resp ::= http::get('localhost:8000/json')
+resp ::= http::post('localhost:8000/post', { name: 'Steve' })
 println('status code: {resp.statusCode}')
 println('status message: {resp.status}')
 println('body: {resp.body}')
