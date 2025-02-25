@@ -1,4 +1,4 @@
-github.com/AlDanial/cloc v 2.04  T=0.05 s (1657.3 files/s, 316143.5 lines/s)
+github.com/AlDanial/cloc v 2.04  T=0.03 s (2593.8 files/s, 495553.9 lines/s)
 --------------------------------------------------------------------------------------
 File                                    blank        comment           code
 --------------------------------------------------------------------------------------
@@ -14,8 +14,8 @@ File                                    blank        comment           code
 ./c/types/type_string.c                    63              8            269
 ./c/libs/lib_math.c                        82             11            268
 ./c/types/type_file.c                      77              5            260
+./c/libs/lib_toml.c                        66              3            238
 ./c/types/type_map.c                       60              3            221
-./c/libs/lib_toml.c                        61              3            220
 ./c/debug.c                                22              4            187
 ./c/libs/lib_env.c                         53              3            184
 ./c/libs/lib_window.c                      45              4            184
@@ -80,5 +80,5 @@ File                                    blank        comment           code
 ./install.sh                                0              0              1
 ./c/types/type_web_app.c                    0              3              0
 --------------------------------------------------------------------------------------
-SUM:                                     2555            353          11780
+SUM:                                     2560            353          11798
 --------------------------------------------------------------------------------------

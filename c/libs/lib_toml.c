@@ -254,11 +254,34 @@ static Value tomlParseFile(VM *vm, const int argc, Value *args) {
     return OBJ_VAL(map);
 }
 
-static Value tomlParseString(VM *vm, int argc, Value *args) {
-    return NULL_VAL;
+static Value tomlParseString(VM *vm, const int argc, Value *args) {
+    if (argc != 1) {
+        runtimeError(vm, "Function parseString() expected 1 argument but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    if (!IS_STRING(args[0])) {
+        char *type = valueType(args[0]);
+        runtimeError(vm, "Function parseString() expected type 'string' for the first argument but got '%s'.", type);
+        free(type);
+        return ERROR_VAL;
+    }
+
+    const ObjString *string = AS_STRING(args[0]);
+
+    char errbuf[200];
+    const toml_table_t *conf = toml_parse(string->str, errbuf, sizeof(errbuf));
+    if (conf == NULL) {
+        return NULL_VAL; // TODO: error
+    }
+
+    ObjMap *map = newMap(vm);
+    setMapValuesFromToml(vm, map, conf);
+
+    return OBJ_VAL(map);
 }
 
-static Value tomlMapToToml(VM *vm, int argc, Value *args) {
+static Value tomlMapToToml(VM *vm, const int argc, Value *args) {
     return NULL_VAL;
 }
 
@@ -273,7 +296,7 @@ Value useTomlLib(VM *vm) {
     }
 
     defineNative(vm, "parseFile", tomlParseFile, &lib->values);
-    defineNative(vm, "parseString", tomlParseFile, &lib->values);
+    defineNative(vm, "parseString", tomlParseString, &lib->values);
     defineNative(vm, "toToml", tomlMapToToml, &lib->values);
 
     pop(vm);
