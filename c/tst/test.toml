@@ -2,13 +2,14 @@ name = "bla"
 age = 55
 height = 5.5
 alive = true
+thing = { a = 1, b = 2 }
 
 [table]
 str = "yeet"
 bool = false
 int = 12
 double = 12.34
-arr = [1, "two", false, [3, 4], 34.56]
+arr = [1, "two", false, [3, 4], 34.56, { k = "a", v = 450 }]
 
 [server.alpha]
 name = "steve"

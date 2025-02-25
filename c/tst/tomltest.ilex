@@ -5,3 +5,5 @@ println(cfg)
 println(cfg.name)
 
 println(cfg.server.alpha.name)
+
+println(cfg.thing)

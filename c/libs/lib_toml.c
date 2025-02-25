@@ -4,7 +4,6 @@
 
 #include "lib_toml.h"
 
-#include <toml/toml.h>
 #include <stdlib.h>
 
 static void setMapString(VM *vm, ObjMap *map, const toml_datum_t datum, const char *key) {
@@ -99,12 +98,23 @@ static void appendDouble(VM *vm, ObjArray *array, const toml_datum_t datum) {
     pop(vm);
 }
 
-static void setMapArray(VM *vm, ObjMap *map, const toml_array_t *arr, const char *key) {
-    const Value valueKey = OBJ_VAL(copyString(vm, key, (int)strlen(key)));
-    push(vm, valueKey);
+static void appendMap(VM *vm, ObjArray *array, ObjMap *map) {
+    const Value value = OBJ_VAL(map);
+    push(vm, value);
 
-    ObjArray *array = newArray(vm);
+    writeValueArray(vm, &array->data, value);
+    pop(vm);
+}
 
+static void appendArray(VM *vm, ObjArray *array, ObjArray *subArray) {
+    const Value value = OBJ_VAL(subArray);
+    push(vm, value);
+
+    writeValueArray(vm, &array->data, value);
+    pop(vm);
+}
+
+static void setArrayValueFromToml(VM *vm, ObjArray *array, const toml_array_t *arr) {
     for (int i = 0;; ++i) {
         toml_datum_t datum = toml_string_at(arr, i);
         if (datum.ok) {
@@ -132,18 +142,30 @@ static void setMapArray(VM *vm, ObjMap *map, const toml_array_t *arr, const char
 
         const toml_table_t *table = toml_table_at(arr, i);
         if (table != NULL) {
-            // TODO
+            ObjMap *map = newMap(vm);
+            setMapValuesFromToml(vm, map, table);
+            appendMap(vm, array, map);
             continue;
         }
 
         const toml_array_t *subArr = toml_array_at(arr, i);
         if (subArr != NULL) {
-            // TODO
+            ObjArray *subArray = newArray(vm);
+            setArrayValueFromToml(vm, subArray, subArr);
+            appendArray(vm, array, subArray);
             continue;
         }
 
         break;
     }
+}
+
+static void setMapArray(VM *vm, ObjMap *map, const toml_array_t *arr, const char *key) {
+    const Value valueKey = OBJ_VAL(copyString(vm, key, (int)strlen(key)));
+    push(vm, valueKey);
+
+    ObjArray *array = newArray(vm);
+    setArrayValueFromToml(vm, array, arr);
 
     const Value value = OBJ_VAL(array);
     push(vm, value);
@@ -153,7 +175,7 @@ static void setMapArray(VM *vm, ObjMap *map, const toml_array_t *arr, const char
     pop(vm);
 }
 
-static void setMapValuesFromToml(VM *vm, ObjMap *map, const toml_table_t *conf) {
+void setMapValuesFromToml(VM *vm, ObjMap *map, const toml_table_t *conf) {
     for (int i = 0;; ++i) {
         const char *key = toml_key_in(conf, i);
         if (!key) {
