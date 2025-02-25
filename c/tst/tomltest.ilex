@@ -1,0 +1,7 @@
+use <toml>
+
+cfg ::= toml::parseFile('test.toml')
+println(cfg)
+println(cfg.name)
+
+println(cfg.server.alpha.name)

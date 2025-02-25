@@ -19,6 +19,7 @@
 #include "lib_ascii.h"
 #include "lib_web.h"
 #include "lib_http.h"
+#include "lib_toml.h"
 
 BuiltInLibs makeLib(VM *vm, const char *name, BuiltInLib lib);
 void initBuiltInLibs(VM *vm);

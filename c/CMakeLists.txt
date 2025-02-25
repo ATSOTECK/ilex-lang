@@ -64,7 +64,9 @@ set(sources
         libs/lib_json.c
         libs/lib_time.h
         libs/lib_time.c
-        glad.c)
+        glad.c
+        inc/toml/toml.c
+        inc/toml/toml.h)
 
 add_executable(ilex main.c ${sources} types/type_window.h types/type_window.c libs/lib_window.h libs/lib_window.c libs/lib_test.h libs/lib_test.c libs/lib_ascii.h libs/lib_ascii.c types/type_enum.h types/type_enum.c
         libs/lib_web.h
@@ -74,7 +76,9 @@ add_executable(ilex main.c ${sources} types/type_window.h types/type_window.c li
         types/base_types.h
         types/base_types.c
         libs/lib_http.h
-        libs/lib_http.c)
+        libs/lib_http.c
+        libs/lib_toml.h
+        libs/lib_toml.c)
 
 add_library(ilex_lib ${sources})
 

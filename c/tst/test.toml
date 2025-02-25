@@ -1,0 +1,17 @@
+name = "bla"
+age = 55
+height = 5.5
+alive = true
+
+[table]
+str = "yeet"
+bool = false
+int = 12
+double = 12.34
+arr = [1, "two", false, [3, 4], 34.56]
+
+[server.alpha]
+name = "steve"
+
+[server.beta]
+name = "alice"
