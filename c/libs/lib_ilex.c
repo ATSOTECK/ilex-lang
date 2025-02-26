@@ -10,31 +10,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static Value ilexVersionString(VM *vm, int argc, Value *args) {
+static Value ilexVersionString(VM *vm, int argc, const Value *args) {
     return OBJ_VAL(takeString(vm, newCString(ILEX_VERSION), strlen(ILEX_VERSION)));
 }
 
-static Value ilexVersionMajor(VM *vm, int argc, Value *args) {
+static Value ilexVersionMajor(VM *vm, int argc, const Value *args) {
     return NUMBER_VAL(ILEX_VERSION_MAJOR);
 }
 
-static Value ilexVersionMinor(VM *vm, int argc, Value *args) {
+static Value ilexVersionMinor(VM *vm, int argc, const Value *args) {
     return NUMBER_VAL(ILEX_VERSION_MINOR);
 }
 
-static Value ilexVersionBuild(VM *vm, int argc, Value *args) {
+static Value ilexVersionBuild(VM *vm, int argc, const Value *args) {
     return NUMBER_VAL(ILEX_VERSION_BUILD);
 }
 
-static Value ilexDateString(VM *vm, int argc, Value *args) {
+static Value ilexDateString(VM *vm, int argc, const Value *args) {
     return OBJ_VAL(takeString(vm, newCString(ILEX_DATE), strlen(ILEX_DATE)));
 }
 
-static Value ilexMemUsed(VM *vm, int argc, Value *args) {
+static Value ilexMemUsed(VM *vm, const int argc, const Value *args) {
     return NUMBER_VAL(vm->bytesAllocated);
 }
 
-static Value ilexPrintMemUsed(VM *vm, int argc, Value *args) {
+static Value ilexPrintMemUsed(VM *vm, int argc, const Value *args) {
     double bytes = (double)vm->bytesAllocated;
 
     int times = 0;
@@ -55,7 +55,7 @@ static Value ilexPrintMemUsed(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value ilexGetMemUsed(VM *vm, int argc, Value *args) {
+static Value ilexGetMemUsed(VM *vm, const int argc, const Value *args) {
     double bytes = (double)vm->bytesAllocated;
 
     int times = 0;
@@ -84,7 +84,7 @@ static Value ilexGetMemUsed(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value ilexNextGcAt(VM *vm, int argc, Value *args) {
+static Value ilexNextGcAt(VM *vm, const int argc, const Value *args) {
     double bytes = (double)vm->nextGC;
 
     int times = 0;
@@ -113,20 +113,20 @@ static Value ilexNextGcAt(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value ilexGcRuns(VM *vm, int argc, Value *args) {
+static Value ilexGcRuns(VM *vm, const int argc, const Value *args) {
     return NUMBER_VAL((double)vm->gcRuns);
 }
 
-static Value ilexCollectGarbage(VM *vm, int argc, Value *args) {
+static Value ilexCollectGarbage(VM *vm, const int argc, const Value *args) {
     collectGarbage(vm);
     return ZERO_VAL;
 }
 
-static Value ilexFunctionCount(VM *vm, int argc, Value *args) {
+static Value ilexFunctionCount(VM *vm, const int argc, const Value *args) {
     return NUMBER_VAL(vm->fnCount);
 }
 
-static Value ilexValueCount(VM *vm, int argc, Value *args) {
+static Value ilexValueCount(VM *vm, const int argc, const Value *args) {
     return NUMBER_VAL(vm->valCount);
 }
 

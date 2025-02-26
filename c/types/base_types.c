@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 
-static Value numberToStringLib(VM *vm, const int argc, Value *args) {
+static Value numberToStringLib(VM *vm, const int argc, const Value *args) {
     char *str = valueToString(args[0]);
     ObjString *ret = copyString(vm, str, (int)strlen(str));
     free(str);

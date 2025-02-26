@@ -28,23 +28,23 @@ ObjSet *newSet(VM *vm);
 ObjAbstract *newAbstract(VM *vm, AbstractFreeFn freeFn);
 char *objectType(Value value);
 char *objectToString(Value value);
-char *arrayToString(ObjArray *array);
-char *mapToString(ObjMap *map);
-char *setToString(ObjSet *set);
+char *arrayToString(const ObjArray *array);
+char *mapToString(const ObjMap *map);
+char *setToString(const ObjSet *set);
 bool mapSet(VM *vm, ObjMap *map, Value key, Value value);
 bool mapGet(const ObjMap *map, Value key, Value *value);
 bool mapHasKey(const ObjMap *map, Value key);
 bool mapDelete(VM *vm, ObjMap *map, Value key);
 void mapClear(VM *vm, ObjMap *map);
-void markMap(VM *vm, ObjMap *map);
+void markMap(VM *vm, const ObjMap *map);
 ValueArray mapKeys(VM *vm, const ObjMap *map);
 ValueArray mapValues(VM *vm, const ObjMap *map);
 bool setAdd(VM *vm, ObjSet *set, Value value);
-bool setGet(ObjSet *set, Value value);
+bool setGet(const ObjSet *set, Value value);
 bool setDelete(VM *vm, ObjSet *set, Value value);
-void markSet(VM *vm, ObjSet *set);
+void markSet(VM *vm, const ObjSet *set);
 
-ObjArray *copyArray(VM *vm, ObjArray *array, bool isShallow);
-ObjMap *copyMap(VM *vm, ObjMap *map, bool isShallow);
+ObjArray *copyArray(VM *vm, const ObjArray *array, bool isShallow);
+ObjMap *copyMap(VM *vm, const ObjMap *map, bool isShallow);
 
 #endif //__C_OBJECT_H__

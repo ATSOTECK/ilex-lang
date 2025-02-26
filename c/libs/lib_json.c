@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 
-static Value parseJSON(VM *vm, json_value *json) {
+static Value parseJSON(VM *vm, const json_value *json) {
     switch (json->type) {
         case json_none:
         case json_null: return NULL_VAL;
@@ -52,7 +52,7 @@ static Value parseJSON(VM *vm, json_value *json) {
     }
 }
 
-static Value jsonParse(VM *vm, int argc, Value *args) {
+static Value jsonParse(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function parse() expected 1 argument but got %d.", argc);
         return ERROR_VAL;
@@ -144,7 +144,7 @@ json_value *stringifyJSON(VM *vm, Value value) {
     return NULL;
 }
 
-static Value jsonStringify(VM *vm, int argc, Value *args) {
+static Value jsonStringify(VM *vm, int argc, const Value *args) {
     if (argc != 1 && argc != 2) {
         runtimeError(vm, "Function stringify() expected 1 or 2 arguments but got %d.", argc);
         return ERROR_VAL;

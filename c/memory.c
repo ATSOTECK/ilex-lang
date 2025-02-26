@@ -74,7 +74,7 @@ void markValue(VM *vm, Value value) {
     }
 }
 
-static void markArray(VM *vm, ValueArray *array) {
+static void markArray(VM *vm, const ValueArray *array) {
     for (int i = 0; i < array->count; ++i) {
         markValue(vm, array->values[i]);
     }

@@ -44,7 +44,7 @@ static bool isCommented(const char *line) {
     return false;
 }
 
-static char *concat(char *buffer, char *str) {
+static char *concat(char *buffer, const char *str) {
     if (!buffer) {
         return strdup(str);
     }
@@ -122,7 +122,7 @@ static bool readEnv(VM *vm, const char *path) {
     return true;
 }
 
-static Value envGet(VM *vm, int argc, Value *args) {
+static Value envGet(VM *vm, int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function indexOf() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -159,7 +159,7 @@ static Value envGet(VM *vm, int argc, Value *args) {
     return NULL_VAL;
 }
 
-static Value envSet(VM *vm, int argc, Value *args) {
+static Value envSet(VM *vm, int argc, const Value *args) {
     if (argc != 2) {
         runtimeError(vm, "Function set() expected 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -195,7 +195,7 @@ static Value envSet(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value envReadFile(VM *vm, int argc, Value *args) {
+static Value envReadFile(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function readFile() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;

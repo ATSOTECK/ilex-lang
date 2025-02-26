@@ -17,7 +17,7 @@ void disassembleChunk(Chunk *chunk, const char *name) {
 }
 
 // TODO: There is a bug here. Causes a crash when printing the value with OP_SET_CLASS_STATIC_VAR.
-static int constantInstruction(const char *name, Chunk *chunk, int offset) {
+static int constantInstruction(const char *name, const Chunk *chunk, int offset) {
     uint16_t constant = (uint16_t)(chunk->code[offset + 1] << 8);
     constant |= chunk->code[offset + 2];
 
@@ -28,7 +28,7 @@ static int constantInstruction(const char *name, Chunk *chunk, int offset) {
     return offset + 3;
 }
 
-static int invokeInstruction(const char *name, Chunk *chunk, int offset) {
+static int invokeInstruction(const char *name, const Chunk *chunk, int offset) {
     uint16_t constant = (uint16_t)(chunk->code[offset + 1] << 8);
     constant |= chunk->code[offset + 2];
     uint8_t argCount = chunk->code[offset + 3];
@@ -44,27 +44,27 @@ static int simpleInstruction(const char *name, int offset) {
     return offset + 1;
 }
 
-static int byteInstruction(const char *name, Chunk *chunk, int offset) {
+static int byteInstruction(const char *name, const Chunk *chunk, int offset) {
     uint8_t slot = chunk->code[offset + 1];
     printf("%-16s %4d\n", name, slot);
     return offset + 2;
 }
 
-static int shortInstruction(const char *name, Chunk *chunk, int offset) {
+static int shortInstruction(const char *name, const Chunk *chunk, int offset) {
     uint16_t slot = (uint16_t)(chunk->code[offset + 1] << 8);
     slot |= chunk->code[offset + 2];
     printf("%-16s %4d\n", name, slot);
     return offset + 3;
 }
 
-static int jumpInstruction(const char *name, int sign, Chunk *chunk, int offset) {
+static int jumpInstruction(const char *name, int sign, const Chunk *chunk, int offset) {
     uint16_t jump = (uint16_t)(chunk->code[offset + 1] << 8);
     jump |= chunk->code[offset + 2];
     printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
     return offset + 3;
 }
 
-static int useBuiltinInstruction(const char* name, Chunk* chunk, int offset) {
+static int useBuiltinInstruction(const char* name, const Chunk* chunk, int offset) {
     uint16_t lib = (uint16_t)(chunk->code[offset + 2] << 8);
     lib |= chunk->code[offset + 3];
     printf("%-18s '", name);
@@ -73,7 +73,7 @@ static int useBuiltinInstruction(const char* name, Chunk* chunk, int offset) {
     return offset + 4;
 }
 
-static int useFromBuiltinInstruction(const char* name, Chunk* chunk, int offset) {
+static int useFromBuiltinInstruction(const char* name, const Chunk* chunk, int offset) {
     uint16_t lib = (uint16_t)(chunk->code[offset + 1] << 8);
     lib |= chunk->code[offset + 2];
     uint8_t argc = chunk->code[offset + 3];
@@ -83,7 +83,7 @@ static int useFromBuiltinInstruction(const char* name, Chunk* chunk, int offset)
     return offset + 5 + argc;
 }
 
-static int classInstruction(const char *name, Chunk *chunk, int offset) {
+static int classInstruction(const char *name, const Chunk *chunk, int offset) {
     uint8_t type = chunk->code[offset + 1];
     uint16_t constant = (uint16_t)(chunk->code[offset + 2] << 8);
     constant |= chunk->code[offset + 3];

@@ -275,7 +275,7 @@ static size_t writeHeaders(const char *ptr, const size_t size, const size_t nite
     return size * nitems;
 }
 
-static bool setRequestHeaders(VM *vm, struct curl_slist *list, CURL *curl, ObjMap *headers) {
+static bool setRequestHeaders(VM *vm, struct curl_slist *list, CURL *curl, const ObjMap *headers) {
     if (headers->count == 0) {
         return true;
     }
@@ -355,7 +355,7 @@ static ObjMap *makeResponseWithError(VM *vm, CURL *curl, Response response, cons
     return NULL;
 }
 
-static char *mapToPayload(ObjMap *map) {
+static char *mapToPayload(const ObjMap *map) {
     int len = 100;
     char *ret = (char*)malloc(sizeof(char) * len);
     int currentLen = 0;
@@ -415,7 +415,7 @@ static char *mapToPayload(ObjMap *map) {
     return ret;
 }
 
-static Value httpGet(VM *vm, const int argc, Value *args) {
+static Value httpGet(VM *vm, const int argc, const Value *args) {
     if (argc < 1 || argc > 3) {
         runtimeError(vm, "Function get() expected 1 to 3 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -504,7 +504,7 @@ static Value httpGet(VM *vm, const int argc, Value *args) {
     return NULL_VAL; // TODO: Return map with error.
 }
 
-static Value httpPost(VM *vm, const int argc, Value *args) {
+static Value httpPost(VM *vm, const int argc, const Value *args) {
     if (argc < 1 || argc > 4) {
         runtimeError(vm, "Function post() expected 1 to 4 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -621,7 +621,7 @@ static Value httpPost(VM *vm, const int argc, Value *args) {
     return NULL_VAL;
 }
 
-static Value httpPut(VM *vm, const int argc, Value *args) {
+static Value httpPut(VM *vm, const int argc, const Value *args) {
     if (argc < 1 || argc > 4) {
         runtimeError(vm, "Function put() expected 1 to 4 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -739,7 +739,7 @@ static Value httpPut(VM *vm, const int argc, Value *args) {
     return NULL_VAL;
 }
 
-static Value httpHead(VM *vm, const int argc, Value *args) {
+static Value httpHead(VM *vm, const int argc, const Value *args) {
     if (argc < 1 || argc > 3) {
         runtimeError(vm, "Function head() expected 1 to 3 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -826,7 +826,7 @@ static Value httpHead(VM *vm, const int argc, Value *args) {
     return NULL_VAL; // TODO: Return map with error.
 }
 
-static Value httpOptions(VM *vm, const int argc, Value *args) {
+static Value httpOptions(VM *vm, const int argc, const Value *args) {
     if (argc < 1 || argc > 3) {
         runtimeError(vm, "Function options() expected 1 to 3 arguments but got '%d'.", argc);
         return ERROR_VAL;

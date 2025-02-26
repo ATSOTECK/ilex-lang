@@ -13,7 +13,7 @@ static void windowResizeCallback(GLFWwindow *window, int w, int h) {
     glViewport(0, 0, w, h);
 }
 
-static Value windowNewWindow(VM *vm, int argc, Value *args) {
+static Value windowNewWindow(VM *vm, int argc, const Value *args) {
     if (argc != 1 && argc != 3) {
         runtimeError(vm, "Function newWindow() expected 1 or 3 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -95,7 +95,7 @@ static Value windowNewWindow(VM *vm, int argc, Value *args) {
     return OBJ_VAL(objWindow);
 }
 
-static Value windowShouldClose(VM *vm, int argc, Value *args) {
+static Value windowShouldClose(VM *vm, int argc, const Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function windowShouldClose() expected 0 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -109,7 +109,7 @@ static Value windowShouldClose(VM *vm, int argc, Value *args) {
     return BOOL_VAL(glfwWindowShouldClose(vm->window->window));
 }
 
-static Value windowClose(VM *vm, int argc, Value *args) {
+static Value windowClose(VM *vm, int argc, const Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function windowClose() expected 0 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -125,7 +125,7 @@ static Value windowClose(VM *vm, int argc, Value *args) {
     return NULL_VAL;
 }
 
-static Value windowClear(VM *vm, int argc, Value *args) {
+static Value windowClear(VM *vm, const int argc, const Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function windowClear() expected 0 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -140,7 +140,7 @@ static Value windowClear(VM *vm, int argc, Value *args) {
     return NULL_VAL;
 }
 
-static Value windowDraw(VM *vm, int argc, Value *args) {
+static Value windowDraw(VM *vm, const int argc, const Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function windowDraw() expected 0 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -156,7 +156,7 @@ static Value windowDraw(VM *vm, int argc, Value *args) {
     return NULL_VAL;
 }
 
-static Value windowSetClearColor(VM *vm, int argc, Value *args) {
+static Value windowSetClearColor(VM *vm, int argc, const Value *args) {
     if (argc != 3 && argc != 4) {
         runtimeError(vm, "Function windowSetClearColor() expected 3 or 4 arguments but got '%d'.", argc);
         return ERROR_VAL;

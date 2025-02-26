@@ -41,7 +41,7 @@ Value useBuiltInLib(VM *vm, int idx) {
     return vm->libs[idx].lib(vm);
 }
 
-int findBuiltInLib(VM *vm, char *name, int len) {
+int findBuiltInLib(const VM *vm, const char *name, int len) {
     for (int i = 0; vm->libs[i].lib != NULL; ++i) {
         if (strncmp(vm->libs[i].name, name, len) == 0) {
             return i;

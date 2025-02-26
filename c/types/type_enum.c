@@ -4,7 +4,7 @@
 
 #include "type_enum.h"
 
-static Value enumValues(VM *vm, const int argc, Value *args) {
+static Value enumValues(VM *vm, const int argc, const Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function values() takes no arguments but got '%d'.", argc);
         return ERROR_VAL;

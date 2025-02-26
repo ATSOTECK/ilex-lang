@@ -16,7 +16,7 @@
 #   include <direct.h>
 #endif
 
-static Value sysSleep(VM *vm, int argc, Value *args) {
+static Value sysSleep(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function sleep() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -39,7 +39,7 @@ static Value sysSleep(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value sysExit(VM *vm, int argc, Value *args) {
+static Value sysExit(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function exit() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -56,7 +56,7 @@ static Value sysExit(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value sysGetCWD(VM *vm, int argc, Value *args) {
+static Value sysGetCWD(VM *vm, const int argc, const Value *args) {
     char cwd[PATH_MAX];
 
     if (_getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -66,7 +66,7 @@ static Value sysGetCWD(VM *vm, int argc, Value *args) {
     return NULL_VAL;
 }
 
-static Value sysPWD(VM *vm, int argc, Value *args) {
+static Value sysPWD(VM *vm, const int argc, const Value *args) {
     char cwd[PATH_MAX];
 
     if (_getcwd(cwd, sizeof(cwd)) != NULL) {
@@ -77,7 +77,7 @@ static Value sysPWD(VM *vm, int argc, Value *args) {
     return NULL_VAL;
 }
 
-static Value sysCD(VM *vm, int argc, Value *args) {
+static Value sysCD(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function cd() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -99,7 +99,7 @@ static Value sysCD(VM *vm, int argc, Value *args) {
     return ret < 0 ? NULL_VAL : ZERO_VAL;
 }
 
-static Value sysRMDIR(VM *vm, int argc, Value *args) {
+static Value sysRMDIR(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function rmdir() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -122,7 +122,7 @@ static Value sysRMDIR(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(ret);
 }
 
-static Value sysMKDIR(VM *vm, int argc, Value *args) {
+static Value sysMKDIR(VM *vm, int argc, const Value *args) {
     if (argc != 1 && argc != 2) {
         runtimeError(vm, "Function mkdir() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;

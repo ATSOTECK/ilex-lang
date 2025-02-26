@@ -18,7 +18,7 @@
 #   include <io.h>
 #endif
 
-static Value ioInput(VM *vm, int argc, Value *args) {
+static Value ioInput(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function input() expected 1 or 0 arguments but got %d", argc);
         return ERROR_VAL;
@@ -72,7 +72,7 @@ static Value ioInput(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, line, length));
 }
 
-static Value ioGetNumber(VM *vm, int argc, Value *args) {
+static Value ioGetNumber(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function getNumber() expected 1 or 0 arguments but got %d", argc);
         return ERROR_VAL;
@@ -133,7 +133,7 @@ static Value ioGetNumber(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(number);
 }
 
-static Value ioGetPass(VM *vm, int argc, Value *args) {
+static Value ioGetPass(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function getPass() expected 1 or 0 arguments but got %d", argc);
         return ERROR_VAL;
@@ -215,7 +215,7 @@ static Value ioGetPass(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, line, length));
 }
 
-static Value ioDisableEcho(VM *vm, int argc, Value *args) {
+static Value ioDisableEcho(VM *vm, const int argc, const Value *args) {
 #ifndef I_WIN
     struct termios old, new;
     if (tcgetattr(fileno(stdin), &old) != 0) {
@@ -239,7 +239,7 @@ static Value ioDisableEcho(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value ioEnableEcho(VM *vm, int argc, Value *args) {
+static Value ioEnableEcho(VM *vm, const int argc, const Value *args) {
 #ifndef I_WIN
     struct termios ts;
 
@@ -256,7 +256,7 @@ static Value ioEnableEcho(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value ioIsATTY(VM *vm, int argc, Value *args) {
+static Value ioIsATTY(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function isatty() expected 1 or 0 arguments but got %d", argc);
         return ERROR_VAL;
@@ -298,7 +298,7 @@ static Value ioIsATTY(VM *vm, int argc, Value *args) {
 #endif
 }
 
-static Value ioFflush(VM *vm, int argc, Value *args) {
+static Value ioFflush(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function fflush() expected 1 or 0 arguments but got %d", argc);
         return ERROR_VAL;
@@ -330,12 +330,12 @@ static Value ioFflush(VM *vm, int argc, Value *args) {
     return ERROR_VAL;
 }
 
-static Value ioFlushConsole(VM *vm, int argc, Value *args) {
+static Value ioFlushConsole(VM *vm, const int argc, const Value *args) {
     fflush(stdout);
     return ZERO_VAL;
 }
 
-static Value ioOpenFile(VM *vm, int argc, Value *args) {
+static Value ioOpenFile(VM *vm, const int argc, const Value *args) {
     if (argc != 2) {
         runtimeError(vm, "Function openFile() expected 2 arguments but got '%d'.", argc);
         return ERROR_VAL;

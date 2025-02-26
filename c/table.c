@@ -22,7 +22,7 @@ void freeTable(VM *vm, Table *table) {
     initTable(table);
 }
 
-static Entry* findEntry(Entry *entries, int capacity, ObjString* key) {
+static Entry* findEntry(Entry *entries, int capacity, const ObjString* key) {
     uint32_t index = key->hash & (capacity - 1);
     Entry *tombstone = NULL;
 
@@ -71,7 +71,7 @@ static void adjustCapacity(VM *vm, Table* table, int capacity) {
     table->capacity = capacity;
 }
 
-bool tableGet(Table *table, ObjString *key, Value *value) {
+bool tableGet(const Table *table, ObjString *key, Value *value) {
     if (table->count == 0) {
         return false;
     }
@@ -85,7 +85,7 @@ bool tableGet(Table *table, ObjString *key, Value *value) {
     return true;
 }
 
-int tableGetKeyValue(Table *table, char **key, Value *value, int startIndex) {
+int tableGetKeyValue(const Table *table, char **key, Value *value, int startIndex) {
     if (table->count == 0 || startIndex >= table->capacity) {
         return 0;
     }
@@ -128,7 +128,7 @@ bool tableSet(VM *vm, Table *table, ObjString *key, Value value, bool readOnly) 
     return isNewKey;
 }
 
-bool tableDelete(Table *table, ObjString *key) {
+bool tableDelete(const Table *table, ObjString *key) {
     if (table->count == 0) {
         return false;
     }
@@ -143,7 +143,7 @@ bool tableDelete(Table *table, ObjString *key) {
     return true;
 }
 
-void tableAddAll(VM *vm, Table *from, Table *to) {
+void tableAddAll(VM *vm, const Table *from, Table *to) {
     for (int i = 0; i < from->capacity; ++i) {
         Entry *entry = &from->entries[i];
         if (entry->key != NULL) {
@@ -152,7 +152,7 @@ void tableAddAll(VM *vm, Table *from, Table *to) {
     }
 }
 
-ObjString *tableFindString(Table *table, const char *str, int len, uint32_t hash) {
+ObjString *tableFindString(const Table *table, const char *str, int len, uint32_t hash) {
     if (table->count == 0) {
         return NULL;
     }
@@ -184,7 +184,7 @@ void tableRemoveWhite(Table *table) {
     }
 }
 
-void markTable(VM *vm, Table *table) {
+void markTable(VM *vm, const Table *table) {
     for (int i = 0; i < table->capacity; ++i) {
         Entry *entry = &table->entries[i];
         markObject(vm, (Obj*)entry->key);
@@ -192,7 +192,7 @@ void markTable(VM *vm, Table *table) {
     }
 }
 
-void printTable(Table *table) {
+void printTable(const Table *table) {
     for (int i = 0; i < table->capacity; ++i) {
         Entry entry = table->entries[i];
         if (entry.key == NULL) {

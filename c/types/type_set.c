@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 
-static Value setToStringLib(VM *vm, int argc, Value *args) {
+static Value setToStringLib(VM *vm, int argc, const Value *args) {
     char *str = setToString(AS_SET(args[0]));
     ObjString *ret = copyString(vm, str, (int)strlen(str));
     free(str);
@@ -16,17 +16,17 @@ static Value setToStringLib(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value setSize(VM *vm, int argc, Value *args) {
+static Value setSize(VM *vm, int argc, const Value *args) {
     ObjSet *set = AS_SET(args[0]);
     return NUMBER_VAL(set->count);
 }
 
-static Value setMaxSize(VM *vm, int argc, Value *args) {
+static Value setMaxSize(VM *vm, int argc, const Value *args) {
     ObjSet *set = AS_SET(args[0]);
     return NUMBER_VAL(set->capacity + 1);
 }
 
-static Value setAddLib(VM *vm, int argc, Value *args) {
+static Value setAddLib(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function add() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -43,7 +43,7 @@ static Value setAddLib(VM *vm, int argc, Value *args) {
     return setAdd(vm, set, args[1]) ? TRUE_VAL : FALSE_VAL;
 }
 
-static Value setContains(VM *vm, int argc, Value *args) {
+static Value setContains(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function add() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -61,7 +61,7 @@ static Value setContains(VM *vm, int argc, Value *args) {
 }
 
 
-static Value setDeleteLib(VM *vm, int argc, Value *args) {
+static Value setDeleteLib(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function add() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -78,7 +78,7 @@ static Value setDeleteLib(VM *vm, int argc, Value *args) {
     return setDelete(vm, set, args[1]) ? TRUE_VAL : FALSE_VAL;
 }
 
-static Value setIsEmpty(VM *vm, int argc, Value *args) {
+static Value setIsEmpty(VM *vm, int argc, const Value *args) {
     ObjSet *set = AS_SET(args[0]);
     return set->count == 0 ? TRUE_VAL : FALSE_VAL;
 }

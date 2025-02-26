@@ -249,7 +249,7 @@ ObjAbstract *newAbstract(VM *vm, AbstractFreeFn freeFn) {
     return abstract;
 }
 
-static void printFunction(ObjFunction *function) {
+static void printFunction(const ObjFunction *function) {
     if (function->name == NULL) {
         printf("<script>");
         return;
@@ -259,7 +259,7 @@ static void printFunction(ObjFunction *function) {
 }
 
 //TODO(Skyler): The next 4 functions currently cause memory leaks.
-static char *functionToString(ObjFunction *function) {
+static char *functionToString(const ObjFunction *function) {
     if (function->name == NULL) {
         return newCString("<script>");
     }
@@ -325,7 +325,7 @@ static char *instanceToString(ObjInstance *instance) {
     return ret;
 }
 
-static char *scriptToString(ObjScript *script) {
+static char *scriptToString(const ObjScript *script) {
     if (script->name == NULL) {
         return newCString("<library>");
     }
@@ -336,7 +336,7 @@ static char *scriptToString(ObjScript *script) {
     return ret;
 }
 
-static char *enumToString(ObjEnum *objEnum) {
+static char *enumToString(const ObjEnum *objEnum) {
     char *enumString = malloc(sizeof(char) * (objEnum->name->len + 8));
     memcpy(enumString, "<enum ", 6);
     memcpy(enumString + 6, objEnum->name->str, objEnum->name->len);
@@ -346,7 +346,7 @@ static char *enumToString(ObjEnum *objEnum) {
     return enumString;
 }
 
-char *arrayToString(ObjArray *array) {
+char *arrayToString(const ObjArray *array) {
     int size = 64;
     char *arrayStr = (char*)malloc(sizeof(char) * size);
     arrayStr[0] = '[';
@@ -400,7 +400,7 @@ char *arrayToString(ObjArray *array) {
     return arrayStr;
 }
 
-static char *fileToString(ObjFile *file) {
+static char *fileToString(const ObjFile *file) {
     size_t len = strlen(file->path) + strlen(file->flags) + 11;
     char *fileStr = (char*)malloc(sizeof(char*) * len);
     snprintf(fileStr, len, "<file %s \"%s\">", file->path, file->flags);
@@ -408,7 +408,7 @@ static char *fileToString(ObjFile *file) {
     return fileStr;
 }
 
-char *mapToString(ObjMap *map) {
+char *mapToString(const ObjMap *map) {
     int count = 0;
     int size = 64;
     char *mapStr = malloc(sizeof(char) * size);
@@ -516,7 +516,7 @@ char *mapToString(ObjMap *map) {
     return mapStr;
 }
 
-char *setToString(ObjSet *set) {
+char *setToString(const ObjSet *set) {
     int count = 0;
     int size = 64;
     char *setStr = malloc(sizeof(char) * size);
@@ -766,7 +766,7 @@ void mapClear(VM *vm, ObjMap *map) {
     *map = *newMap(vm);
 }
 
-void markMap(VM *vm, ObjMap *map) {
+void markMap(VM *vm, const ObjMap *map) {
     for (int i = 0; i <= map->capacity; ++i) {
         MapItem *item = &map->items[i];
         markValue(vm, item->key);
@@ -870,7 +870,7 @@ bool setAdd(VM *vm, ObjSet *set, Value value) {
     return isNewValue;
 }
 
-bool setGet(ObjSet *set, Value value) {
+bool setGet(const ObjSet *set, Value value) {
     if (set->count == 0) {
         return false;
     }
@@ -900,14 +900,14 @@ bool setDelete(VM *vm, ObjSet *set, Value value) {
     return true;
 }
 
-void markSet(VM *vm, ObjSet *set) {
+void markSet(VM *vm, const ObjSet *set) {
     for (int i = 0; i <= set->capacity; ++i) {
         const SetItem *item = &set->items[i];
         markValue(vm, item->value);
     }
 }
 
-ObjArray *copyArray(VM *vm, ObjArray *array, const bool isShallow) {
+ObjArray *copyArray(VM *vm, const ObjArray *array, const bool isShallow) {
     ObjArray *ret = newArray(vm);
     push(vm, OBJ_VAL(ret));
     
@@ -932,7 +932,7 @@ ObjArray *copyArray(VM *vm, ObjArray *array, const bool isShallow) {
     return ret;
 }
 
-ObjMap *copyMap(VM *vm, ObjMap *map, const bool isShallow) {
+ObjMap *copyMap(VM *vm, const ObjMap *map, const bool isShallow) {
     ObjMap *ret = newMap(vm);
     push(vm, OBJ_VAL(ret));
     

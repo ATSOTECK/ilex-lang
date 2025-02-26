@@ -8,7 +8,7 @@
 #include <string.h>
 #include "lib_natives.h"
 
-static Value println(VM *vm, int argc, Value *args) {
+static Value println(VM *vm, int argc, const Value *args) {
     for (int i = 0; i < argc; ++i) {
         printValue(args[i]);
         if (i < argc - 1) {
@@ -21,7 +21,7 @@ static Value println(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value newLine(VM *vm, int argc, Value *args) {
+static Value newLine(VM *vm, int argc, const Value *args) {
     int count = 1;
 
     if (argc > 1) {
@@ -40,7 +40,7 @@ static Value newLine(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value print(VM *vm, int argc, Value *args) {
+static Value print(VM *vm, int argc, const Value *args) {
     for (int i = 0; i < argc; ++i) {
         printValue(args[i]);
         if (i < argc - 1) {
@@ -51,7 +51,7 @@ static Value print(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value stdErr(VM *vm, int argc, Value *args) {
+static Value stdErr(VM *vm, int argc, const Value *args) {
     for (int i = 0; i < argc; ++i) {
         char *str = valueToString(args[i]);
         fprintf(stderr, "%s", str);
@@ -66,7 +66,7 @@ static Value stdErr(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value typeof_(VM *vm, int argc, Value *args) {
+static Value typeof_(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function typeof() expected 1 argument but got %d.", argc);
         return ERROR_VAL;
@@ -77,12 +77,12 @@ static Value typeof_(VM *vm, int argc, Value *args) {
 }
 
 // TODO: Broken on windows. Must fix.
-static Value seconds(VM *vm, int argc, Value* args) {
+static Value seconds(VM *vm, const int argc, const Value* args) {
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
 // TODO: Broken on windows. Must fix.
-static Value milliseconds(VM *vm, int argc, Value* args) {
+static Value milliseconds(VM *vm, const int argc, const Value* args) {
 #ifndef I_WIN
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC * 1000);
 #else
@@ -90,7 +90,7 @@ static Value milliseconds(VM *vm, int argc, Value* args) {
 #endif
 }
 
-static Value nativeToString(VM *vm, int argc, Value *args) {
+static Value nativeToString(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function toString() expected 1 argument but got %d.", argc);
         return ERROR_VAL;

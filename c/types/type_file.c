@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 
-static Value fileWrite(VM *vm, int argc, Value *args) {
+static Value fileWrite(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function write() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -41,7 +41,7 @@ static Value fileWrite(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(written);
 }
 
-static Value fileWriteLine(VM *vm, int argc, Value *args) {
+static Value fileWriteLine(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function write() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -73,7 +73,7 @@ static Value fileWriteLine(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(written);
 }
 
-static Value fileRead(VM *vm, int argc, Value *args) {
+static Value fileRead(VM *vm, int argc, const Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     
     if (file->file == NULL) {
@@ -107,7 +107,7 @@ static Value fileRead(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, buf, bytesRead));
 }
 
-static Value fileReadln(VM *vm, int argc, Value *args) {
+static Value fileReadln(VM *vm, int argc, const Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     
     if (file->file == NULL) {
@@ -124,7 +124,7 @@ static Value fileReadln(VM *vm, int argc, Value *args) {
     return NULL_VAL;
 }
 
-static Value fileReadChar(VM *vm, int argc, Value *args) {
+static Value fileReadChar(VM *vm, int argc, const Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     
     if (file->file == NULL) {
@@ -140,7 +140,7 @@ static Value fileReadChar(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, cStr, 2));
 }
 
-static Value fileSeek(VM *vm, int argc, Value *args) {
+static Value fileSeek(VM *vm, int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function seek() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -192,7 +192,7 @@ static Value fileSeek(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(ret);
 }
 
-static Value fileTell(VM *vm, int argc, Value *args) {
+static Value fileTell(VM *vm, int argc, const Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     
     if (file->file == NULL) {
@@ -205,7 +205,7 @@ static Value fileTell(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(ret);
 }
 
-static Value fileSize(VM *vm, int argc, Value *args) {
+static Value fileSize(VM *vm, int argc, const Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     
     if (file->file == NULL) {
@@ -221,7 +221,7 @@ static Value fileSize(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(size);
 }
 
-static Value fileEmpty(VM *vm, int argc, Value *args) {
+static Value fileEmpty(VM *vm, int argc, const Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     
     if (file->file == NULL) {
@@ -237,7 +237,7 @@ static Value fileEmpty(VM *vm, int argc, Value *args) {
     return BOOL_VAL(size == 0);
 }
 
-static Value fileIsOpen(VM *vm, int argc, Value *args) {
+static Value fileIsOpen(VM *vm, int argc, const Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     
     if (file->file == NULL) {
@@ -249,7 +249,7 @@ static Value fileIsOpen(VM *vm, int argc, Value *args) {
     return BOOL_VAL(pos >= 0);
 }
 
-static Value fileExists(VM *vm, int argc, Value *args) {
+static Value fileExists(VM *vm, int argc, const Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     
     // Check if it is open first.
@@ -274,7 +274,7 @@ static Value fileExists(VM *vm, int argc, Value *args) {
 #endif
 }
 
-static Value fileOpen(VM *vm, int argc, Value *args) {
+static Value fileOpen(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function open() expected 0 or 1 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -310,7 +310,7 @@ static Value fileOpen(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value fileClose(VM *vm, int argc, Value *args) {
+static Value fileClose(VM *vm, int argc, const Value *args) {
     ObjFile *file = AS_FILE(args[0]);
     
     if (file->file == NULL) {

@@ -39,7 +39,7 @@
 
 unsigned int randomLibSeed;
 
-static Value randomSeed(VM *vm, int argc, Value *args) {
+static Value randomSeed(VM *vm, int argc, const Value *args) {
     argCheckNum("seed");
 
     srand((unsigned  int)AS_NUMBER(args[0]));
@@ -47,7 +47,7 @@ static Value randomSeed(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value randomRandomSeed(VM *vm, int argc, Value *args) {
+static Value randomRandomSeed(VM *vm, int argc, const Value *args) {
     argCheckNum("randomSeed");
 
     srand((unsigned  int)rand() % RAND_MAX);
@@ -55,15 +55,15 @@ static Value randomRandomSeed(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value randomGetSeed(VM *vm, int argc, Value *args) {
+static Value randomGetSeed(VM *vm, const int argc, const Value *args) {
     return NUMBER_VAL(randomLibSeed);
 }
 
-static Value randomRand(VM *vm, int argc, Value *args) {
+static Value randomRand(VM *vm, const int argc, const Value *args) {
     return NUMBER_VAL((double)rand() / RAND_MAX);
 }
 
-static Value randomRandom(VM *vm, int argc, Value *args) {
+static Value randomRandom(VM *vm, const int argc, const Value *args) {
     if (argc == 0) {
         return NUMBER_VAL((double)rand());
     }
@@ -78,13 +78,13 @@ static Value randomRandom(VM *vm, int argc, Value *args) {
     return AS_NUMBER((double)rand() / (double)(RAND_MAX / AS_NUMBER(args[0])));
 }
 
-static Value randomRandomRange(VM *vm, int argc, Value *args) {
+static Value randomRandomRange(VM *vm, int argc, const Value *args) {
     argCheckNum2("randomRange");
 
     return AS_NUMBER((double)rand() / (double)(RAND_MAX / AS_NUMBER(args[0]) - AS_NUMBER(args[1])));
 }
 
-static Value randomRandomI(VM *vm, int argc, Value *args) {
+static Value randomRandomI(VM *vm, int argc, const Value *args) {
     if (argc == 0) {
         return NUMBER_VAL(rand());
     }
@@ -99,13 +99,13 @@ static Value randomRandomI(VM *vm, int argc, Value *args) {
     return AS_NUMBER(rand() % (unsigned int)AS_NUMBER(args[0]));
 }
 
-static Value randomRandomRangeI(VM *vm, int argc, Value *args) {
+static Value randomRandomRangeI(VM *vm, int argc, const Value *args) {
     argCheckNum2("intRange");
 
     return AS_NUMBER(rand() % (unsigned int)( AS_NUMBER(args[0]) - AS_NUMBER(args[1])));
 }
 
-static Value randomChoose(VM *vm, const int argc, Value *args) {
+static Value randomChoose(VM *vm, const int argc, const Value *args) {
     if (argc == 0) {
         return NULL_VAL;
     }

@@ -88,7 +88,7 @@ typedef enum {
     INTERPRET_PANIC_ERROR   = (int)0xBAAAAAAD
 } InterpretResult;
 
-typedef Value (*NativeFn)(VM *vm, int argCount, Value *args);
+typedef Value (*NativeFn)(VM *vm, int argCount, const Value *args);
 typedef Value (*BuiltInLib)(VM *vm);
 typedef void (*ErrorCallback)(const char *msg);
 

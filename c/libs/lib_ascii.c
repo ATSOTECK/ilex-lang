@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 
-static Value asciiIsAlpha(VM *vm, int argc, Value *args) {
+static Value asciiIsAlpha(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function isAlpha() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -27,7 +27,7 @@ static Value asciiIsAlpha(VM *vm, int argc, Value *args) {
     return BOOL_VAL((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
 }
 
-static Value asciiIsDigit(VM *vm, int argc, Value *args) {
+static Value asciiIsDigit(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function isDigit() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -45,7 +45,7 @@ static Value asciiIsDigit(VM *vm, int argc, Value *args) {
     return BOOL_VAL(c >= '0' && c <= '9');
 }
 
-static Value asciiIsAlphanumeric(VM *vm, int argc, Value *args) {
+static Value asciiIsAlphanumeric(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function isAlphanumeric() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -63,7 +63,7 @@ static Value asciiIsAlphanumeric(VM *vm, int argc, Value *args) {
     return BOOL_VAL((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'));
 }
 
-static Value asciiToChar(VM *vm, int argc, Value *args) {
+static Value asciiToChar(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function toChar() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;

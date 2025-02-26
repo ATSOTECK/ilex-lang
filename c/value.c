@@ -10,7 +10,7 @@
 #include "memory.h"
 #include "value.h"
 
-static bool arraysEqual(ObjArray *a, ObjArray *b) {
+static bool arraysEqual(const ObjArray *a, const ObjArray *b) {
     if (a->data.count != b->data.count) {
         return false;
     }
@@ -28,7 +28,7 @@ static bool arraysEqual(ObjArray *a, ObjArray *b) {
     return true;
 }
 
-static bool mapsEqual(ObjMap *a, ObjMap *b) {
+static bool mapsEqual(const ObjMap *a, const ObjMap *b) {
     if (a->count != b->count) {
         return false;
     }
@@ -56,7 +56,7 @@ static bool mapsEqual(ObjMap *a, ObjMap *b) {
     return true;
 }
 
-static bool setsEqual(ObjSet *a, ObjSet *b) {
+static bool setsEqual(const ObjSet *a, const ObjSet *b) {
     if (a->count != b->count) {
         return false;
     }

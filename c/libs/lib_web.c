@@ -6,7 +6,7 @@
 
 #include "../vm.h"
 
-static Value webNewApp(VM *vm, const int argc, Value *args) {
+static Value webNewApp(VM *vm, const int argc, const Value *args) {
     return FALSE_VAL;
 }
 

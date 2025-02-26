@@ -576,7 +576,7 @@ static void string(Compiler *compiler, bool canAssign) {
     emitConstant(compiler, parseString(compiler));
 }
 
-static void invokeMethod(Compiler* compiler, const int argc, const char* name, const int length) {
+static void invokeMethod(const Compiler* compiler, const int argc, const char* name, const int length) {
     const uint16_t slot = makeConstant(compiler, OBJ_VAL(copyString(compiler->parser->vm, name, length)));
     emitByteShort(compiler, OP_INVOKE, slot);
     emitByte(compiler, argc);

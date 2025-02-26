@@ -8,17 +8,17 @@
 
 #include <stdlib.h>
 
-static Value mapSizeLib(VM *vm, int argc, Value *args) {
+static Value mapSizeLib(VM *vm, int argc, const Value *args) {
     const ObjMap *map = AS_MAP(args[0]);
     return NUMBER_VAL(map->count);
 }
 
-static Value mapCapacityLib(VM *vm, int argc, Value *args) {
+static Value mapCapacityLib(VM *vm, int argc, const Value *args) {
     const ObjMap *map = AS_MAP(args[0]);
     return NUMBER_VAL(map->capacity + 1);
 }
 
-static Value mapToStringLib(VM *vm, int argc, Value *args) {
+static Value mapToStringLib(VM *vm, int argc, const Value *args) {
     char *str = mapToString(AS_MAP(args[0]));
     ObjString *ret = copyString(vm, str, (int)strlen(str));
     free(str);
@@ -26,7 +26,7 @@ static Value mapToStringLib(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value mapKeysLib(VM *vm, int argc, Value *args) {
+static Value mapKeysLib(VM *vm, int argc, const Value *args) {
     const ObjMap *map = AS_MAP(args[0]);
     const ValueArray keysArr = mapKeys(vm, map);
     ObjArray *keys = newArray(vm);
@@ -35,7 +35,7 @@ static Value mapKeysLib(VM *vm, int argc, Value *args) {
     return OBJ_VAL(keys);
 }
 
-static Value mapValuesLib(VM *vm, int argc, Value *args) {
+static Value mapValuesLib(VM *vm, int argc, const Value *args) {
     const ObjMap *map = AS_MAP(args[0]);
     const ValueArray valuesArr = mapValues(vm, map);
     ObjArray *values = newArray(vm);
@@ -44,7 +44,7 @@ static Value mapValuesLib(VM *vm, int argc, Value *args) {
     return OBJ_VAL(values);
 }
 
-static Value mapGetLib(VM *vm, const int argc, Value *args) {
+static Value mapGetLib(VM *vm, const int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function get() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -72,7 +72,7 @@ static Value mapGetLib(VM *vm, const int argc, Value *args) {
     return defaultValue;
 }
 
-static Value mapPopLib(VM *vm, const int argc, Value *args) {
+static Value mapPopLib(VM *vm, const int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function pop() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -101,7 +101,7 @@ static Value mapPopLib(VM *vm, const int argc, Value *args) {
     return defaultValue;
 }
 
-static Value mapDeleteLib(VM *vm, const int argc, Value *args) {
+static Value mapDeleteLib(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function delete() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -123,14 +123,14 @@ static Value mapDeleteLib(VM *vm, const int argc, Value *args) {
     return FALSE_VAL;
 }
 
-static Value mapClearLib(VM *vm, int argc, Value *args) {
+static Value mapClearLib(VM *vm, int argc, const Value *args) {
     ObjMap *map = AS_MAP(args[0]);
     mapClear(vm, map);
 
     return TRUE_VAL;
 }
 
-static Value mapExistsLib(VM *vm, const int argc, Value *args) {
+static Value mapExistsLib(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function exists() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -151,24 +151,24 @@ static Value mapExistsLib(VM *vm, const int argc, Value *args) {
     return FALSE_VAL;
 }
 
-static Value mapIsEmpty(VM *vm, int argc, Value *args) {
+static Value mapIsEmpty(VM *vm, int argc, const Value *args) {
     const ObjMap *map = AS_MAP(args[0]);
     return map->count == 0 ? TRUE_VAL : FALSE_VAL;
 }
 
-static Value mapCopyShallow(VM *vm, int argc, Value *args) {
+static Value mapCopyShallow(VM *vm, int argc, const Value *args) {
     ObjMap *map = AS_MAP(args[0]);
     ObjMap *ret = copyMap(vm, map, true);
     return OBJ_VAL(ret);
 }
 
-static Value mapCopyDeep(VM *vm, int argc, Value *args) {
+static Value mapCopyDeep(VM *vm, int argc, const Value *args) {
     ObjMap *map = AS_MAP(args[0]);
     ObjMap *ret = copyMap(vm, map, false);
     return OBJ_VAL(ret);
 }
 
-static Value mapForEach(VM *vm, const int argc, Value *args) {
+static Value mapForEach(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function forEach() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -205,7 +205,7 @@ static Value mapForEach(VM *vm, const int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value mapMergeLib(VM *vm, const int argc, Value *args) {
+static Value mapMergeLib(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function merge() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -235,7 +235,7 @@ static Value mapMergeLib(VM *vm, const int argc, Value *args) {
     return TRUE_VAL;
 }
 
-static Value mapUpdateLib(VM *vm, const int argc, Value *args) {
+static Value mapUpdateLib(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function update() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;

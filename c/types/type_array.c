@@ -9,12 +9,12 @@
 #include <math.h>
 #include <stdlib.h>
 
-static Value arrayLen(VM *vm, int argc, Value *args) {
+static Value arrayLen(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     return NUMBER_VAL(array->data.count);
 }
 
-static Value arrayToStringLib(VM *vm, int argc, Value *args) {
+static Value arrayToStringLib(VM *vm, int argc, const Value *args) {
     char *str = arrayToString(AS_ARRAY(args[0]));
     ObjString *ret = copyString(vm, str, (int)strlen(str));
     free(str);
@@ -22,7 +22,7 @@ static Value arrayToStringLib(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value arrayMake(VM *vm, int argc, Value *args) {
+static Value arrayMake(VM *vm, int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function make() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -46,7 +46,7 @@ static Value arrayMake(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value arrayFill(VM *vm, int argc, Value *args) {
+static Value arrayFill(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function fill() expected 0 or 1 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -59,7 +59,7 @@ static Value arrayFill(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value arrayPush(VM *vm, int argc, Value *args) {
+static Value arrayPush(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function push() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -71,7 +71,7 @@ static Value arrayPush(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value arrayPop(VM *vm, int argc, Value *args) {
+static Value arrayPop(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     
     if (array->data.count == 0) {
@@ -84,7 +84,7 @@ static Value arrayPop(VM *vm, int argc, Value *args) {
     return element;
 }
 
-static Value arrayInsert(VM *vm, int argc, Value *args) {
+static Value arrayInsert(VM *vm, int argc, const Value *args) {
     if (argc != 2) {
         runtimeError(vm, "Function insert() expected 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -124,7 +124,7 @@ static Value arrayInsert(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value arrayErase(VM *vm, int argc, Value *args) {
+static Value arrayErase(VM *vm, int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function erase() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -173,7 +173,7 @@ static Value arrayErase(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value arrayRemove(VM *vm, int argc, Value *args) {
+static Value arrayRemove(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function remove() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -215,7 +215,7 @@ static Value arrayRemove(VM *vm, int argc, Value *args) {
     return FALSE_VAL;
 }
 
-static Value arrayContains(VM *vm, int argc, Value *args) {
+static Value arrayContains(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function contains() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -233,7 +233,7 @@ static Value arrayContains(VM *vm, int argc, Value *args) {
     return FALSE_VAL;
 }
 
-static Value arrayIndexOf(VM *vm, int argc, Value *args) {
+static Value arrayIndexOf(VM *vm, int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function indexOf() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -269,7 +269,7 @@ static Value arrayIndexOf(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(-1);
 }
 
-static Value arrayReverse(VM *vm, int argc, Value *args) {
+static Value arrayReverse(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     int len = array->data.count;
     
@@ -282,7 +282,7 @@ static Value arrayReverse(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static int partition(ObjArray *array, int start, int end, bool asc) {
+static int partition(const ObjArray *array, int start, int end, bool asc) {
     int pivot_index = (int)floor(start + end) / 2;
     
     double pivot =  AS_NUMBER(array->data.values[pivot_index]);
@@ -336,7 +336,7 @@ static void quickSort(ObjArray *array, int start, int end, bool asc) {
     }
 }
 
-static Value arraySort(VM *vm, int argc, Value *args) {
+static Value arraySort(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function sort() expected 0 or 1 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -376,7 +376,7 @@ static Value arraySort(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value arrayJoin(VM *vm, int argc, Value *args) {
+static Value arrayJoin(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function join() expected 0 or 1 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -435,7 +435,7 @@ static Value arrayJoin(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, fullString, strLen));
 }
 
-static Value arrayClear(VM *vm, int argc, Value *args) {
+static Value arrayClear(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     freeValueArray(vm, &array->data); // Should the array be freed or should the count be set to 0?
     initValueArray(&array->data);
@@ -443,24 +443,24 @@ static Value arrayClear(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value arrayIsEmpty(VM *vm, int argc, Value *args) {
+static Value arrayIsEmpty(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     return array->data.count == 0 ? TRUE_VAL : FALSE_VAL;
 }
 
-static Value arrayCopy(VM *vm, int argc, Value *args) {
+static Value arrayCopy(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     ObjArray *ret = copyArray(vm, array, true);
     return OBJ_VAL(ret);
 }
 
-static Value arrayCopyDeep(VM *vm, int argc, Value *args) {
+static Value arrayCopyDeep(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     ObjArray *ret = copyArray(vm, array, false);
     return OBJ_VAL(ret);
 }
 
-static Value arrayAllTruthy(VM *vm, int argc, Value *args) {
+static Value arrayAllTruthy(VM *vm, int argc, const Value *args) {
     if (argc > 2) {
         runtimeError(vm, "Function allTruthy() expected up to 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -509,7 +509,7 @@ static Value arrayAllTruthy(VM *vm, int argc, Value *args) {
     return TRUE_VAL;
 }
 
-static Value arrayNoneTruthy(VM *vm, int argc, Value *args) {
+static Value arrayNoneTruthy(VM *vm, int argc, const Value *args) {
     if (argc > 2) {
         runtimeError(vm, "Function noneTruthy() expected up to 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -558,7 +558,7 @@ static Value arrayNoneTruthy(VM *vm, int argc, Value *args) {
     return TRUE_VAL;
 }
 
-static Value arrayAnyTruthy(VM *vm, int argc, Value *args) {
+static Value arrayAnyTruthy(VM *vm, int argc, const Value *args) {
     if (argc > 2) {
         runtimeError(vm, "Function anyTruthy() expected up to 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -607,7 +607,7 @@ static Value arrayAnyTruthy(VM *vm, int argc, Value *args) {
     return FALSE_VAL;
 }
 
-static Value arrayForEach(VM *vm, int argc, Value *args) {
+static Value arrayForEach(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function forEach() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -634,7 +634,7 @@ static Value arrayForEach(VM *vm, int argc, Value *args) {
     return ZERO_VAL;
 }
 
-static Value arrayMap(VM *vm, int argc, Value *args) {
+static Value arrayMap(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function map() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -664,7 +664,7 @@ static Value arrayMap(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value arrayFilter(VM *vm, int argc, Value *args) {
+static Value arrayFilter(VM *vm, int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function filter() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -703,7 +703,7 @@ static Value arrayFilter(VM *vm, int argc, Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value arrayReduce(VM *vm, int argc, Value *args) {
+static Value arrayReduce(VM *vm, int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function reduce() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -783,7 +783,7 @@ static Value arrayReduce(VM *vm, int argc, Value *args) {
         }\
     } while (false)
 
-static Value arrayAllOf(VM *vm, int argc, Value *args) {
+static Value arrayAllOf(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     int start = 0;
     int stop = array->data.count;
@@ -813,7 +813,7 @@ static Value arrayAllOf(VM *vm, int argc, Value *args) {
     return TRUE_VAL;
 }
 
-static Value arrayNoneOf(VM *vm, int argc, Value *args) {
+static Value arrayNoneOf(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     int start = 0;
     int stop = array->data.count;
@@ -843,7 +843,7 @@ static Value arrayNoneOf(VM *vm, int argc, Value *args) {
     return TRUE_VAL;
 }
 
-static Value arrayAnyOf(VM *vm, int argc, Value *args) {
+static Value arrayAnyOf(VM *vm, int argc, const Value *args) {
     ObjArray *array = AS_ARRAY(args[0]);
     int start = 0;
     int stop = array->data.count;

@@ -24,6 +24,6 @@
 BuiltInLibs makeLib(VM *vm, const char *name, BuiltInLib lib);
 void initBuiltInLibs(VM *vm);
 Value useBuiltInLib(VM *vm, int idx);
-int findBuiltInLib(VM *vm, char *name, int len);
+int findBuiltInLib(const VM *vm, const char *name, int len);
 
 #endif //__C_LIB_BUILTIN_H__

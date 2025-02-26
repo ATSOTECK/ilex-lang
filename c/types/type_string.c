@@ -51,7 +51,7 @@ char *trimWhitespace(size_t *retLen, size_t len, const char *str) {
     return ret;
 }
 
-static Value stringToUpper(VM *vm, int argc, Value *args) {
+static Value stringToUpper(VM *vm, int argc, const Value *args) {
     ObjString *string = AS_STRING(args[0]);
     char *tmp = ALLOCATE(vm, char, string->len + 1);
 
@@ -63,7 +63,7 @@ static Value stringToUpper(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, tmp, string->len));
 }
 
-static Value stringToLower(VM *vm, int argc, Value *args) {
+static Value stringToLower(VM *vm, int argc, const Value *args) {
     ObjString *string = AS_STRING(args[0]);
     char *tmp = ALLOCATE(vm, char, string->len + 1);
 
@@ -75,12 +75,12 @@ static Value stringToLower(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, tmp, string->len));
 }
 
-static Value stringLen(VM *vm, int argc, Value *args) {
+static Value stringLen(VM *vm, int argc, const Value *args) {
     ObjString *string = AS_STRING(args[0]);
     return NUMBER_VAL(string->len);
 }
 
-static Value stringContains(VM *vm, int argc, Value *args) {
+static Value stringContains(VM *vm, int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function contains() expected 1 argument but got %d", argc);
         return ERROR_VAL;
@@ -98,7 +98,7 @@ static Value stringContains(VM *vm, int argc, Value *args) {
     return BOOL_VAL(strstr(string, toFind) != NULL);
 }
 
-static Value stringToNumber(VM *vm, int argc, Value *args) {
+static Value stringToNumber(VM *vm, int argc, const Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function toNumber() expected 0 arguments but got %d.", argc);
         return ERROR_VAL;
@@ -124,7 +124,7 @@ static Value stringToNumber(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(number);
 }
 
-static Value stringIndexOfFirst(VM *vm, int argc, Value *args) {
+static Value stringIndexOfFirst(VM *vm, int argc, const Value *args) {
     if (argc != 1 && argc != 2) {
         runtimeError(vm, "Function indexOfFirst() expected 1 or 2 arguments but got %d.", argc);
         return ERROR_VAL;
@@ -165,7 +165,7 @@ static Value stringIndexOfFirst(VM *vm, int argc, Value *args) {
     return NUMBER_VAL(pos);
 }
 
-static Value stringSplit(VM *vm, int argc, Value *args) {
+static Value stringSplit(VM *vm, int argc, const Value *args) {
     if (argc != 1 && argc != 2) {
         runtimeError(vm, "Function split() expected 1 or 2 arguments but got %d.", argc);
         return ERROR_VAL;
@@ -257,7 +257,7 @@ static Value stringSplit(VM *vm, int argc, Value *args) {
     return OBJ_VAL(arr);
 }
 
-static Value stringTrimStart(VM *vm, int argc, Value *args) {
+static Value stringTrimStart(VM *vm, int argc, const Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function trimStart() expected 0 arguments but got %d.", argc);
         return ERROR_VAL;
@@ -283,7 +283,7 @@ static Value stringTrimStart(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, temp, string->len - count));
 }
 
-static Value stringTrimEnd(VM *vm, int argc, Value *args) {
+static Value stringTrimEnd(VM *vm, int argc, const Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function trimEnd() expected 0 arguments but got %d.", argc);
         return ERROR_VAL;
@@ -308,7 +308,7 @@ static Value stringTrimEnd(VM *vm, int argc, Value *args) {
     return OBJ_VAL(takeString(vm, temp, len + 1));
 }
 
-static Value stringTrim(VM *vm, const int argc, Value *args) {
+static Value stringTrim(VM *vm, const int argc, const Value *args) {
     if (argc != 0) {
         runtimeError(vm, "Function trim() expected 0 arguments but got %d.", argc);
         return ERROR_VAL;
@@ -321,7 +321,7 @@ static Value stringTrim(VM *vm, const int argc, Value *args) {
     return str;
 }
 
-static Value stringToString(VM *vm, int argc, Value *args) {
+static Value stringToString(VM *vm, int argc, const Value *args) {
     return args[0];
 }
 

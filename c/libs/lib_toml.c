@@ -221,7 +221,7 @@ void setMapValuesFromToml(VM *vm, ObjMap *map, const toml_table_t *conf) {
     }
 }
 
-static Value tomlParseFile(VM *vm, const int argc, Value *args) {
+static Value tomlParseFile(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function parseFile() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -254,7 +254,7 @@ static Value tomlParseFile(VM *vm, const int argc, Value *args) {
     return OBJ_VAL(map);
 }
 
-static Value tomlParseString(VM *vm, const int argc, Value *args) {
+static Value tomlParseString(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function parseString() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -281,7 +281,7 @@ static Value tomlParseString(VM *vm, const int argc, Value *args) {
     return OBJ_VAL(map);
 }
 
-static Value tomlMapToToml(VM *vm, const int argc, Value *args) {
+static Value tomlMapToToml(VM *vm, const int argc, const Value *args) {
     if (argc != 1 && argc != 2) {
         runtimeError(vm, "Function stringify() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;

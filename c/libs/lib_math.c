@@ -38,31 +38,31 @@
                             } \
                         } while (false)
 
-static Value mathToRad(VM *vm, const int argc, Value *args) {
+static Value mathToRad(VM *vm, const int argc, const Value *args) {
     argCheckNum("toRad");
 
     return NUMBER_VAL(0.01745329251994329576923690768489 * AS_NUMBER(args[0]));
 }
 
-static Value mathToDeg(VM *vm, const int argc, Value *args) {
+static Value mathToDeg(VM *vm, const int argc, const Value *args) {
     argCheckNum("toRad");
 
     return NUMBER_VAL(57.295779513082320876798154814105 * AS_NUMBER(args[0]));
 }
 
-static Value mathRound(VM *vm, const int argc, Value *args) {
+static Value mathRound(VM *vm, const int argc, const Value *args) {
     argCheckNum("round");
 
     return NUMBER_VAL(round(AS_NUMBER(args[0])));
 }
 
-static Value mathSqrt(VM *vm, const int argc, Value *args) {
+static Value mathSqrt(VM *vm, const int argc, const Value *args) {
     argCheckNum("sqrt");
 
     return NUMBER_VAL(sqrt(AS_NUMBER(args[0])));
 }
 
-static Value mathSin(VM *vm, const int argc, Value *args) {
+static Value mathSin(VM *vm, const int argc, const Value *args) {
     argCheckNum("sin");
 
     const double arg = AS_NUMBER(args[0]);
@@ -75,91 +75,91 @@ static Value mathSin(VM *vm, const int argc, Value *args) {
     return NUMBER_VAL(sin(arg));
 }
 
-static Value mathCos(VM *vm, const int argc, Value *args) {
+static Value mathCos(VM *vm, const int argc, const Value *args) {
     argCheckNum("cos");
 
     return NUMBER_VAL(cos(AS_NUMBER(args[0])));
 }
 
-static Value mathTan(VM *vm, const int argc, Value *args) {
+static Value mathTan(VM *vm, const int argc, const Value *args) {
     argCheckNum("tan");
 
     return NUMBER_VAL(tan(AS_NUMBER(args[0])));
 }
 
-static Value mathASin(VM *vm, const int argc, Value *args) {
+static Value mathASin(VM *vm, const int argc, const Value *args) {
     argCheckNum("asin");
 
     return NUMBER_VAL(asin(AS_NUMBER(args[0])));
 }
 
-static Value mathACos(VM *vm, const int argc, Value *args) {
+static Value mathACos(VM *vm, const int argc, const Value *args) {
     argCheckNum("acos");
 
     return NUMBER_VAL(acos(AS_NUMBER(args[0])));
 }
 
-static Value mathATan(VM *vm, const int argc, Value *args) {
+static Value mathATan(VM *vm, const int argc, const Value *args) {
     argCheckNum("atan");
 
     return NUMBER_VAL(atan(AS_NUMBER(args[0])));
 }
 
-static Value mathSinh(VM *vm, const int argc, Value *args) {
+static Value mathSinh(VM *vm, const int argc, const Value *args) {
     argCheckNum("sinh");
 
     return NUMBER_VAL(sinh(AS_NUMBER(args[0])));
 }
 
-static Value mathCosh(VM *vm, const int argc, Value *args) {
+static Value mathCosh(VM *vm, const int argc, const Value *args) {
     argCheckNum("cosh");
 
     return NUMBER_VAL(cosh(AS_NUMBER(args[0])));
 }
 
-static Value mathTanh(VM *vm, const int argc, Value *args) {
+static Value mathTanh(VM *vm, const int argc, const Value *args) {
     argCheckNum("tanh");
 
     return NUMBER_VAL(tanh(AS_NUMBER(args[0])));
 }
 
-static Value mathExp(VM *vm, const int argc, Value *args) {
+static Value mathExp(VM *vm, const int argc, const Value *args) {
     argCheckNum("exp");
 
     return NUMBER_VAL(exp(AS_NUMBER(args[0])));
 }
 
-static Value mathLog(VM *vm, const int argc, Value *args) {
+static Value mathLog(VM *vm, const int argc, const Value *args) {
     argCheckNum("log");
 
     return NUMBER_VAL(log(AS_NUMBER(args[0])));
 }
 
-static Value mathLog10(VM *vm, const int argc, Value *args) {
+static Value mathLog10(VM *vm, const int argc, const Value *args) {
     argCheckNum("log10");
 
     return NUMBER_VAL(log10(AS_NUMBER(args[0])));
 }
 
-static Value mathCeil(VM *vm, const int argc, Value *args) {
+static Value mathCeil(VM *vm, const int argc, const Value *args) {
     argCheckNum("ceil");
 
     return NUMBER_VAL(ceil(AS_NUMBER(args[0])));
 }
 
-static Value mathFloor(VM *vm, const int argc, Value *args) {
+static Value mathFloor(VM *vm, const int argc, const Value *args) {
     argCheckNum("floor");
 
     return NUMBER_VAL(floor(AS_NUMBER(args[0])));
 }
 
-static Value mathAbs(VM *vm, const int argc, Value *args) {
+static Value mathAbs(VM *vm, const int argc, const Value *args) {
     argCheckNum("abs");
 
     return NUMBER_VAL(fabs(AS_NUMBER(args[0])));
 }
 
-static Value mathATan2(VM *vm, const int argc, Value *args) {
+static Value mathATan2(VM *vm, const int argc, const Value *args) {
     argCheckNum2("atan2");
 
     return NUMBER_VAL(atan2(AS_NUMBER(args[0]), AS_NUMBER(args[1])));
@@ -175,13 +175,13 @@ static Value mathFrexp(VM *vm, int argc, Value *args) {
 }
 */
 
-static Value mathLdexp(VM *vm, const int argc, Value *args) {
+static Value mathLdexp(VM *vm, const int argc, const Value *args) {
     argCheckNum2("ldexp");
 
     return NUMBER_VAL(ldexp(AS_NUMBER(args[0]), AS_NUMBER(args[1])));
 }
 
-static Value mathMax(VM *vm, const int argc, Value *args) {
+static Value mathMax(VM *vm, const int argc, const Value *args) {
     if (argc == 0) {
         return ZERO_VAL;
     }
@@ -232,7 +232,7 @@ static Value mathMax(VM *vm, const int argc, Value *args) {
     return NUMBER_VAL(max);
 }
 
-static Value mathMin(VM *vm, const int argc, Value *args) {
+static Value mathMin(VM *vm, const int argc, const Value *args) {
     if (argc == 0) {
         return ZERO_VAL;
     }
@@ -283,7 +283,7 @@ static Value mathMin(VM *vm, const int argc, Value *args) {
     return NUMBER_VAL(min);
 }
 
-static Value mathAverage(VM *vm, const int argc, Value *args) {
+static Value mathAverage(VM *vm, const int argc, const Value *args) {
     if (argc == 0) {
         return ZERO_VAL;
     }
