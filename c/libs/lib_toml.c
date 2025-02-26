@@ -282,7 +282,32 @@ static Value tomlParseString(VM *vm, const int argc, Value *args) {
 }
 
 static Value tomlMapToToml(VM *vm, const int argc, Value *args) {
-    return NULL_VAL;
+    if (argc != 1 && argc != 2) {
+        runtimeError(vm, "Function stringify() expected 1 or 2 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    if (!IS_MAP(args[0])) {
+        char *type = valueType(args[0]);
+        runtimeError(vm, "Function stringify() expected type 'map' for the first argument but got '%s'.", type);
+        free(type);
+        return ERROR_VAL;
+    }
+
+    int ident = 4;
+
+    if (argc == 2) {
+        if (!IS_NUMBER(args[1])) {
+            char *type = valueType(args[0]);
+            runtimeError(vm, "Function stringify() expected type 'number' for the second argument but got '%s'.", type);
+            free(type);
+            return ERROR_VAL;
+        }
+
+        ident = AS_NUMBER(args[1]);
+    }
+
+    return TRUE_VAL;
 }
 
 Value useTomlLib(VM *vm) {
@@ -297,7 +322,7 @@ Value useTomlLib(VM *vm) {
 
     defineNative(vm, "parseFile", tomlParseFile, &lib->values);
     defineNative(vm, "parseString", tomlParseString, &lib->values);
-    defineNative(vm, "toToml", tomlMapToToml, &lib->values);
+    defineNative(vm, "stringify", tomlMapToToml, &lib->values);
 
     pop(vm);
     pop(vm);

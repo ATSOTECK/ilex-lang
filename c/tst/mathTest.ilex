@@ -6,7 +6,7 @@ println("e", e)
 println("math::e", math::e)
 
 x := min(12, 5)
-println(version())
+println('Ilex version: {version()}')
 
 sqrt12 := math::sqrt(12)
 assert(sqrt12 > 3.4 && sqrt12 < 3.5) // Close enough.
@@ -119,6 +119,9 @@ assert(0Q10 == 8)
 
 println("sin(pi) =", sin(pi))
 println("cos(pi) =", cos(pi))
+
+assert(sin(pi) == 0)
+assert(cos(pi) == -1)
 
 println("\nMath test passed in", milliseconds(), "ms!\n")
 
