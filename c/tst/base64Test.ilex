@@ -3,6 +3,8 @@ use <base64>
 encoded ::= base64::encode('Hello world!')
 assert(encoded == 'SGVsbG8gd29ybGQh')
 
+println("'Hello world!' base64 encoded is {encoded}")
+
 decoded ::= base64::decode(encoded)
 assert(decoded == 'Hello world!')
 

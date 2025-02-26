@@ -1,9 +1,23 @@
 use <toml>
 
 cfg ::= toml::parseFile('test.toml')
-println(cfg)
-println(cfg.name)
+assert(cfg.name == 'bla')
+assert(cfg.age == 55)
+assert(cfg.height = 5.5)
+assert(cfg.alive == true)
+assert(cfg.thing = {a: 1, b: 2})
 
-println(cfg.server.alpha.name)
+table ::= cfg.table
+assert(table.str == 'yeet')
+assert(table.bool == false)
+assert(table.int == 12)
+assert(table.double == 12.34)
+assert(table.arr == [1, 'two', false, [3, 4], 34.56, { k: 'a', v: 450 }])
 
-println(cfg.thing)
+alpha ::= cfg.server.alpha
+assert(alpha.name == 'steve')
+
+beta ::= cfg.server.beta
+assert(beta.name == 'alice')
+
+println('Passed!')

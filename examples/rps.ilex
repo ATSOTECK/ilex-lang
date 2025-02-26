@@ -12,11 +12,11 @@ fn lose() {
 fn play() {
     answer := 'yes'
     while answer == 'yes' {
-        user := input('R for rock, P for paper, S for scissors: ').toLower()
+        user ::= input('R for rock, P for paper, S for scissors: ').toLower()
         
-        computer := random::choose('r', 'p', 's')
+        computer ::= random::choose('r', 'p', 's')
         
-        println('You chose', user, 'and the computer chose', computer)
+        println('You chose {user} and the computer chose {computer}')
         
         if user == computer {
             println('\nDraw!\n')
