@@ -311,7 +311,7 @@ static Value tomlMapToToml(VM *vm, const int argc, const Value *args) {
 }
 
 Value useTomlLib(VM *vm) {
-    ObjString *name = copyString(vm, "sys", 3);
+    ObjString *name = copyString(vm, "toml", 4);
     push(vm, OBJ_VAL(name));
     ObjScript *lib = newScript(vm, name);
     push(vm, OBJ_VAL(lib));

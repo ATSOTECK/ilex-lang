@@ -1,0 +1,18 @@
+use <base64>
+
+encoded ::= base64::encode('Hello world!')
+assert(encoded == 'SGVsbG8gd29ybGQh')
+
+decoded ::= base64::decode(encoded)
+assert(decoded == 'Hello world!')
+
+blank := base64::encode('')
+assert(blank == '')
+
+blank = base64::decode('')
+assert(blank == '')
+
+blank = base64::decode('@#$$%%^^')
+assert(blank == '')
+
+println('Test passed!')

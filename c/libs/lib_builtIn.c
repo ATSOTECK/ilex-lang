@@ -18,10 +18,10 @@ BuiltInLibs makeLib(VM *vm, const char *name, const BuiltInLib lib) {
 }
 
 void initBuiltInLibs(VM *vm) {
-    vm->libCapacity = 9;
+    vm->libCapacity = 13;
     vm->libCapacity = GROW_CAPACITY(vm->libCapacity);
 
-    vm->libCount = 12;
+    vm->libCount = 13;
     vm->libs = ALLOCATE(vm, BuiltInLibs, vm->libCapacity);
     vm->libs[0]  = makeLib(vm, "math",   &useMathLib);
     vm->libs[1]  = makeLib(vm, "ilex",   &useIlexLib);
@@ -35,6 +35,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libs[9]  = makeLib(vm, "web",    &useWebLib);
     vm->libs[10] = makeLib(vm, "http",   &useHttpLib);
     vm->libs[11] = makeLib(vm, "toml",   &useTomlLib);
+    vm->libs[12] = makeLib(vm, "base64", &useBase64Lib);
 }
 
 Value useBuiltInLib(VM *vm, int idx) {

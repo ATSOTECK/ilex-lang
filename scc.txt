@@ -1,4 +1,4 @@
-github.com/AlDanial/cloc v 2.04  T=0.04 s (2039.2 files/s, 390439.4 lines/s)
+github.com/AlDanial/cloc v 2.04  T=0.03 s (2623.7 files/s, 495750.9 lines/s)
 --------------------------------------------------------------------------------------
 File                                    blank        comment           code
 --------------------------------------------------------------------------------------
@@ -25,6 +25,7 @@ File                                    blank        comment           code
 ./c/libs/lib_sys.c                         37              3            150
 ./c/util.c                                 29              3            141
 ./c/libs/lib_ilex.c                        40              3            136
+./c/libs/lib_base64.c                      33              3            134
 ./c/libs/lib_random.c                      37              3            126
 ./c/lexer.h                                12              8            112
 ./c/chunk.h                                 5              3             99
@@ -34,10 +35,10 @@ File                                    blank        comment           code
 ./c/types/type_set.c                       19              3             72
 ./c/compiler.h                             11              3             58
 ./c/object.h                                5              3             42
-./c/libs/lib_builtIn.c                      9              3             40
+./c/libs/lib_builtIn.c                      9              3             41
 ./c/main.c                                  6              4             37
 ./c/chunk.c                                 8              3             34
-./c/libs/lib_builtIn.h                      5              3             21
+./c/libs/lib_builtIn.h                      5              3             22
 ./c/types/type_enum.c                       8              3             21
 ./c/libs/lib_web.c                          8              3             19
 ./c/libs/lib_test.c                         7              3             18
@@ -54,6 +55,7 @@ File                                    blank        comment           code
 ./c/libs/lib_toml.h                         6              3              7
 ./c/debug.h                                 4              3              6
 ./c/libs/lib_ascii.h                        4              3              5
+./c/libs/lib_base64.h                       4              3              5
 ./c/libs/lib_env.h                          4              3              5
 ./c/libs/lib_ilex.h                         4              3              5
 ./c/libs/lib_io.h                           4              3              5
@@ -80,5 +82,5 @@ File                                    blank        comment           code
 ./install.sh                                0              0              1
 ./c/types/type_web_app.c                    0              3              0
 --------------------------------------------------------------------------------------
-SUM:                                     2567            354          11822
+SUM:                                     2604            360          11963
 --------------------------------------------------------------------------------------

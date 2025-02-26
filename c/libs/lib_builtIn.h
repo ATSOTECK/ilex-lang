@@ -20,6 +20,7 @@
 #include "lib_web.h"
 #include "lib_http.h"
 #include "lib_toml.h"
+#include "lib_base64.h"
 
 BuiltInLibs makeLib(VM *vm, const char *name, BuiltInLib lib);
 void initBuiltInLibs(VM *vm);

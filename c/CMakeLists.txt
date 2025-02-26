@@ -78,7 +78,9 @@ add_executable(ilex main.c ${sources} types/type_window.h types/type_window.c li
         libs/lib_http.h
         libs/lib_http.c
         libs/lib_toml.h
-        libs/lib_toml.c)
+        libs/lib_toml.c
+        libs/lib_base64.h
+        libs/lib_base64.c)
 
 add_library(ilex_lib ${sources})
 
