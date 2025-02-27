@@ -18,10 +18,11 @@ BuiltInLibs makeLib(VM *vm, const char *name, const BuiltInLib lib) {
 }
 
 void initBuiltInLibs(VM *vm) {
-    vm->libCapacity = 13;
+    static const int LIB_COUNT = 13;
+    vm->libCapacity = LIB_COUNT;
     vm->libCapacity = GROW_CAPACITY(vm->libCapacity);
 
-    vm->libCount = 13;
+    vm->libCount = LIB_COUNT;
     vm->libs = ALLOCATE(vm, BuiltInLibs, vm->libCapacity);
     vm->libs[0]  = makeLib(vm, "math",   &useMathLib);
     vm->libs[1]  = makeLib(vm, "ilex",   &useIlexLib);
@@ -38,7 +39,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libs[12] = makeLib(vm, "base64", &useBase64Lib);
 }
 
-Value useBuiltInLib(VM *vm, int idx) {
+Value useBuiltInLib(VM *vm, const int idx) {
     return vm->libs[idx].lib(vm);
 }
 

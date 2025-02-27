@@ -7,6 +7,6 @@
 
 #include "../vm.h"
 
-void defineBaseTypes(VM *vm);
+void defineNumberFunctions(VM *vm);
 
 #endif //__C_BASE_TYPES_H__

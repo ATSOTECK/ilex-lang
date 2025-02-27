@@ -2473,10 +2473,10 @@ ObjFunction *compile(VM *vm, ObjScript *script,  const char *source) {
 }
 
 void markCompilerRoots(VM *vm) {
-    Compiler *compiler = vm->compiler;
+    const Compiler *compiler = vm->compiler;
 
     while (compiler != NULL) {
-        ClassCompiler *classCompiler = vm->compiler->class;
+        const ClassCompiler *classCompiler = vm->compiler->class;
 
         while (classCompiler != NULL) {
             markTable(vm, &classCompiler->privateVariables);

@@ -90,6 +90,7 @@ typedef enum {
 
 typedef Value (*NativeFn)(VM *vm, int argCount, const Value *args);
 typedef Value (*BuiltInLib)(VM *vm);
+typedef Value (*IlexTypeFn)(VM *vm);
 typedef void (*ErrorCallback)(const char *msg);
 
 #define SIGN_BIT ((uint64_t)0x8000000000000000)

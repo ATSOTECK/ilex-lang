@@ -246,7 +246,7 @@ static void freeObject(VM *vm, Obj *obj) {
 }
 
 static void markRoots(VM *vm) {
-    for (Value *slot = vm->stack; slot < vm->stackTop; slot++) {
+    for (const Value *slot = vm->stack; slot < vm->stackTop; slot++) {
         markValue(vm, *slot);
     }
 
@@ -261,6 +261,7 @@ static void markRoots(VM *vm) {
     markTable(vm, &vm->scripts);
     markTable(vm, &vm->globals);
     markTable(vm, &vm->consts);
+    markTable(vm, &vm->numberFunctions);
     markTable(vm, &vm->stringFunctions);
     markTable(vm, &vm->arrayFunctions);
     markTable(vm, &vm->mapFunctions);
