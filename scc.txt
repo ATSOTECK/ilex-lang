@@ -1,16 +1,16 @@
-github.com/AlDanial/cloc v 2.04  T=0.03 s (2623.7 files/s, 495750.9 lines/s)
+github.com/AlDanial/cloc v 2.04  T=0.04 s (2104.5 files/s, 398841.0 lines/s)
 --------------------------------------------------------------------------------------
 File                                    blank        comment           code
 --------------------------------------------------------------------------------------
-./c/compiler.c                            407             20           2063
-./c/vm.c                                  280             52           1866
+./c/compiler.c                            408             20           2068
+./c/vm.c                                  284             52           1879
 ./c/libs/lib_http.c                       169             17            898
 ./c/object.c                              203              7            799
 ./c/types/type_array.c                    184              7            719
 ./c/lexer.c                                71              3            513
-./c/ilex.h                                 80             12            352
+./c/ilex.h                                 80             12            354
 ./c/libs/lib_io.c                          82              6            323
-./c/memory.c                               34              3            297
+./c/memory.c                               34              3            298
 ./c/libs/lib_math.c                        84             12            272
 ./c/types/type_string.c                    63              8            269
 ./c/types/type_file.c                      77              5            260
@@ -28,20 +28,20 @@ File                                    blank        comment           code
 ./c/libs/lib_base64.c                      33              3            134
 ./c/libs/lib_random.c                      37              3            126
 ./c/lexer.h                                12              8            112
-./c/chunk.h                                 5              3             99
+./c/chunk.h                                 5              3            100
 ./c/libs/lib_natives.c                     22              6             91
 ./c/libs/lib_ascii.c                       28              3             83
 ./c/vm.h                                   20              4             75
 ./c/types/type_set.c                       19              3             72
 ./c/compiler.h                             11              3             58
+./c/libs/lib_builtIn.c                      9              3             42
 ./c/object.h                                5              3             42
-./c/libs/lib_builtIn.c                      9              3             41
 ./c/main.c                                  6              4             37
 ./c/chunk.c                                 8              3             34
+./c/libs/lib_test.c                        11              3             31
 ./c/libs/lib_builtIn.h                      5              3             22
 ./c/types/type_enum.c                       8              3             21
 ./c/libs/lib_web.c                          8              3             19
-./c/libs/lib_test.c                         7              3             18
 ./c/table.h                                 7              3             18
 ./c/memory.h                               11              3             17
 ./c/tst/test.toml                           3              0             15
@@ -82,5 +82,5 @@ File                                    blank        comment           code
 ./install.sh                                0              0              1
 ./c/types/type_web_app.c                    0              3              0
 --------------------------------------------------------------------------------------
-SUM:                                     2604            360          11963
+SUM:                                     2613            360          11999
 --------------------------------------------------------------------------------------
