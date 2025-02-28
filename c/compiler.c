@@ -2179,7 +2179,10 @@ static void useStatement(Compiler *compiler, const bool isFrom) {
 
             const uint16_t useName = parseVariable(compiler, "Expect use name.");
             emitByte(compiler, OP_USE_VAR);
-            defineVariable(compiler, useName, false); // TODO(Skyler): Should this be true?
+            defineVariable(compiler, useName, true);
+        } else {
+            emitByte(compiler, OP_USE_VAR);
+            defineVariable(compiler, useConstant, true);
         }
     } else if (match(compiler, TK_LBRACE)) {
         uint16_t variables[255];
@@ -2206,18 +2209,21 @@ static void useStatement(Compiler *compiler, const bool isFrom) {
 
         useStatement(compiler, true);
 
+        emitByte(compiler, OP_POP);
+
         if (builtin) {
-            emitByte(compiler, OP_POP);
             emitByte(compiler, OP_USE_BUILTIN_VAR);
             emitShortByte(compiler, compiler->currentLibName, varCount);
+        } else {
+            emitBytes(compiler, OP_USE_VAR_FROM, varCount);
+        }
 
-            for (int i = 0; i < varCount; ++i) {
-                emitShort(compiler, variables[i]);
-            }
+        for (int i = 0; i < varCount; ++i) {
+            emitShort(compiler, variables[i]);
+        }
 
-            for (int i = varCount - 1; i >= 0; --i) {
-                defineVariable(compiler, variables[i], false);
-            }
+        for (int i = varCount - 1; i >= 0; --i) {
+            defineVariable(compiler, variables[i], true);
         }
     } else if (match(compiler, TK_MUL)) {
         eat(compiler->parser, TK_FROM, "Expect 'from' after '*'.");

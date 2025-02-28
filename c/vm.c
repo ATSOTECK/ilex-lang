@@ -1554,6 +1554,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     runtimeError(vm, "Coule not open file '%s'.", filenameStr);
                     return INTERPRET_RUNTIME_ERROR;
                 }
+
+                const size_t pathLen = strlen(path);
                 
                 char *src = readFile(path);
                 if (src == NULL) {
@@ -1562,10 +1564,10 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 
-                ObjString *pathStr = copyString(vm, path, (int)len);
-                push(vm, OBJ_VAL(pathStr));
-                ObjScript *script = newScript(vm, pathStr);
-                script->path = dirName(vm, path, len);
+                ObjString *nameStr = copyString(vm, filenameStr, (int)len);
+                push(vm, OBJ_VAL(nameStr));
+                ObjScript *script = newScript(vm, nameStr);
+                script->path = dirName(vm, path, pathLen);
                 vm->lastScript = script;
                 pop(vm);
                 
@@ -1591,6 +1593,21 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
             } break;
             case OP_USE_VAR: {
                 push(vm, OBJ_VAL(vm->lastScript));
+            } break;
+            case OP_USE_VAR_FROM: {
+                const int varCount = READ_BYTE();
+
+                for (int i = 0; i < varCount; ++i) {
+                    Value libVar;
+                    ObjString *variable = READ_STRING();
+
+                    if (!tableGet(&vm->lastScript->values, variable, &libVar)) {
+                        runtimeError(vm, "OP_USE_VAR_FROM: Undefined variable '%s'.", variable->str);
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    push(vm, libVar);
+                }
             } break;
             case OP_USE_BUILTIN: {
                 int idx = READ_BYTE();

@@ -17,6 +17,12 @@ println(hi)
 println('Passed!')
 -/
 
+// use 'hello'
+// hello.hello2()
+
 use { hello2 } from 'hello'
+use { pi } from <math>
+
+println(pi)
 
 hello2()

@@ -79,6 +79,7 @@ typedef enum {
     OP_ENUM_SET_VALUE,
     OP_USE,
     OP_USE_VAR,
+    OP_USE_VAR_FROM,
     OP_USE_BUILTIN,
     OP_USE_BUILTIN_VAR,
     OP_USE_END,
