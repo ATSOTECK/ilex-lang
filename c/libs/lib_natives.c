@@ -4,8 +4,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <string.h>
 #include "lib_natives.h"
 
 static Value println(VM *vm, int argc, const Value *args) {
@@ -76,20 +74,6 @@ static Value typeof_(VM *vm, int argc, const Value *args) {
     return OBJ_VAL(takeString(vm, type, strlen(type)));
 }
 
-// TODO: Broken on windows. Must fix.
-static Value seconds(VM *vm, const int argc, const Value* args) {
-    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
-}
-
-// TODO: Broken on windows. Must fix.
-static Value milliseconds(VM *vm, const int argc, const Value* args) {
-#ifndef I_WIN
-    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC * 1000);
-#else
-    return NUMBER_VAL((double)clock());
-#endif
-}
-
 static Value nativeToString(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function toString() expected 1 argument but got %d.", argc);
@@ -112,8 +96,4 @@ void defineNatives(VM *vm) {
     defineNative(vm, "printErr", stdErr, &vm->globals);
     defineNative(vm, "typeof", typeof_, &vm->globals);
     defineNative(vm, "toString", nativeToString, &vm->globals);
-
-    // Move these into Ilex library?
-    defineNative(vm, "seconds", seconds, &vm->globals);
-    defineNative(vm, "milliseconds", milliseconds, &vm->globals);
 }

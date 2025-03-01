@@ -121,9 +121,9 @@ void writeValueArray(VM *vm, ValueArray *array, Value value) {
     array->count++;
 }
 
-void fillValueArray(VM *vm, int count, ValueArray *array, Value value) {
+void fillValueArray(VM *vm, const int count, ValueArray *array, const Value value) {
     if (array->capacity < count) {
-        int oldCapacity = array->capacity;
+        const int oldCapacity = array->capacity;
         array->capacity = count;
         array->values = GROW_ARRAY(vm, Value, array->values, oldCapacity, array->capacity);
     }
@@ -133,6 +133,14 @@ void fillValueArray(VM *vm, int count, ValueArray *array, Value value) {
     }
 
     array->count = count;
+}
+
+void makeValueArray(VM *vm, const int count, ValueArray *array) {
+    if (array->capacity < count) {
+        const int oldCapacity = array->capacity;
+        array->capacity = count;
+        array->values = GROW_ARRAY(vm, Value, array->values, oldCapacity, array->capacity);
+    }
 }
 
 void freeValueArray(VM *vm, ValueArray *array) {

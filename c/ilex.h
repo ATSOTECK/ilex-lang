@@ -34,9 +34,9 @@
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION_BUILD 70
-#define ILEX_VERSION "0.0.70"
-#define ILEX_DATE "27 - February - 2025"
+#define ILEX_VERSION_BUILD 71
+#define ILEX_VERSION "0.0.71"
+#define ILEX_DATE "01 - March - 2025"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN
@@ -163,7 +163,7 @@ typedef union {
     double num;
 } IlexDouble;
 
-static inline double valueToNum(Value value) {
+static inline double valueToNum(const Value value) {
     IlexDouble data;
     data.bits64 = value;
     return data.num;
@@ -249,6 +249,7 @@ typedef struct {
     ObjString *key;
     Value value;
     bool readOnly;
+    bool exported;
 } Entry;
 
 typedef struct {

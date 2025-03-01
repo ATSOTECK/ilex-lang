@@ -22,7 +22,7 @@ static Value arrayToStringLib(VM *vm, int argc, const Value *args) {
     return OBJ_VAL(ret);
 }
 
-static Value arrayMake(VM *vm, int argc, const Value *args) {
+static Value arrayMake(VM *vm, const int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function make() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
@@ -39,27 +39,32 @@ static Value arrayMake(VM *vm, int argc, const Value *args) {
         return ERROR_VAL;
     }
 
-    int count = (int)AS_NUMBER(args[1]);
-    Value value = argc == 2 ? args[2] : ZERO_VAL;
-    fillValueArray(vm, count, &array->data, value);
+    const int count = (int)AS_NUMBER(args[1]);
+
+    if (argc == 2) {
+        const Value value = args[2];
+        fillValueArray(vm, count, &array->data, value);
+    } else {
+        makeValueArray(vm, count, &array->data);
+    }
 
     return ZERO_VAL;
 }
 
-static Value arrayFill(VM *vm, int argc, const Value *args) {
+static Value arrayFill(VM *vm, const int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function fill() expected 0 or 1 arguments but got '%d'.", argc);
         return ERROR_VAL;
     }
 
     ObjArray *array = AS_ARRAY(args[0]);
-    Value value = argc == 1 ? args[1] : ZERO_VAL;
+    const Value value = argc == 1 ? args[1] : ZERO_VAL;
     fillValueArray(vm, array->data.count, &array->data, value);
 
     return ZERO_VAL;
 }
 
-static Value arrayPush(VM *vm, int argc, const Value *args) {
+static Value arrayPush(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function push() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
@@ -215,14 +220,14 @@ static Value arrayRemove(VM *vm, int argc, const Value *args) {
     return FALSE_VAL;
 }
 
-static Value arrayContains(VM *vm, int argc, const Value *args) {
+static Value arrayContains(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function contains() expected 1 argument but got '%d'.", argc);
         return ERROR_VAL;
     }
     
-    ObjArray *array = AS_ARRAY(args[0]);
-    Value value = args[1];
+    const ObjArray *array = AS_ARRAY(args[0]);
+    const Value value = args[1];
     
     for (int i = 0; i < array->data.count; ++i) {
         if (valuesEqual(value, array->data.values[i])) {
@@ -233,14 +238,33 @@ static Value arrayContains(VM *vm, int argc, const Value *args) {
     return FALSE_VAL;
 }
 
-static Value arrayIndexOf(VM *vm, int argc, const Value *args) {
+static Value arrayCount(VM *vm, const int argc, const Value *args) {
+    if (argc != 1) {
+        runtimeError(vm, "Function count() expected 1 argument but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    const ObjArray *array = AS_ARRAY(args[0]);
+    const Value value = args[1];
+
+    int count = 0;
+    for (int i = 0; i < array->data.count; ++i) {
+        if (valuesEqual(value, array->data.values[i])) {
+            ++count;
+        }
+    }
+
+    return NUMBER_VAL(count);
+}
+
+static Value arrayIndexOf(VM *vm, const int argc, const Value *args) {
     if (argc == 0 || argc > 2) {
         runtimeError(vm, "Function indexOf() expected 1 or 2 arguments but got '%d'.", argc);
         return ERROR_VAL;
     }
     
-    ObjArray *array = AS_ARRAY(args[0]);
-    Value value = args[1];
+    const ObjArray *array = AS_ARRAY(args[0]);
+    const Value value = args[1];
     int startIdx = 0;
     
     if (argc == 2) {
@@ -282,68 +306,68 @@ static Value arrayReverse(VM *vm, int argc, const Value *args) {
     return ZERO_VAL;
 }
 
-static int partition(const ObjArray *array, int start, int end, bool asc) {
-    int pivot_index = (int)floor(start + end) / 2;
-    
-    double pivot =  AS_NUMBER(array->data.values[pivot_index]);
-    
-    int i = start - 1;
-    int j = end + 1;
-    
-    for (;;) {
-        if (asc) {
-            do {
-                i = i + 1;
-            } while (AS_NUMBER(array->data.values[i]) < pivot);
-    
-            do {
-                j = j - 1;
-            } while (AS_NUMBER(array->data.values[j]) > pivot);
-        } else {
-            do {
-                i = i + 1;
-            } while (AS_NUMBER(array->data.values[i]) > pivot);
-    
-            do {
-                j = j - 1;
-            } while (AS_NUMBER(array->data.values[j]) < pivot);
+#define SWAP_D(a, b) const double tmp = *a; *a = *b; *b = tmp
+
+static int partition(double *array, const int low, const int high) {
+    const double pivot = array[high];
+    int i = low - 1;
+    for (int j = low; j <= high - 1; ++j) {
+        if (array[j] <= pivot) {
+            ++i;
+            SWAP_D(&array[i], &array[j]);
         }
-        
-        if (i >= j) {
-            return j;
-        }
-        
-        Value tmp = array->data.values[i];
-        
-        array->data.values[i] = array->data.values[j];
-        array->data.values[j] = tmp;
     }
+
+    SWAP_D(&array[i + 1], &array[high]);
+    return i + 1;
 }
 
-static void quickSort(ObjArray *array, int start, int end, bool asc) {
-    while (start < end) {
-        int part = partition(array, start, end, asc);
-        
-        if (part - start < end - part) {
-            quickSort(array, start, part, asc);
-            
-            start = start + 1;
-        } else {
-            quickSort(array, part + 1, end, asc);
-            
-            end = end - 1;
+static void quickSortRaw(double *array, double low, double high, const bool asc) {
+    double stack[(int)(high - low + 1)];
+    int top = -1;
+    stack[++top] = low;
+    stack[++top] = high;
+
+    while (top >= 0) {
+        high = stack[top--];
+        low = stack[top--];
+        const int p = partition(array, (int)low, (int)high);
+
+        if (p - 1 > low) {
+            stack[++top] = low;
+            stack[++top] = p -1;
+        }
+
+        if (p + 1 < high) {
+            stack[++top] = p + 1;
+            stack[++top] = high;
         }
     }
 }
 
-static Value arraySort(VM *vm, int argc, const Value *args) {
+static void quickSort(ObjArray *array, const int start, const int end, const bool asc) {
+    double *raw = (double*)malloc(sizeof(double) * array->data.count);
+    for (int i = 0; i < array->data.count; ++i) {
+        raw[i] = AS_NUMBER(array->data.values[i]);
+    }
+
+    quickSortRaw(raw, (double)start, (double)end, asc);
+
+    for (int i = 0; i < array->data.count; ++i) {
+        array->data.values[i] = NUMBER_VAL(raw[i]);
+    }
+
+    free(raw);
+}
+
+static Value arraySort(VM *vm, const int argc, const Value *args) {
     if (argc > 1) {
         runtimeError(vm, "Function sort() expected 0 or 1 arguments but got '%d'.", argc);
         return ERROR_VAL;
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
-    int len = array->data.count;
+    const int len = array->data.count;
     bool asc = true;
     
     if (argc == 1) {
@@ -373,6 +397,46 @@ static Value arraySort(VM *vm, int argc, const Value *args) {
     
     quickSort(array, 0, len - 1, asc);
     
+    return ZERO_VAL;
+}
+
+static Value arrayToSorted(VM *vm, const int argc, const Value *args) {
+    if (argc > 1) {
+        runtimeError(vm, "Function toSorted() expected 0 or 1 arguments but got '%d'.", argc);
+        return ERROR_VAL;
+    }
+
+    ObjArray *array = AS_ARRAY(args[0]);
+    const int len = array->data.count;
+    bool asc = true;
+
+    if (argc == 1) {
+        if (!IS_BOOL(args[1])) {
+            char *str = valueType(args[1]);
+            runtimeError(vm, "Function toSorted() expected type 'bool' for first argument but got '%s'.", str);
+            free(str);
+            return ERROR_VAL;
+        }
+
+        asc = AS_BOOL(args[1]);
+    }
+
+    if (len == 0) {
+        return ZERO_VAL;
+    }
+
+    for (int i = 0; i < len; ++i) {
+        if (!IS_NUMBER(array->data.values[i])) {
+            char *str = valueType(array->data.values[i]);
+            runtimeError(vm, "Function toSorted() expected array of numbers but found type '%s' at index '%d'.", str, i);
+            free(str);
+
+            return ERROR_VAL;
+        }
+    }
+
+    quickSort(array, 0, len - 1, asc);
+
     return ZERO_VAL;
 }
 
@@ -884,9 +948,11 @@ void defineArrayFunctions(VM *vm) {
     defineNative(vm, "erase", arrayErase, &vm->arrayFunctions);
     defineNative(vm, "remove", arrayRemove, &vm->arrayFunctions);
     defineNative(vm, "contains", arrayContains, &vm->arrayFunctions);
+    defineNative(vm, "count", arrayCount, &vm->arrayFunctions);
     defineNative(vm, "indexOf", arrayIndexOf, &vm->arrayFunctions);
     defineNative(vm, "reverse", arrayReverse, &vm->arrayFunctions);
     defineNative(vm, "sort", arraySort, &vm->arrayFunctions);
+    defineNative(vm, "toSorted", arrayToSorted, &vm->arrayFunctions);
     defineNative(vm, "join", arrayJoin, &vm->arrayFunctions);
     defineNative(vm, "clear", arrayClear, &vm->arrayFunctions);
     defineNative(vm, "isEmpty", arrayIsEmpty, &vm->arrayFunctions);

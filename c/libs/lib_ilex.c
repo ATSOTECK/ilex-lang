@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 static Value ilexVersionString(VM *vm, int argc, const Value *args) {
     return OBJ_VAL(takeString(vm, newCString(ILEX_VERSION), strlen(ILEX_VERSION)));
@@ -130,6 +131,20 @@ static Value ilexValueCount(VM *vm, const int argc, const Value *args) {
     return NUMBER_VAL(vm->valCount);
 }
 
+// TODO: Broken on windows. Must fix.
+static Value seconds(VM *vm, const int argc, const Value* args) {
+    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
+
+// TODO: Broken on windows. Must fix.
+static Value milliseconds(VM *vm, const int argc, const Value* args) {
+#ifndef I_WIN
+    return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC * 1000);
+#else
+    return NUMBER_VAL((double)clock());
+#endif
+}
+
 Value useIlexLib(VM *vm) {
     ObjString *name = copyString(vm, "ilex", 4);
     push(vm, OBJ_VAL(name));
@@ -162,13 +177,16 @@ Value useIlexLib(VM *vm) {
     push(vm, OBJ_VAL(arr));
     
     for (int i = 0; i < vm->argc; ++i) {
-        Value arg = OBJ_VAL(copyString(vm, vm->argv[i], strlen(vm->argv[i])));
+        const Value arg = OBJ_VAL(copyString(vm, vm->argv[i], strlen(vm->argv[i])));
         push(vm, arg);
         writeValueArray(vm, &arr->data, arg);
         pop(vm);
     }
     
     defineNativeValue(vm, "args", OBJ_VAL(arr), &lib->values);
+
+    defineNative(vm, "seconds", seconds, &lib->values);
+    defineNative(vm, "milliseconds", milliseconds, &lib->values);
 
     pop(vm);
     pop(vm);
