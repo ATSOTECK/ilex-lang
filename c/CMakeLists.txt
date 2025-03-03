@@ -80,7 +80,9 @@ add_executable(ilex main.c ${sources} types/type_window.h types/type_window.c li
         libs/lib_toml.h
         libs/lib_toml.c
         libs/lib_base64.h
-        libs/lib_base64.c)
+        libs/lib_base64.c
+        libs/lib_fmt.h
+        libs/lib_fmt.c)
 
 add_library(ilex_lib ${sources})
 

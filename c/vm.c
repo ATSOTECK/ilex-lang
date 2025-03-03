@@ -266,6 +266,8 @@ VM *initVM(const char *path, const int argc, char **argv) {
 
     initBuiltInLibs(vm);
 
+    srand(time(NULL));
+
     return vm;
 }
 
@@ -762,11 +764,11 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
 #define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 #define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_SHORT()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
-#define BINARY_OP(valueTypeArg, op, type) \
+#define BINARY_OP(valueTypeArg, op, opStr, type) \
     do { \
       if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
         frame->ip = ip; \
-        runtimeError(vm, "Operands must be numbers. Got '%s', '%s' (%s, %s).", valueType(peek(vm, 0)), valueType(peek(vm, 1)), valueToString(peek(vm, 0)), valueToString(peek(vm, 1))); \
+        runtimeError(vm, "'%s' operands must be numbers. Got '%s', '%s' (%s, %s).", opStr, valueType(peek(vm, 0)), valueType(peek(vm, 1)), valueToString(peek(vm, 0)), valueToString(peek(vm, 1))); \
         return INTERPRET_RUNTIME_ERROR; \
       } \
       type b = AS_NUMBER(pop(vm)); \
@@ -785,8 +787,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
         printf("\n");
         disassembleInstruction(&frame->closure->function->chunk, (int)(ip - frame->closure->function->chunk.code));
 #endif
-        uint8_t instruction;
-        switch (instruction = READ_BYTE()) {
+        switch (READ_BYTE()) {
             case OP_CONSTANT: {
                 Value constant = READ_CONSTANT();
                 push(vm, constant);
@@ -1204,10 +1205,10 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 Value b = pop(vm);
                 push(vm, BOOL_VAL(!valuesEqual(a, b)));
             } break;
-            case OP_GR: BINARY_OP(BOOL_VAL, >, double); break;
-            case OP_GREQ: BINARY_OP(BOOL_VAL, >=, double); break;
-            case OP_LT: BINARY_OP(BOOL_VAL, <, double); break;
-            case OP_LTEQ: BINARY_OP(BOOL_VAL, <=, double); break;
+            case OP_GR: BINARY_OP(BOOL_VAL, >, ">", double); break;
+            case OP_GREQ: BINARY_OP(BOOL_VAL, >=, ">=", double); break;
+            case OP_LT: BINARY_OP(BOOL_VAL, <, "<", double); break;
+            case OP_LTEQ: BINARY_OP(BOOL_VAL, <=, "<=", double); break;
             case OP_ADD: {
                 if (IS_NUMBER(peek(vm, 0)) && IS_NUMBER(peek(vm, 1))) {
                     double b = AS_NUMBER(pop(vm));
@@ -1238,7 +1239,7 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 
                 push(vm, NUMBER_VAL(AS_NUMBER(pop(vm)) + 1));
             } break;
-            case OP_SUB: BINARY_OP(NUMBER_VAL, -, double); break;
+            case OP_SUB: BINARY_OP(NUMBER_VAL, -, "-", double); break;
             case OP_DEC: {
                 if (!IS_NUMBER(peek(vm, 0))) {
                     frame->ip = ip;
@@ -1248,8 +1249,8 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
         
                 push(vm, NUMBER_VAL(AS_NUMBER(pop(vm)) - 1));
             } break;
-            case OP_MUL: BINARY_OP(NUMBER_VAL, *, double); break;
-            case OP_DIV: BINARY_OP(NUMBER_VAL, /, double); break;
+            case OP_MUL: BINARY_OP(NUMBER_VAL, *, "*", double); break;
+            case OP_DIV: BINARY_OP(NUMBER_VAL, /, "/", double); break;
             case OP_POW: {
                 if (!IS_NUMBER(peek(vm, 0) || !IS_NUMBER(peek(vm, 1)))) {
                     frame->ip = ip;
@@ -1270,11 +1271,11 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                 double a = AS_NUMBER(pop(vm));
                 push(vm, NUMBER_VAL(fmod(a, b)));
             } break;
-            case OP_BIT_AND: BINARY_OP(NUMBER_VAL, &,  int); break;
-            case OP_BIT_OR:  BINARY_OP(NUMBER_VAL, |,  int); break;
-            case OP_BIT_XOR: BINARY_OP(NUMBER_VAL, ^,  int); break;
-            case OP_BIT_LS:  BINARY_OP(NUMBER_VAL, <<, int); break;
-            case OP_BIT_RS:  BINARY_OP(NUMBER_VAL, >>, int); break;
+            case OP_BIT_AND: BINARY_OP(NUMBER_VAL, &, "&",  int); break;
+            case OP_BIT_OR:  BINARY_OP(NUMBER_VAL, |, "|",  int); break;
+            case OP_BIT_XOR: BINARY_OP(NUMBER_VAL, ^, "^",  int); break;
+            case OP_BIT_LS:  BINARY_OP(NUMBER_VAL, <<, "<<", int); break;
+            case OP_BIT_RS:  BINARY_OP(NUMBER_VAL, >>, ">>", int); break;
             case OP_NULL_COALESCE: {
                 if (IS_NULL(peek(vm, 1))) {
                     Value rhs = pop(vm); // rhs

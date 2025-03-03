@@ -18,7 +18,7 @@ BuiltInLibs makeLib(VM *vm, const char *name, const BuiltInLib lib) {
 }
 
 void initBuiltInLibs(VM *vm) {
-    static const int LIB_COUNT = 13;
+    static const int LIB_COUNT = 14;
     vm->libCapacity = LIB_COUNT;
     vm->libCapacity = GROW_CAPACITY(vm->libCapacity);
 
@@ -37,6 +37,7 @@ void initBuiltInLibs(VM *vm) {
     vm->libs[10] = makeLib(vm, "http",   &useHttpLib);
     vm->libs[11] = makeLib(vm, "toml",   &useTomlLib);
     vm->libs[12] = makeLib(vm, "base64", &useBase64Lib);
+    vm->libs[13] = makeLib(vm, "fmt",    &useFmtLib);
 }
 
 Value useBuiltInLib(VM *vm, const int idx) {

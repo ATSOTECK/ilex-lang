@@ -150,7 +150,7 @@ static Value arrayErase(VM *vm, int argc, const Value *args) {
     }
     
     ObjArray *array = AS_ARRAY(args[0]);
-    int idx = AS_NUMBER(args[1]);
+    const int idx = AS_NUMBER(args[1]);
     int count = argc == 2 ? (int)AS_NUMBER(args[2]) : 1;
     
     if (array->data.count == 0) {
