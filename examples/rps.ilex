@@ -1,39 +1,37 @@
 use { input } from <io>
 use <random>
+use { blue, green, red, reset, yellow } from <fmt>
 
 fn win() {
-    println('\nYou win!\n')
+    println('\nYou {green}win{reset}!\n')
 }
 
-fn lose() {
-    println('\nComputer wins!\n')
+lose ::= fn -> println('\nYou {red}lose{reset}!\n')
+
+const draw = fn -> {
+    println("\nIt's a {yellow}draw{reset}!\n")
 }
 
-fn play() {
-    answer := 'yes'
-    while answer == 'yes' {
-        user ::= input('R for rock, P for paper, S for scissors: ').toLower()
-        
-        computer ::= random::choose('r', 'p', 's')
-        
-        println('You chose {user} and the computer chose {computer}')
-        
-        if user == computer {
-            println('\nDraw!\n')
-        } else {
-            switch (user) {
-                case 'r': computer == 's' ? win() : lose()
-                case 'p': computer == 'r' ? win() : lose()
-                case 's': computer == 'p' ? win() : lose()
-                default: println('Invalid choice:', user)
-            }
-        }
-        
-        answer = input('Play again? (yes/no): ').toLower()
-        if answer == 'y' {
-            answer = 'yes'
+answer := 'yes'
+while answer == 'yes' {
+    user ::= input('R for rock, P for paper, S for scissors: ').toLower()
+    computer ::= random::choose('r', 'p', 's')
+    
+    println('You chose {blue}{user}{reset} and the computer chose {blue}{computer}{reset}')
+    
+    if user == computer {
+        draw()
+    } else {
+        when user {
+            is 'r': computer == 's' ? win() : lose()
+            is 'p': computer == 'r' ? win() : lose()
+            is 's': computer == 'p' ? win() : lose()
+            else: println("Invalid choice: '{user}'.")
         }
     }
+    
+    answer = input('Play again? (yes/no): ').toLower()
+    if answer == 'y' {
+        answer = 'yes'
+    }
 }
-
-play()
