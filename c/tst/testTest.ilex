@@ -1,0 +1,25 @@
+use { group, test, expect, require } from <test>
+
+test('name', fn -> {
+    map ::= { a: 1 }
+    expect(map.a).toBe(1) // Does not end test if fails.
+    require(map.a).toBe(1) // Ends test if fails.
+})
+
+test('should skip', { skip: true }, fn -> {
+    //
+})
+
+test('name', { timeout: 10000 }, fn -> {
+    //
+})
+
+group('name' fn -> {
+    test('name' fn -> {
+        //
+    })
+
+    test('name' fn -> {
+        //
+    })
+})

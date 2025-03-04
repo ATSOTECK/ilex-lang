@@ -1,3 +1,6 @@
+use { milliseconds } from <ilex>
+use <fmt>
+
 hi := "hi".toUpper()
 assert(hi == "HI")
 
@@ -21,6 +24,7 @@ str = "This is a string"
 assert(str.contains("a"))
 
 assert('yeet' == "yeet")
+assert("yeet" != "YEET")
 
 count ::= 10
 str = 'You have {count + 2} items.'
@@ -32,8 +36,6 @@ println('two:', str)
 str = 'You have \{count + 2} items.'
 println('three:', str)
 
-println('hello' + ' there')
+assert('hello' + ' there' == 'hello there')
 
-println("String test passed in", milliseconds(), "ms!")
-
-assert("yeet" == "YEET", "This should fail.")
+println("String test {fmt.green}passed{fmt::reset} in {milliseconds()} ms!")

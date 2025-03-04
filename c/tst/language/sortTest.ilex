@@ -1,0 +1,6 @@
+arr ::= [7, 4, 8, 2, 9, 3]
+arr.sort()
+println(arr)
+
+arr2 ::= [1, 2, 3, 4, 5, 5, 5, 6, 7]
+println(arr2.count(5))

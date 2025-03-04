@@ -50,4 +50,4 @@ withFile ('tst.txt', 'rb+') {
     assert(str == 'ye yeet')
 }
 
-println('Done!')
+println('Passed!')

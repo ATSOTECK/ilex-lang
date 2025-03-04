@@ -1,3 +1,5 @@
+use { seconds } from <ilex>
+
 class Zoo {
     var aardvark
     var baboon

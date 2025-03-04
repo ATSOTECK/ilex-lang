@@ -1,0 +1,23 @@
+use <web_socket>
+
+struct Socket {
+    connect: fn -> void
+}
+
+const createSocket = fn |url|: Socket -> {
+    socket ::= web_socket::new(url)
+
+    const connect = fn -> {}
+
+    return {
+        connect
+    }
+}
+
+const func = fn |url| -> {
+    println(url)
+}
+
+map ::= {send: func}
+send ::= map.send
+send('bla')

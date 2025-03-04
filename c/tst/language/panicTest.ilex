@@ -4,6 +4,6 @@ fn panic(arg) {
 
 panic("yeet")
 
-panic! ("At the disco!")
+panic!("At the disco!")
 
-assert (false, "This should never run.")
+assert(false, "This should never run.")

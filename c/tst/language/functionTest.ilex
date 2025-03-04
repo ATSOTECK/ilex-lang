@@ -30,3 +30,17 @@ someFunc(1, "yeet", true)
 someFunc(1, "yeet", true, [1, 2, 3])
 someFunc(1, "yeet", true, [1, 2, 3], null)
 
+const anon = fn |x| x
+assert(anon(12) == 12)
+
+addAnon ::= fn |a, b| -> {
+    return a + b
+}
+assert(addAnon(2, 5) == 7) 
+
+addAnon2 ::= fn |a, b| a + b
+assert(addAnon2(5, 6) == 11)
+
+// anonOpt ::= fn |a, b = 10| a + b
+// assert(anonOpt(2) == 12)
+// assert(anonOpt(10, 12) == 22)

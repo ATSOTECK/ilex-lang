@@ -1,5 +1,7 @@
 use <random>
 use <math>
+use <fmt>
+use { milliseconds } from <ilex>
 
 assert([] == [])
 
@@ -248,4 +250,4 @@ assert(someEven.allOf(fn |x| x % 2 == 0, 4, 7) == false)
 assert(someEven.noneOf(fn |x| x % 2 == 0, 4, 6) == false)
 assert(someEven.anyOf(fn |x| x % 2 == 0, 4, 6) == true)
 
-println("Array test \033[32mpassed\033[0m in", milliseconds(), "ms!")
+println("Array test {fmt.green}passed{fmt.reset} in {milliseconds()} ms!")

@@ -1,3 +1,6 @@
+use { milliseconds } from <ilex>
+use <fmt>
+
 assert({} == {})
 assert({} != [])
 
@@ -84,7 +87,7 @@ map10 := { a: 'a' }
 map10.merge(map9)
 assert(map10 == { a: 'a', b: '2' })
 
-println("Map test \033[32mpassed\033[0m in", milliseconds(), "ms!")
+println("Map test {fmt::green}passed{fmt::reset} in {milliseconds()} ms!")
 
-println('This test should fail now.')
+println('This test should {fmt::red}fail{fmt::reset} now.')
 map4.key5 = "bla"

@@ -26,4 +26,4 @@ fn str(arg) {
 num(1)
 str("ya")
 
-println('Done!')
+println('Passed!')

@@ -1,6 +1,7 @@
 use { pi, e, max, min, cos, sin } from <math>
 use <math>
-use { version } from <ilex>
+use { version, milliseconds } from <ilex>
+use <fmt>
 
 println("e", e)
 println("math::e", math::e)
@@ -123,6 +124,6 @@ println("cos(pi) =", cos(pi))
 assert(sin(pi) == 0)
 assert(cos(pi) == -1)
 
-println("\nMath test passed in", milliseconds(), "ms!\n")
+println("\nMath test {fmt::green}passed{fmt::reset} in {milliseconds()} ms!\n")
 
 assert(num == 2, "This should fail.");

@@ -1,0 +1,5 @@
+x := 12
+
+assert(x == 12)
+// assert(x == 13)
+assert(x == 13, "x should be 13 (should fail)")
