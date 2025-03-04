@@ -1228,8 +1228,8 @@ ParseRule rules[] = {
         [TK_WHILE]            = {NULL,     NULL,    PREC_NONE},
         [TK_DO]               = {NULL,     NULL,    PREC_NONE},
         [TK_UNTIL]            = {NULL,     NULL,    PREC_NONE},
-        [TK_SWITCH]           = {NULL,     NULL,    PREC_NONE},
-        [TK_CASE]             = {NULL,     NULL,    PREC_NONE},
+        [TK_WHEN]           = {NULL,     NULL,    PREC_NONE},
+        [TK_IS]             = {NULL,     NULL,    PREC_NONE},
         [TK_DEFAULT]          = {NULL,     NULL,    PREC_NONE},
         [TK_ASSERT]           = {NULL,     NULL,    PREC_NONE},
         [TK_PANIC]            = {NULL,     NULL,    PREC_NONE},
@@ -1302,7 +1302,7 @@ static void synchronize(Parser *parser) {
             case TK_UNTIL:
             case TK_RETURN:
             case TK_ASSERT:
-            case TK_SWITCH:
+            case TK_WHEN:
             case TK_USE:
             case TK_FROM:
             case TK_AS:
@@ -1897,13 +1897,13 @@ static void panicStatement(const Compiler *compiler) {
     emitByteShort(compiler, OP_PANIC, (uint16_t)constant);
 }
 
-static void switchStatement(Compiler *compiler) {
+static void whenStatement(Compiler *compiler) {
     int caseEnds[256];
     int caseCount = 0;
     bool expectClosingParen = false;
 
     if (check(compiler, TK_LPAREN)) {
-        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'switch'.");
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'when'.");
         expectClosingParen = true;
     }
 
@@ -1914,7 +1914,7 @@ static void switchStatement(Compiler *compiler) {
     }
 
     eat(compiler->parser, TK_LBRACE, "Expect '{' after switch statement.");
-    eat(compiler->parser, TK_CASE, "Expect at least one 'case' block.");
+    eat(compiler->parser, TK_IS, "Expect at least one 'is' block.");
 
     int nextJmp = -1;
     do {
@@ -1952,29 +1952,29 @@ static void switchStatement(Compiler *compiler) {
         patchJump(compiler, compareJump);
 
         if (caseCount > 255) {
-            errorAtCurrent(compiler->parser, "Switch statements can't have more than 255 case blocks");
+            errorAtCurrent(compiler->parser, "Switch statements can't have more than 255 is blocks");
         }
 
-        if (!check(compiler, TK_CASE) && !check(compiler, TK_RBRACE) && !check(compiler, TK_DEFAULT)) {
+        if (!check(compiler, TK_IS) && !check(compiler, TK_RBRACE) && !check(compiler, TK_ELSE)) {
             char *msg = newCStringLen(compiler->parser->current.start, compiler->parser->current.len);
             error(compiler->parser, "Unexpected token '%s'.", msg);
             free(msg);
             synchronize(compiler->parser);
         }
 
-    } while (match(compiler, TK_CASE));
+    } while (match(compiler, TK_IS));
 
-    if (match(compiler,TK_DEFAULT)){
+    if (match(compiler,TK_ELSE)){
         emitByte(compiler, OP_POP); // expression.
-        eat(compiler->parser, TK_COLON, "Expect ':' after 'default'."); // -> would not make sense here.
+        eat(compiler->parser, TK_COLON, "Expect ':' after 'else'."); // -> would not make sense here.
         statement(compiler);
     }
 
-    if (match(compiler,TK_CASE)){
-        error(compiler->parser, "Unexpected case after 'default'.");
+    if (match(compiler,TK_IS)){
+        error(compiler->parser, "Unexpected 'is' after 'else'.");
     }
 
-    eat(compiler->parser, TK_RBRACE, "Expect '}' after cases.");
+    eat(compiler->parser, TK_RBRACE, "Expect '}' after 'is' blocks.");
 
     for (int i = 0; i < caseCount; i++) {
         if (caseEnds[i] >= 0) {
@@ -2438,8 +2438,8 @@ static void statement(Compiler *compiler) {
         assertStatement(compiler);
     } else if (match(compiler, TK_PANIC)) {
         panicStatement(compiler);
-    } else if (match(compiler, TK_SWITCH)) {
-        switchStatement(compiler);
+    } else if (match(compiler, TK_WHEN)) {
+        whenStatement(compiler);
     } else if (match(compiler, TK_USE)) {
         useStatement(compiler, false);
     } else if (match(compiler, TK_CONTINUE)) {

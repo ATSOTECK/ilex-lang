@@ -153,6 +153,15 @@ static IlexTokenType checkKeyword(const int start, const int len, const char *re
     return TK_IDENT;
 }
 
+static IlexTokenType checkKeyword2(const int start, const int len, const char *rest, const IlexTokenType type, const int start2, const int len2, const char *rest2, const IlexTokenType type2) {
+    IlexTokenType tokenType = checkKeyword(start, len, rest, type);
+    if (tokenType == TK_IDENT) {
+        tokenType = checkKeyword(start2, len2, rest2, type2);
+    }
+
+    return tokenType;
+}
+
 static bool match(const char expected) {
     if (atEnd()) {
         return false;
@@ -228,7 +237,7 @@ static IlexTokenType identType() {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'a': return checkKeyword(2, 3, "lse", TK_FALSE);
-                    case 'n': return TK_FN;
+                    case 'n': return checkKeyword(2, 0, "", TK_FN);
                     case 'o': return checkKeyword(2, 1, "r", TK_FOR);
                     case 'r': return checkKeyword(2, 2, "om", TK_FROM);
                     default: break;
@@ -238,8 +247,9 @@ static IlexTokenType identType() {
         case 'i': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'f': return TK_IF;
-                    case 'n': return checkKeyword(2, 6, "herits", TK_INHERITS);
+                    case 'f': return checkKeyword(2, 0, "", TK_IF);
+                    case 'n': return checkKeyword2(2, 0, "", TK_IN, 2, 6, "herits", TK_INHERITS);
+                    case 's': return checkKeyword(2, 0, "", TK_IS);
                     default: break;
                 }
             }
@@ -303,7 +313,7 @@ static IlexTokenType identType() {
         case 'w': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'h': return checkKeyword(2, 3, "ile", TK_WHILE);
+                    case 'h': return checkKeyword2(2, 2, "en", TK_WHEN, 2, 3, "ile", TK_WHILE);
                     case 'i': return checkKeyword(2, 6, "thFile", TK_WITH_FILE);
                     default: break;
                 }

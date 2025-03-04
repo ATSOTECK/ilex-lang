@@ -93,6 +93,8 @@ typedef enum {
     TK_FROM,
     TK_GOTO, // TODO
     TK_IF,
+    TK_IN,
+    TK_IS,
     TK_INHERITS,
     TK_NAMESPACE,
     TK_NULL,
@@ -109,6 +111,7 @@ typedef enum {
     TK_UNTIL,
     TK_USE,
     TK_VAR,
+    TK_WHEN,
     TK_WHILE,
     TK_WITH_FILE,
 

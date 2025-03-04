@@ -1,0 +1,29 @@
+fn num(arg) {
+    when (arg) {
+        is 1: println(1)
+        is 2, 3, 4, 5: println(2)
+        is 6, 7, 8, 9: println(3)
+        else: println("yeet")
+    }
+}
+
+fn str(arg) {
+    when (arg) {
+        is "one" -> println("one") // fallthrough to two
+        is "two", "three", "four", "five": println("two")
+        is "six", "seven", "eight", "nine": println("three")
+        is "yeet": {
+            println("yaat")
+            println("yeet")
+        }
+        is "ya" -> println("woo")
+        is "ya2": println("woo 2")
+        // is "ya": println("woo 3") //TODO: Should error on duplicate is.
+        else: println("yote")
+    }
+}
+
+num(1)
+str("ya")
+
+println('Passed!')

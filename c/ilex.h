@@ -21,7 +21,7 @@
 #   define nullptr ((void*)0)
 #endif
 
-//#define DEBUG_PRINT_CODE
+// #define DEBUG_PRINT_CODE
 //#define DEBUG_TRACE_EXECUTION
 
 //#define DEBUG_STRESS_GC
@@ -34,9 +34,9 @@
 
 #define ILEX_VERSION_MAJOR 0
 #define ILEX_VERSION_MINOR 0
-#define ILEX_VERSION_BUILD 71
-#define ILEX_VERSION "0.0.71"
-#define ILEX_DATE "01 - March - 2025"
+#define ILEX_VERSION_BUILD 74
+#define ILEX_VERSION "0.0.74"
+#define ILEX_DATE "04 - March - 2025"
 
 #if defined(WIN32) || defined(_WIN32)
 #   define I_WIN
