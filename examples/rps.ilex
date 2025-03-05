@@ -13,7 +13,7 @@ const draw = fn -> {
 }
 
 answer := 'yes'
-while answer == 'yes' {
+while answer is 'yes' {
     user ::= input('R for rock, P for paper, S for scissors: ').toLower()
     computer ::= random::choose('r', 'p', 's')
     
@@ -22,16 +22,16 @@ while answer == 'yes' {
     if user == computer {
         draw()
     } else {
-        when user {
-            is 'r': computer == 's' ? win() : lose()
-            is 'p': computer == 'r' ? win() : lose()
-            is 's': computer == 'p' ? win() : lose()
+        match user {
+            when 'r': computer == 's' ? win() : lose()
+            when 'p': computer == 'r' ? win() : lose()
+            when 's': computer == 'p' ? win() : lose()
             else: println("Invalid choice: '{user}'.")
         }
     }
     
     answer = input('Play again? (yes/no): ').toLower()
-    if answer == 'y' {
+    if answer is 'y' {
         answer = 'yes'
     }
 }
