@@ -26,7 +26,7 @@ while answer is 'yes' {
             when 'r': computer == 's' ? win() : lose()
             when 'p': computer == 'r' ? win() : lose()
             when 's': computer == 'p' ? win() : lose()
-            else: println("Invalid choice: '{user}'.")
+            const invalid: println("Invalid choice: '{invalid}'.")
         }
     }
     

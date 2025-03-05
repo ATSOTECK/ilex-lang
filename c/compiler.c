@@ -1650,12 +1650,10 @@ static void varDeclaration(Compiler *compiler, const bool isConst) {
 }
 
 static void matchVarDeclaration(Compiler *compiler, const uint16_t id, const bool isConst) {
-    do {
-        const uint16_t global = parseVariable(compiler, "Expect variable name.");
-        emitByteShort(compiler, OP_SET_LOCAL, id);
+    const uint16_t global = parseVariable(compiler, "Expect variable name.");
+    emitByteShort(compiler, OP_SET_LOCAL, id);
 
-        defineVariable(compiler, global, isConst);
-    } while (match(compiler, TK_COMMA));
+    defineVariable(compiler, global, isConst);
 
     match(compiler, TK_SEMICOLON);
 }
@@ -1920,7 +1918,13 @@ static void matchStatement(Compiler *compiler) {
     int caseCount = 0;
     bool expectClosingParen = false;
 
-    const uint16_t matchArgId = identifierConstant(compiler, &compiler->parser->current);
+    int matchArgId = resolveLocal(compiler, &compiler->parser->current, false);
+    if (matchArgId == -1) {
+        matchArgId = resolveUpvalue(compiler, &compiler->parser->current);
+    }
+    if (matchArgId == -1) {
+        matchArgId = identifierConstant(compiler, &compiler->parser->current);
+    }
 
     if (check(compiler, TK_LPAREN)) {
         eat(compiler->parser, TK_LPAREN, "Expect '(' after 'match'.");
@@ -1932,6 +1936,8 @@ static void matchStatement(Compiler *compiler) {
     if (expectClosingParen) {
         eat(compiler->parser, TK_RPAREN, "Expect ')' after expression.");
     }
+
+    beginScope(compiler);
 
     eat(compiler->parser, TK_LBRACE, "Expect '{' after 'match' statement.");
     eat(compiler->parser, TK_WHEN, "Expect at least one 'when' block.");
@@ -1989,7 +1995,6 @@ static void matchStatement(Compiler *compiler) {
     if (match(compiler, TK_CONST) || match(compiler, TK_VAR)) {
         varDecl = true;
         matchVarDeclaration(compiler, matchArgId, isConst);
-        emitByte(compiler, OP_POP); // expression.
         if (isConst) {
             eat(compiler->parser, TK_COLON, "Expect ':' after const declaration.");
         } else {
@@ -2015,6 +2020,7 @@ static void matchStatement(Compiler *compiler) {
     }
 
     eat(compiler->parser, TK_RBRACE, "Expect '}' after 'when' blocks.");
+    endScope(compiler);
 
     for (int i = 0; i < caseCount; i++) {
         if (caseEnds[i] >= 0) {

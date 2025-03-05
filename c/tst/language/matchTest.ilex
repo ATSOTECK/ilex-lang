@@ -39,8 +39,8 @@ match x {
     when 1: println('one')
     when 2, 3, 4: println('two, three, or four')
     when 10: println('ten')
-    var yy: {
-        yy++
+    var y: {
+        y++
         println('x is {x}, y is {y}')
     }
 }
