@@ -69,4 +69,8 @@ assert(a is not 'yeet')
 assert(!(a is not 'yeet') == false)
 assert(not(a is not 'yeet') == false)
 
+assert(a is ! 'yeet') // Weird but valid.
+assert(a is! 'something') // Weird but valid.
+// assert(a !is 'something') // Invalid (and also weird).
+
 println('Passed!')
