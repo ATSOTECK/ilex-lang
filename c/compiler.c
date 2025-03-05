@@ -912,11 +912,17 @@ static void static_(Compiler *compiler, bool canAssign) {
 
 static void binary(Compiler *compiler, Token prev, bool canAssign) {
     const IlexTokenType operatorType = compiler->parser->previous.type;
+    const IlexTokenType secondOp = compiler->parser->current.type;
     const ParseRule *rule = getRule(operatorType);
     parsePrecedence(compiler, (Precedence)(rule->precedence + 1));
 
     switch (operatorType) {
         case TK_NOTEQ:         emitByte(compiler, OP_NOTEQ); break;
+        case TK_IS: {
+            if (secondOp == TK_NOT) {
+                emitByte(compiler, OP_NOTEQ); break;
+            }
+        }
         case TK_EQ:            emitByte(compiler, OP_EQ); break;
         case TK_GR:            emitByte(compiler, OP_GR); break;
         case TK_GREQ:          emitByte(compiler, OP_GREQ); break;
@@ -1190,6 +1196,7 @@ ParseRule rules[] = {
         [TK_NOTEQ]            = {NULL,     binary,  PREC_EQUALITY},
         [TK_ASSIGN]           = {NULL,     NULL,    PREC_NONE},
         [TK_EQ]               = {NULL,     binary,  PREC_EQUALITY},
+        [TK_IS]               = {NULL,     binary,  PREC_EQUALITY},
         [TK_GR]               = {NULL,     binary,  PREC_COMPARISON},
         [TK_GREQ]             = {NULL,     binary,  PREC_COMPARISON},
         [TK_LT]               = {NULL,     binary,  PREC_COMPARISON},
@@ -1228,8 +1235,8 @@ ParseRule rules[] = {
         [TK_WHILE]            = {NULL,     NULL,    PREC_NONE},
         [TK_DO]               = {NULL,     NULL,    PREC_NONE},
         [TK_UNTIL]            = {NULL,     NULL,    PREC_NONE},
-        [TK_WHEN]           = {NULL,     NULL,    PREC_NONE},
-        [TK_IS]             = {NULL,     NULL,    PREC_NONE},
+        [TK_MATCH]            = {NULL,     NULL,    PREC_NONE},
+        [TK_WHEN]             = {NULL,     NULL,    PREC_NONE},
         [TK_DEFAULT]          = {NULL,     NULL,    PREC_NONE},
         [TK_ASSERT]           = {NULL,     NULL,    PREC_NONE},
         [TK_PANIC]            = {NULL,     NULL,    PREC_NONE},
@@ -1302,7 +1309,7 @@ static void synchronize(Parser *parser) {
             case TK_UNTIL:
             case TK_RETURN:
             case TK_ASSERT:
-            case TK_WHEN:
+            case TK_MATCH:
             case TK_USE:
             case TK_FROM:
             case TK_AS:
@@ -1642,6 +1649,17 @@ static void varDeclaration(Compiler *compiler, const bool isConst) {
     match(compiler, TK_SEMICOLON);
 }
 
+static void matchVarDeclaration(Compiler *compiler, const uint16_t id, const bool isConst) {
+    do {
+        const uint16_t global = parseVariable(compiler, "Expect variable name.");
+        emitByteShort(compiler, OP_SET_LOCAL, id);
+
+        defineVariable(compiler, global, isConst);
+    } while (match(compiler, TK_COMMA));
+
+    match(compiler, TK_SEMICOLON);
+}
+
 static void varDeclaration2(Compiler *compiler, const bool isConst) {
     eat(compiler->parser, TK_IDENT, "Expect variable name.");
     declareVariable(compiler);
@@ -1897,13 +1915,15 @@ static void panicStatement(const Compiler *compiler) {
     emitByteShort(compiler, OP_PANIC, (uint16_t)constant);
 }
 
-static void whenStatement(Compiler *compiler) {
+static void matchStatement(Compiler *compiler) {
     int caseEnds[256];
     int caseCount = 0;
     bool expectClosingParen = false;
 
+    const uint16_t matchArgId = identifierConstant(compiler, &compiler->parser->current);
+
     if (check(compiler, TK_LPAREN)) {
-        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'when'.");
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'match'.");
         expectClosingParen = true;
     }
 
@@ -1913,8 +1933,8 @@ static void whenStatement(Compiler *compiler) {
         eat(compiler->parser, TK_RPAREN, "Expect ')' after expression.");
     }
 
-    eat(compiler->parser, TK_LBRACE, "Expect '{' after switch statement.");
-    eat(compiler->parser, TK_IS, "Expect at least one 'is' block.");
+    eat(compiler->parser, TK_LBRACE, "Expect '{' after 'match' statement.");
+    eat(compiler->parser, TK_WHEN, "Expect at least one 'when' block.");
 
     int nextJmp = -1;
     do {
@@ -1952,29 +1972,49 @@ static void whenStatement(Compiler *compiler) {
         patchJump(compiler, compareJump);
 
         if (caseCount > 255) {
-            errorAtCurrent(compiler->parser, "Switch statements can't have more than 255 is blocks");
+            errorAtCurrent(compiler->parser, "Match statements can't have more than 255 'when' blocks");
         }
 
-        if (!check(compiler, TK_IS) && !check(compiler, TK_RBRACE) && !check(compiler, TK_ELSE)) {
+        if (!check(compiler, TK_WHEN) && !check(compiler, TK_RBRACE) && !check(compiler, TK_ELSE) && !check(compiler, TK_CONST) && !check(compiler, TK_VAR)) {
             char *msg = newCStringLen(compiler->parser->current.start, compiler->parser->current.len);
             error(compiler->parser, "Unexpected token '%s'.", msg);
             free(msg);
             synchronize(compiler->parser);
         }
 
-    } while (match(compiler, TK_IS));
+    } while (match(compiler, TK_WHEN));
 
-    if (match(compiler,TK_ELSE)){
+    bool varDecl = false;
+    const bool isConst = check(compiler, TK_CONST);
+    if (match(compiler, TK_CONST) || match(compiler, TK_VAR)) {
+        varDecl = true;
+        matchVarDeclaration(compiler, matchArgId, isConst);
+        emitByte(compiler, OP_POP); // expression.
+        if (isConst) {
+            eat(compiler->parser, TK_COLON, "Expect ':' after const declaration.");
+        } else {
+            eat(compiler->parser, TK_COLON, "Expect ':' after var declaration.");
+        }
+        statement(compiler);
+    } else if (match(compiler,TK_ELSE)){
         emitByte(compiler, OP_POP); // expression.
         eat(compiler->parser, TK_COLON, "Expect ':' after 'else'."); // -> would not make sense here.
         statement(compiler);
     }
 
-    if (match(compiler,TK_IS)){
-        error(compiler->parser, "Unexpected 'is' after 'else'.");
+    if (match(compiler, TK_ELSE) && varDecl) {
+        if (isConst) {
+            error(compiler->parser, "Unexpected 'else' after const declaration.");
+        } else {
+            error(compiler->parser, "Unexpected 'else' after var declaration.");
+        }
     }
 
-    eat(compiler->parser, TK_RBRACE, "Expect '}' after 'is' blocks.");
+    if (match(compiler,TK_WHEN)){
+        error(compiler->parser, "Unexpected 'when' after 'else'.");
+    }
+
+    eat(compiler->parser, TK_RBRACE, "Expect '}' after 'when' blocks.");
 
     for (int i = 0; i < caseCount; i++) {
         if (caseEnds[i] >= 0) {
@@ -2438,8 +2478,8 @@ static void statement(Compiler *compiler) {
         assertStatement(compiler);
     } else if (match(compiler, TK_PANIC)) {
         panicStatement(compiler);
-    } else if (match(compiler, TK_WHEN)) {
-        whenStatement(compiler);
+    } else if (match(compiler, TK_MATCH)) {
+        matchStatement(compiler);
     } else if (match(compiler, TK_USE)) {
         useStatement(compiler, false);
     } else if (match(compiler, TK_CONTINUE)) {

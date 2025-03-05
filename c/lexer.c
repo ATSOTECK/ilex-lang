@@ -195,7 +195,6 @@ static IlexTokenType identType() {
         case 'c': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
-                    case 'a': return checkKeyword(2, 2, "se", TK_CASE);
                     case 'l': return checkKeyword(2, 3, "ass", TK_CLASS);
                     case 'o': {
                         const IlexTokenType tk = checkKeyword(2, 3, "nst", TK_CONST);
@@ -254,10 +253,12 @@ static IlexTokenType identType() {
                 }
             }
         } break;
+        case 'm': return checkKeyword(1, 4, "atch", TK_MATCH);
         case 'n': {
             if (lexer.current - lexer.start > 1) {
                 switch (lexer.start[1]) {
                     case 'a': return checkKeyword(2, 7, "mespace", TK_NAMESPACE);
+                    case 'o': return checkKeyword(2, 1, "t", TK_NOT);
                     case 'u': return checkKeyword(2, 2, "ll", TK_NULL);
                     default: break;
                 }

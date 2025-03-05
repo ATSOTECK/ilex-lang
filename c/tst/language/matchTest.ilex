@@ -1,0 +1,54 @@
+fn num(arg) {
+    match (arg) {
+        when 1: println(1)
+        when 2, 3, 4, 5: println(2)
+        when 6, 7, 8, 9: println(3)
+        else: println("yeet")
+    }
+}
+
+fn str(arg) {
+    match (arg) {
+        when "one" -> println("one") // fallthrough to two
+        when "two", "three", "four", "five": println("two")
+        when "six", "seven", "eight", "nine": println("three")
+        when "yeet": {
+            println("yaat")
+            println("yeet")
+        }
+        when "ya" -> println("woo")
+        when "ya2": println("woo 2")
+        // catch "ya": println("woo 3") //TODO: Should error on duplicate catch.
+        else: println("yote")
+    }
+}
+
+num(1)
+str("ya")
+
+x := 101
+
+match x {
+    when 1: println('one')
+    when 2, 3, 4: println('two, three, or four')
+    when 10: println('ten')
+    const y: println('y is {y}')
+}
+
+match x {
+    when 1: println('one')
+    when 2, 3, 4: println('two, three, or four')
+    when 10: println('ten')
+    var yy: {
+        yy++
+        println('x is {x}, y is {y}')
+    }
+}
+
+println('Passed!')
+
+// match x {
+//     []: println('empty array')
+//     [const start, _, 'end']: println('first element is {start}')
+//     ['start', ..]: println('open ended array that starts with start')
+// }

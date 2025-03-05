@@ -61,4 +61,12 @@ if (a || b) {
     println("A or B true 4")
 }
 
+a = 'bla'
+assert(a is 'bla')
+assert(!(a is 'yeet'))
+assert(not(a is 'yeet'))
+assert(a is not 'yeet')
+assert(!(a is not 'yeet') == false)
+assert(not(a is not 'yeet') == false)
+
 println('Passed!')
