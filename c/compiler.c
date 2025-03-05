@@ -1651,11 +1651,14 @@ static void varDeclaration(Compiler *compiler, const bool isConst) {
 
 static void matchVarDeclaration(Compiler *compiler, const uint16_t id, const bool isConst) {
     const uint16_t global = parseVariable(compiler, "Expect variable name.");
-    emitByteShort(compiler, OP_SET_LOCAL, id);
+    if (match(compiler, TK_ASSIGN)) {
+        emitByte(compiler, OP_POP); // pop the match arg
+        expression(compiler);
+    } else {
+        emitByteShort(compiler, OP_SET_LOCAL, id);
+    }
 
     defineVariable(compiler, global, isConst);
-
-    match(compiler, TK_SEMICOLON);
 }
 
 static void varDeclaration2(Compiler *compiler, const bool isConst) {

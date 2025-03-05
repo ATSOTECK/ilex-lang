@@ -45,10 +45,54 @@ match x {
     }
 }
 
+x = 12
+match x {
+    when 1: println('one')
+    when 2, 3, 4: println('2, 3, 4')
+    const val = x ** 2: println('val is {val}')
+}
+
 println('Passed!')
 
+// state := 'idle'
+// action := 'heal'
+
+// match [state, action] {
+//     when ['idle', 'heal']: println('idle heal')
+//     when ['idle', 'eat']: println('idle eat')
+//     when ['running', 'jump']: println('running jump')
+//     else: println('something else')
+// }
+
 // match x {
-//     []: println('empty array')
-//     [const start, _, 'end']: println('first element is {start}')
-//     ['start', ..]: println('open ended array that starts with start')
+//     when []: println('empty array')
+//     when [const start, *, 'end']: println('first element is {start}')
+//     when ['start', ..]: println('open ended array that starts with start')
+// }
+
+// match map {
+//     when {}: println('Empty map')
+//     when {name: 'Steve'}: println('Steve!')
+//     when {name: 'Steve', age: const age}: println('Steve is {age} years old.')
+//     when {name, age}: println('Someone with only a name and an age!')
+//     when {name, ..}: println('Someone with at least a name!')
+// }
+
+// p := [10, 100]
+
+// match p {
+//     when [const x, const y] and x == y: println('point on line x = y')
+//     when [const x, const y] and x == -y: println('point on line x = -y')
+//     [const x, const y]: println('point ({x}, {y})')
+// }
+
+// fn append(arr1, arr2) {
+//     match arr1 {
+//         when []: return arr2
+//         when [const head, ..]: {
+//             tail ::= arr1.slice(1, arr1.len())
+//             result ::= append(tail, arr2)
+//             return [head] + result
+//         }
+//     }
 // }
