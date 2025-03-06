@@ -297,6 +297,7 @@ static IlexTokenType identType() {
                 switch (lexer.start[1]) {
                     case 'h': return checkKeyword(2, 2, "is", TK_THIS);
                     case 'r': return checkKeyword(2, 2, "ue", TK_TRUE);
+                    case 'y': return checkKeyword(2, 4, "peof", TK_TYPEOF);
                     default: break;
                 }
             }

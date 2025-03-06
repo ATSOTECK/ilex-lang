@@ -28,4 +28,7 @@ assert toBool([1, 2, 3]) is true
 assert toBool({a: 1}) is true
 assert toBool(#{1, 2, 'three'}) is true
 
+assert typeof false is 'bool'
+assert typeof(true) is 'bool'
+
 println('Passed!')

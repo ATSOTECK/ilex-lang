@@ -1165,6 +1165,24 @@ static void anon(Compiler *compiler, bool canAssign) {
     endCompiler(&functionCompiler);
 }
 
+static void typeof_(Compiler *compiler, bool canAssign) {
+    bool expectClosingParen = false;
+
+    if (check(compiler, TK_LPAREN)) {
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'typeof'.");
+        expectClosingParen = true;
+    }
+
+    expression(compiler);
+
+    if (expectClosingParen) {
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    }
+    match(compiler, TK_SEMICOLON);
+
+    emitByte(compiler, OP_TYPEOF);
+}
+
 //                              prefix, infix, precedence
 ParseRule rules[] = {
         [TK_LPAREN]           = {grouping, call,    PREC_CALL},
@@ -1239,6 +1257,7 @@ ParseRule rules[] = {
         [TK_WHEN]             = {NULL,     NULL,    PREC_NONE},
         [TK_DEFAULT]          = {NULL,     NULL,    PREC_NONE},
         [TK_ASSERT]           = {NULL,     NULL,    PREC_NONE},
+        [TK_TYPEOF]           = {typeof_,  NULL,    PREC_NONE},
         [TK_PANIC]            = {NULL,     NULL,    PREC_NONE},
         [TK_INC]              = {NULL,     inc,     PREC_TERM},
         [TK_DEC]              = {NULL,     dec,     PREC_TERM},
@@ -1258,7 +1277,6 @@ static void parsePrecedence(Compiler *compiler, const Precedence precedence) {
     advance(parser);
 
     const ParsePrefixFn prefixRule = getRule(parser->previous.type)->prefix;
-
     if (prefixRule == NULL) {
         error(parser, "Expect expression.");
         return;
@@ -1309,6 +1327,7 @@ static void synchronize(Parser *parser) {
             case TK_UNTIL:
             case TK_RETURN:
             case TK_ASSERT:
+            case TK_TYPEOF:
             case TK_MATCH:
             case TK_USE:
             case TK_FROM:
@@ -1913,6 +1932,10 @@ static void assertStatement(Compiler *compiler) {
     emitByteShort(compiler, OP_ASSERT, (uint16_t)constant);
 }
 
+static void typeofStatement(Compiler *compiler) {
+    typeof_(compiler, false);
+}
+
 static void panicStatement(const Compiler *compiler) {
     eat(compiler->parser, TK_LPAREN, "Expect '(' after 'panic!'.");
     eat(compiler->parser, TK_STRING, "Expect panic! error string after '('.");
@@ -2492,6 +2515,8 @@ static void statement(Compiler *compiler) {
         untilStatement(compiler); 
     } else if (match(compiler, TK_ASSERT)) {
         assertStatement(compiler);
+    } else if (match(compiler, TK_TYPEOF)) {
+        typeofStatement(compiler);
     } else if (match(compiler, TK_PANIC)) {
         panicStatement(compiler);
     } else if (match(compiler, TK_MATCH)) {

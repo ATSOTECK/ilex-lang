@@ -1477,11 +1477,17 @@ InterpretResult run(VM *vm, int frameIndex, Value *val) {
                     return INTERPRET_ASSERT_ERROR;
                 }
             } break;
+            case OP_TYPEOF: {
+                Value value = pop(vm);
+                char* type = valueType(value);
+                ObjString *typeStr = takeString(vm, type, (int)strlen(type));
+                push(vm, OBJ_VAL(typeStr));
+            } break;
             case OP_PANIC: {
                 ObjString *error = READ_STRING();
                 panicError(vm, error->str);
                 return INTERPRET_PANIC_ERROR;
-            }
+            } break;
             case OP_MULTI_CASE: {
                 int count = READ_BYTE();
                 Value switchValue = peek(vm, count + 1);

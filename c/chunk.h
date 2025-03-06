@@ -69,6 +69,7 @@ typedef enum {
     OP_CHECK_ABSTRACT,
     OP_METHOD,
     OP_ASSERT,
+    OP_TYPEOF,
     OP_PANIC,
     OP_NULL_COALESCE,
     OP_OR,

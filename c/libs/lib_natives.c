@@ -64,16 +64,6 @@ static Value stdErr(VM *vm, const int argc, const Value *args) {
     return ZERO_VAL;
 }
 
-static Value typeof_(VM *vm, const int argc, const Value *args) {
-    if (argc != 1) {
-        runtimeError(vm, "Function typeof() expected 1 argument but got %d.", argc);
-        return ERROR_VAL;
-    }
-
-    char* type = valueType(args[0]);
-    return OBJ_VAL(takeString(vm, type, strlen(type)));
-}
-
 static Value nativeToString(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function toString() expected 1 argument but got %d.", argc);
@@ -103,7 +93,6 @@ void defineNatives(VM *vm) {
     defineNative(vm, "print", print, &vm->globals);
     defineNative(vm, "debug", print, &vm->globals); // Same as print but more searchable.
     defineNative(vm, "printErr", stdErr, &vm->globals);
-    defineNative(vm, "typeof", typeof_, &vm->globals);
     defineNative(vm, "toString", nativeToString, &vm->globals);
     defineNative(vm, "toBool", nativeToBool, &vm->globals);
 }
