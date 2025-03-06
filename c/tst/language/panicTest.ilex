@@ -5,5 +5,6 @@ fn panic(arg) {
 panic("yeet")
 
 panic!("At the disco!")
+panic! "At the disco!" // Parens are optional (this should never run).
 
 assert(false, "This should never run.")

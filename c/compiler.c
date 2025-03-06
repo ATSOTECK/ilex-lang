@@ -1937,10 +1937,21 @@ static void typeofStatement(Compiler *compiler) {
 }
 
 static void panicStatement(const Compiler *compiler) {
-    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'panic!'.");
-    eat(compiler->parser, TK_STRING, "Expect panic! error string after '('.");
+    bool expectClosingParen = false;
+
+    if (check(compiler, TK_LPAREN)) {
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'panic!'.");
+        eat(compiler->parser, TK_STRING, "Expect panic! error string after '('.");
+        expectClosingParen = true;
+    } else {
+        eat(compiler->parser, TK_STRING, "Expect error string after 'panic!'.");
+    }
+
     const int constant = addConstant(compiler->parser->vm,  currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, compiler->parser->previous.start + 1, compiler->parser->previous.len - 2)));
-    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+
+    if (expectClosingParen) {
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+    }
     match(compiler, TK_SEMICOLON);
 
     emitByteShort(compiler, OP_PANIC, (uint16_t)constant);
