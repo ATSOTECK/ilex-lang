@@ -66,7 +66,7 @@ static bool setsEqual(const ObjSet *a, const ObjSet *b) {
     }
 
     for (int i = 0; i <= a->capacity; ++i) {
-        SetItem *item = &a->items[i];
+        const SetItem *item = &a->items[i];
         if (IS_ERR(item->value) || item->deleted) {
             continue;
         }
@@ -79,7 +79,7 @@ static bool setsEqual(const ObjSet *a, const ObjSet *b) {
     return true;
 }
 
-bool valuesEqual(Value a, Value b) {
+bool valuesEqual(const Value a, const Value b) {
     // IEEE 754 compliance is for NERDS.
     /*
     if (IS_NUMBER(a) && IS_NUMBER(b)) {
@@ -110,7 +110,7 @@ void initValueArray(ValueArray *array) {
     array->count = 0;
 }
 
-void writeValueArray(VM *vm, ValueArray *array, Value value) {
+void writeValueArray(VM *vm, ValueArray *array, const Value value) {
     if (array->capacity < array->count + 1) {
         int oldCapacity = array->capacity;
         array->capacity = GROW_CAPACITY(oldCapacity);
@@ -177,7 +177,7 @@ static uint32_t hashObject(Obj *obj) {
     }
 }
 
-uint32_t hashValue(Value value) {
+uint32_t hashValue(const Value value) {
     if (IS_OBJ(value)) {
         return hashObject(AS_OBJ(value));
     }
@@ -185,7 +185,7 @@ uint32_t hashValue(Value value) {
     return hashBits(value);
 }
 
-char *valueType(Value value) {
+char *valueType(const Value value) {
     if (IS_BOOL(value)) {
         return newCString("bool");
     } else if (IS_NUMBER(value)) {
@@ -222,22 +222,24 @@ char *valueToString(const Value value) {
     return newCString("unknown value");
 }
 
-void printValue(Value value) {
+void printValue(const Value value) {
     char *str = valueToString(value);
     printf("%s", str);
     free(str);
 }
 
-void printValueNl(Value value) {
+void printValueNl(const Value value) {
     char *str = valueToString(value);
     printf("%s\n", str);
     free(str);
 }
 
-bool isFalsy(Value value) {
+bool isFalsy(const Value value) {
     return IS_NULL(value) ||
            (IS_BOOL(value) && !AS_BOOL(value)) ||
            (IS_NUMBER(value) && AS_NUMBER(value) == 0) ||
            (IS_STRING(value) && AS_STRING(value)->len == 0) ||
-           (IS_ARRAY(value) && AS_ARRAY(value)->data.count == 0);
+           (IS_ARRAY(value) && AS_ARRAY(value)->data.count == 0) ||
+           (IS_MAP(value) && AS_MAP(value)->count == 0) ||
+           (IS_SET(value) && AS_SET(value)->count == 0);
 }

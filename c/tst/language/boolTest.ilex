@@ -1,0 +1,31 @@
+a := 'bla'
+assert(a is 'bla')
+assert(!(a is 'yeet'))
+assert(not(a is 'yeet'))
+assert(a is not 'yeet')
+assert(!(a is not 'yeet') == false)
+assert(not(a is not 'yeet') == false)
+
+assert(a is ! 'yeet') // Weird but valid.
+assert(a is! 'something') // Weird but valid.
+// assert(a !is 'something') // Invalid (and also weird).
+
+assert(not false)
+assert(!false)
+assert(!!true)
+assert(not not true)
+
+assert toBool('') is false
+assert toBool(0) is false
+assert toBool(null) is false
+assert toBool([]) is false
+assert toBool({}) is false
+assert toBool(#{}) is false
+
+assert toBool('hi') is true
+assert toBool(12) is true
+assert toBool([1, 2, 3]) is true
+assert toBool({a: 1}) is true
+assert toBool(#{1, 2, 'three'}) is true
+
+println('Passed!')

@@ -1890,17 +1890,24 @@ static void forStatement(Compiler *compiler) {
 }
 
 static void assertStatement(Compiler *compiler) {
-    eat(compiler->parser, TK_LPAREN, "Expect '(' after 'assert'.");
+    bool expectClosingParen = false;
+
+    if (check(compiler, TK_LPAREN)) {
+        eat(compiler->parser, TK_LPAREN, "Expect '(' after 'assert'.");
+        expectClosingParen = true;
+    }
 
     int constant = addConstant(compiler->parser->vm, currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, "\0", 0)));
 
     expression(compiler);
 
-    if (match(compiler, TK_COMMA)) {
-        eat(compiler->parser, TK_STRING, "Expect assert error string after ','.");
-        constant = addConstant(compiler->parser->vm,  currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, compiler->parser->previous.start + 1, compiler->parser->previous.len - 2)));
+    if (expectClosingParen) {
+        if (match(compiler, TK_COMMA)) {
+            eat(compiler->parser, TK_STRING, "Expect assert error string after ','.");
+            constant = addConstant(compiler->parser->vm,  currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, compiler->parser->previous.start + 1, compiler->parser->previous.len - 2)));
+        }
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
     }
-    eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
     match(compiler, TK_SEMICOLON);
 
     emitByteShort(compiler, OP_ASSERT, (uint16_t)constant);

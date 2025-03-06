@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "lib_natives.h"
 
-static Value println(VM *vm, int argc, const Value *args) {
+static Value println(VM *vm, const int argc, const Value *args) {
     for (int i = 0; i < argc; ++i) {
         printValue(args[i]);
         if (i < argc - 1) {
@@ -19,7 +19,7 @@ static Value println(VM *vm, int argc, const Value *args) {
     return ZERO_VAL;
 }
 
-static Value newLine(VM *vm, int argc, const Value *args) {
+static Value newLine(VM *vm, const int argc, const Value *args) {
     int count = 1;
 
     if (argc > 1) {
@@ -38,7 +38,7 @@ static Value newLine(VM *vm, int argc, const Value *args) {
     return ZERO_VAL;
 }
 
-static Value print(VM *vm, int argc, const Value *args) {
+static Value print(VM *vm, const int argc, const Value *args) {
     for (int i = 0; i < argc; ++i) {
         printValue(args[i]);
         if (i < argc - 1) {
@@ -49,7 +49,7 @@ static Value print(VM *vm, int argc, const Value *args) {
     return ZERO_VAL;
 }
 
-static Value stdErr(VM *vm, int argc, const Value *args) {
+static Value stdErr(VM *vm, const int argc, const Value *args) {
     for (int i = 0; i < argc; ++i) {
         char *str = valueToString(args[i]);
         fprintf(stderr, "%s", str);
@@ -64,7 +64,7 @@ static Value stdErr(VM *vm, int argc, const Value *args) {
     return ZERO_VAL;
 }
 
-static Value typeof_(VM *vm, int argc, const Value *args) {
+static Value typeof_(VM *vm, const int argc, const Value *args) {
     if (argc != 1) {
         runtimeError(vm, "Function typeof() expected 1 argument but got %d.", argc);
         return ERROR_VAL;
@@ -87,6 +87,15 @@ static Value nativeToString(VM *vm, const int argc, const Value *args) {
     return OBJ_VAL(ret);
 }
 
+static Value nativeToBool(VM *vm, const int argc, const Value *args) {
+    if (argc != 1) {
+        runtimeError(vm, "Function toBool() expected 1 argument but got %d.", argc);
+        return ERROR_VAL;
+    }
+
+    return BOOL_VAL(!isFalsy(args[0]));
+}
+
 void defineNatives(VM *vm) {
     defineNative(vm, "println", println, &vm->globals);
     defineNative(vm, "debugln", println, &vm->globals); // Same as println but more searchable.
@@ -96,4 +105,5 @@ void defineNatives(VM *vm) {
     defineNative(vm, "printErr", stdErr, &vm->globals);
     defineNative(vm, "typeof", typeof_, &vm->globals);
     defineNative(vm, "toString", nativeToString, &vm->globals);
+    defineNative(vm, "toBool", nativeToBool, &vm->globals);
 }
