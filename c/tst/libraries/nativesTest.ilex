@@ -3,7 +3,7 @@ use <ilex>
 x := 12
 println('Hello world!', x)
 
-t := seconds()
+t := ilex::seconds()
 str := "yeet"
 
 class Cat {
@@ -20,7 +20,7 @@ println("typeof str is a", typeof(typeof(str)))
 println("typeof cat", typeof(cat))
 
 println("Seconds since start:", t)
-println("Milliseconds since start:", milliseconds())
+println("Milliseconds since start:", ilex::milliseconds())
 
 println("This is running in ilex version:", ilex::version())
 println("Ilex version major:", ilex::versionMajor())
@@ -70,6 +70,3 @@ use <json> // Should this emit a warning?
 
 println('Registered functions:', ilex::functionCount())
 println('Registered values:', ilex::valueCount())
-
-println("\033[31;1;4mHello\033[0m");
-println("\033[32mThis should be green\033[0m")

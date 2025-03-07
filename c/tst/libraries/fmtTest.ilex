@@ -1,0 +1,51 @@
+use * from <fmt>
+
+println('{bold}Bold{reset}')
+println('{dim}Dim{reset}')
+println('{italic}Italic{reset}')
+println('{underline}Underline{reset}')
+println('{blink}Blink{reset}')
+println('{fastBlink}Fast blink{reset}')
+println('{inverted}Inverted{reset}')
+println('{hidden}Hidden{reset} <- hidden')
+println('{strike}Strike{reset}')
+
+println()
+
+println("{red}{underline}Hello{reset} there");
+println("{green}This should be {blue}green{reset}")
+
+println()
+
+format ::= '{cyan}{bold}{blink}{underline}'
+println('{format}Blink{reset}')
+
+println('{inverted}{red}Red inverted{reset}')
+
+println('{red}{underline}Red underline but not{resetUnderline} here.{reset} Total reset here.')
+
+println('{cyan}{underline}Cyan underline.{resetColor} Now deafult color underline.{reset}')
+
+
+println()
+
+println('{red}{italic}{underline}{bold}Very bad error!{reset}')
+
+println()
+
+println('{rgb(98, 142, 126)}24 bit color{reset}')
+
+println('{green}{blink}{underline}This is blinking, but {resetBlink}this is not.{reset}')
+println('{blue}{underline}{bold}This is bold, but {resetIntensity}this is not.{reset}')
+println('{red}{underline}{italic}This is italic, but {resetItalic}this is not.{reset}')
+println('{cyan}{strike}{underline}This is strike, but {resetStrike}this is not.{reset}')
+println('{magenta}{inverted}This is inverted, but {resetInverted}this is not.{reset}')
+println('{red}{inverted}{hidden}This is hidden, but {resetHidden}this is not.{reset}')
+println('{blue}{underline}{dim}This is dim, but {resetIntensity}this is not.{reset}')
+
+// printColors()
+// printColors('yeet')
+
+// for i := 0; i < 255; i++ {
+//     println('{color8(i)}color{reset}')
+// }

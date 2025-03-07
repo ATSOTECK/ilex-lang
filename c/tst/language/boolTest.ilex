@@ -15,6 +15,7 @@ assert(!false)
 assert(!!true)
 assert(not not true)
 
+assert toBool(false) is false
 assert toBool('') is false
 assert toBool(0) is false
 assert toBool(null) is false
@@ -22,6 +23,7 @@ assert toBool([]) is false
 assert toBool({}) is false
 assert toBool(#{}) is false
 
+assert toBool(true) is true
 assert toBool('hi') is true
 assert toBool(12) is true
 assert toBool([1, 2, 3]) is true
