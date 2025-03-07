@@ -12,6 +12,8 @@ static Value fmtPrintColors(VM *vm, const int argc, const Value *args) {
         return ERROR_VAL;
     }
 
+    printf("\033[0m"); // Reset before printing colors.
+
     if (argc == 0) {
         const int r = rand() % 2;
         if (r == 0) {

@@ -1925,7 +1925,7 @@ static void assertStatement(Compiler *compiler) {
             eat(compiler->parser, TK_STRING, "Expect assert error string after ','.");
             constant = addConstant(compiler->parser->vm,  currentChunk(compiler), OBJ_VAL(copyString(compiler->parser->vm, compiler->parser->previous.start + 1, compiler->parser->previous.len - 2)));
         }
-        eat(compiler->parser, TK_RPAREN, "Expect ')' after condition.");
+        eat(compiler->parser, TK_RPAREN, "Expect ')' after message.");
     }
     match(compiler, TK_SEMICOLON);
 

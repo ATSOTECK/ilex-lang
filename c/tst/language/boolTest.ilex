@@ -30,7 +30,29 @@ assert toBool([1, 2, 3]) is true
 assert toBool({a: 1}) is true
 assert toBool(#{1, 2, 'three'}) is true
 
-assert typeof false is 'bool'
+assert typeof(false) is 'bool'
 assert typeof(true) is 'bool'
+
+assert typeof('false') is 'string'
+
+assert((true && false) == false)
+assert((true && true) == true)
+assert((false && false) == false)
+assert((false && true) == false)
+
+assert((true || false) == true)
+assert((false || true) == true)
+assert((false || false) == false)
+assert((true || true) == true)
+
+assert((true and false) is false)
+assert((true and true) is true)
+assert((false and false) is false)
+assert((false and true) is false)
+
+assert((true or false) is true)
+assert((false or true) is true)
+assert((false or false) is false)
+assert((true or true) is true)
 
 println('Passed!')
