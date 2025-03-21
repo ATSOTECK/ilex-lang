@@ -281,7 +281,7 @@ static bool setRequestHeaders(VM *vm, struct curl_slist *list, CURL *curl, const
     }
 
     const ValueArray keys = mapKeys(vm, headers);
-    const ValueArray values = mapKeys(vm, headers);
+    const ValueArray values = mapValues(vm, headers);
 
     for (int i = 0; i < keys.count; ++i) {
         if (!IS_STRING(keys.values[i]) || !IS_STRING(values.values[i])) {
